@@ -15,7 +15,7 @@ class Class(Object):
 
     
     def __init__(self, universe, number_of_fields = -1):
-        super(Class, self).__init__(universe.nilObject, number_of_fields)
+        Object.__init__(self, universe.nilObject, number_of_fields)
         self._invokables_table = {}
         self._universe = universe
         

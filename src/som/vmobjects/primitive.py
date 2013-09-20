@@ -10,8 +10,8 @@ class Primitive(Object, Invokable):
     HOLDER_INDEX               = 1 + SIGNATURE_INDEX
     NUMBER_OF_PRIMITIVE_FIELDS = 1 + HOLDER_INDEX
     
-    def __init__(self, signature_string, universe, invoke, is_empty = None):
-        super(Primitive, self).__init__(universe.nilObject)
+    def __init__(self, signature_string, universe, invoke, is_empty=False):
+        Object.__init__(self, universe.nilObject)
         
         # Set the class of this primitive to be the universal primitive class
         self.set_class(universe.primitiveClass)

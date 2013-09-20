@@ -18,7 +18,7 @@ class Method(Array, Invokable):
 
     
     def __init__(self, nilObject):
-        super(Method, self).__init__(nilObject)
+        Array.__init__(self, nilObject)
         
         self._receiver_class_table   = []
         self._invoked_methods        = []

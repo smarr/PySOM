@@ -3,7 +3,7 @@ from som.vmobjects.object import Object
 class Double(Object):
     
     def __init__(self, nilObject):
-        super(Double, self).__init__(nilObject)
+        Object.__init__(self, nilObject)
         self._embedded_double = 0.0
     
     def get_embedded_double(self):
