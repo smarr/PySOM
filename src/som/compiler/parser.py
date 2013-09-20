@@ -476,7 +476,7 @@ class Parser(object):
         return -self._literal_integer()
  
     def _literal_integer(self):
-        i = long(self._text)
+        i = int(self._text)
         self._expect(Symbol.Integer)
         return i
 
