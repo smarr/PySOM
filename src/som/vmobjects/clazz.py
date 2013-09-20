@@ -14,8 +14,8 @@ class Class(Object):
     NUMBER_OF_CLASS_FIELDS    = 1 + INSTANCE_INVOKABLES_INDEX
 
     
-    def __init__(self, universe, number_of_fields = None):
-        super(Class, self).__init__(universe.nilObject, number_of_fields)
+    def __init__(self, universe, number_of_fields=-1):
+        Object.__init__(self, universe.nilObject, number_of_fields)
         self._invokables_table = {}
         self._universe = universe
         
@@ -61,7 +61,9 @@ class Class(Object):
  
         # Make sure this class is the holder of all invokables in the array
         for i in range(0, self.get_number_of_instance_invokables()):
-            self.get_instance_invokable(i).set_holder(self)
+            invokable = self.get_instance_invokable(i)
+            assert invokable is not None
+            invokable.set_holder(self)
     
     def get_number_of_instance_invokables(self):
         # Return the number of instance invokables in this class

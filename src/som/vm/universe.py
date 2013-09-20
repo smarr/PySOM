@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from som.interpreter.interpreter import Interpreter
 from som.interpreter.bytecodes   import Bytecodes 
 from som.vm.symbol_table         import SymbolTable
@@ -20,7 +18,10 @@ from som.vm.shell import Shell
 import som.compiler.sourcecode_compiler as sourcecode_compiler
 
 import os
-import sys
+
+class Exit(BaseException):
+    def __init__(self, code):
+        self.code = code
 
 class Universe(object):
     
@@ -30,108 +31,36 @@ class Universe(object):
         
         self._globals        = {}
         
-        self._nilObject      = None
-        self._trueObject     = None
-        self._falseObject    = None
-        self._objectClass    = None
-        self._classClass     = None
-        self._metaclassClass = None
+        self.nilObject      = None
+        self.trueObject     = None
+        self.falseObject    = None
+        self.objectClass    = None
+        self.classClass     = None
+        self.metaclassClass = None
         
-        self._nilClass       = None
-        self._integerClass   = None
-        self._bigintegerClass= None
-        self._arrayClass     = None
-        self._methodClass    = None
-        self._symbolClass    = None
-        self._frameClass     = None
-        self._primitiveClass = None
-        self._systemClass    = None
-        self._blockClass     = None
-        self._stringClass    = None
-        self._doubleClass    = None
+        self.nilClass       = None
+        self.integerClass   = None
+        self.bigintegerClass= None
+        self.arrayClass     = None
+        self.methodClass    = None
+        self.symbolClass    = None
+        self.frameClass     = None
+        self.primitiveClass = None
+        self.systemClass    = None
+        self.blockClass     = None
+        self.stringClass    = None
+        self.doubleClass    = None
         
         self._last_exit_code = 0
         self._avoid_exit     = avoid_exit
-        self._classpath      = None
-        self._dump_bytecodes = False        
-    
-    @property
-    def nilObject(self):
-        return self._nilObject
-    
-    @property
-    def trueObject(self):
-        return self._trueObject
-    
-    @property
-    def falseObject(self):
-        return self._falseObject
-    
-    @property
-    def objectClass(self):
-        return self._objectClass
-    
-    @property
-    def classClass(self):
-        return self._classClass
-    
-    @property
-    def nilClass(self):
-        return self._nilClass
-    
-    @property
-    def integerClass(self):
-        return self._integerClass
-    
-    @property
-    def bigintegerClass(self):
-        return self._bigintegerClass
+        self._dump_bytecodes = False
+        self.classpath      = None
 
-    @property
-    def arrayClass(self):
-        return self._arrayClass
-    
-    @property
-    def methodClass(self):
-        return self._methodClass
-    
-    @property
-    def symbolClass(self):
-        return self._symbolClass
-    
-    @property
-    def frameClass(self):
-        return self._frameClass
-    
-    @property
-    def systemClass(self):
-        return self._systemClass
-    
-    @property
-    def blockClass(self):
-        return self._blockClass
-    
-    @property
-    def stringClass(self):
-        return self._stringClass
-    
-    @property
-    def doubleClass(self):
-        return self._doubleClass
-    
-    @property
-    def primitiveClass(self):
-        return self._primitiveClass
-    
-    @property
-    def metaclassClass(self):
-        return self._metaclassClass
-    
     def exit(self, error_code):
         if self._avoid_exit:
             self._last_exit_code = error_code
         else:
-            sys.exit(error_code)
+            raise Exit(error_code)
     
     def last_exit_code(self):
         return self._last_exit_code
@@ -158,7 +87,7 @@ class Universe(object):
         bootstrap_method.set_bytecode(0, Bytecodes.halt)
         bootstrap_method.set_number_of_locals(self.new_integer(0))
         bootstrap_method.set_maximum_number_of_stack_elements(self.new_integer(2))
-        bootstrap_method.set_holder(self._systemClass)
+        bootstrap_method.set_holder(self.systemClass)
         return bootstrap_method
     
     def _create_bootstrap_frame(self, bootstrap_method, receiver, arguments = None):
@@ -190,7 +119,7 @@ class Universe(object):
             arguments_array = self.new_array_with_strings(arguments)
             bootstrap_frame = self._create_bootstrap_frame(bootstrap_method, system_object, arguments_array)
             # Lookup the initialize invokable on the system class
-            initialize = self._systemClass.lookup_invokable(self.symbol_for("initialize:"))
+            initialize = self.systemClass.lookup_invokable(self.symbol_for("initialize:"))
 
             self.start(bootstrap_frame, initialize)
     
@@ -217,11 +146,11 @@ class Universe(object):
                 self._dump_bytecodes = True
             else:
                 remaining_args.append(arguments[i])
-            i += 1 
+            i += 1
     
         if not got_classpath:
             # Get the default class path of the appropriate size
-            self._classpath = self._setup_default_classpath()
+            self.classpath = self._setup_default_classpath()
 
         # check remaining args for class paths, and strip file extension
         i = 0
@@ -229,7 +158,7 @@ class Universe(object):
             split = self._get_path_class_ext(remaining_args[i])
 
             if split[0] != "":  # there was a path
-                self._classpath.insert(0, split[0])
+                self.classpath.insert(0, split[0])
         
             remaining_args[i] = split[1]
             i += 1
@@ -237,7 +166,7 @@ class Universe(object):
         return remaining_args
     
     def setup_classpath(self, cp):
-        self._classpath = cp.split(os.pathsep)
+        self.classpath = cp.split(os.pathsep)
     
     def _setup_default_classpath(self):
         return ['.']
@@ -245,9 +174,18 @@ class Universe(object):
     # take argument of the form "../foo/Test.som" and return
     # "../foo", "Test", "som"
     def _get_path_class_ext(self, path):
-        (path, file_name) = os.path.split(path)
-        (file_name, ext)  = os.path.splitext(file_name)
-        return (path, file_name, ext[1:])
+        path_and_file = path.rsplit(os.pathsep, 1)
+        if len(path_and_file) <= 1:
+            path = ""
+        else:
+            path = path_and_file[0]
+        file_and_ext  = path_and_file[-1].rsplit(".", 1)
+        if len(file_and_ext) <= 1:
+            ext = ""
+        else:
+            ext = file_and_ext[-1]
+        file_name = file_and_ext[0]
+        return (path, file_name, ext)
     
     def _print_usage_and_exit(self):
         # Print the usage
@@ -263,76 +201,76 @@ class Universe(object):
 
     def _initialize_object_system(self):
         # Allocate the nil object
-        self._nilObject = Object(None)
+        self.nilObject = Object(None)
 
         # Allocate the Metaclass classes
-        self._metaclassClass = self.new_metaclass_class()
+        self.metaclassClass = self.new_metaclass_class()
 
         # Allocate the rest of the system classes
-        self._objectClass     = self.new_system_class()
-        self._nilClass        = self.new_system_class()
-        self._classClass      = self.new_system_class()
-        self._arrayClass      = self.new_system_class()
-        self._symbolClass     = self.new_system_class()
-        self._methodClass     = self.new_system_class()
-        self._integerClass    = self.new_system_class()
-        self._bigintegerClass = self.new_system_class()
-        self._frameClass      = self.new_system_class()
-        self._primitiveClass  = self.new_system_class()
-        self._stringClass     = self.new_system_class()
-        self._doubleClass     = self.new_system_class()
+        self.objectClass     = self.new_system_class()
+        self.nilClass        = self.new_system_class()
+        self.classClass      = self.new_system_class()
+        self.arrayClass      = self.new_system_class()
+        self.symbolClass     = self.new_system_class()
+        self.methodClass     = self.new_system_class()
+        self.integerClass    = self.new_system_class()
+        self.bigintegerClass = self.new_system_class()
+        self.frameClass      = self.new_system_class()
+        self.primitiveClass  = self.new_system_class()
+        self.stringClass     = self.new_system_class()
+        self.doubleClass     = self.new_system_class()
 
         # Setup the class reference for the nil object
-        self._nilObject.set_class(self._nilClass)
+        self.nilObject.set_class(self.nilClass)
 
         # Initialize the system classes
-        self._initialize_system_class(self._objectClass,                  None, "Object")
-        self._initialize_system_class(self._classClass,      self._objectClass, "Class")
-        self._initialize_system_class(self._metaclassClass,   self._classClass, "Metaclass")
-        self._initialize_system_class(self._nilClass,        self._objectClass, "Nil")
-        self._initialize_system_class(self._arrayClass,      self._objectClass, "Array")
-        self._initialize_system_class(self._methodClass,      self._arrayClass, "Method")
-        self._initialize_system_class(self._symbolClass,     self._objectClass, "Symbol")
-        self._initialize_system_class(self._integerClass,    self._objectClass, "Integer")
-        self._initialize_system_class(self._bigintegerClass, self._objectClass, "BigInteger")
-        self._initialize_system_class(self._frameClass,       self._arrayClass, "Frame")
-        self._initialize_system_class(self._primitiveClass,  self._objectClass, "Primitive")
-        self._initialize_system_class(self._stringClass,     self._objectClass, "String")
-        self._initialize_system_class(self._doubleClass,     self._objectClass, "Double")
+        self._initialize_system_class(self.objectClass,                 None, "Object")
+        self._initialize_system_class(self.classClass,      self.objectClass, "Class")
+        self._initialize_system_class(self.metaclassClass,   self.classClass, "Metaclass")
+        self._initialize_system_class(self.nilClass,        self.objectClass, "Nil")
+        self._initialize_system_class(self.arrayClass,      self.objectClass, "Array")
+        self._initialize_system_class(self.methodClass,      self.arrayClass, "Method")
+        self._initialize_system_class(self.symbolClass,     self.objectClass, "Symbol")
+        self._initialize_system_class(self.integerClass,    self.objectClass, "Integer")
+        self._initialize_system_class(self.bigintegerClass, self.objectClass, "BigInteger")
+        self._initialize_system_class(self.frameClass,       self.arrayClass, "Frame")
+        self._initialize_system_class(self.primitiveClass,  self.objectClass, "Primitive")
+        self._initialize_system_class(self.stringClass,     self.objectClass, "String")
+        self._initialize_system_class(self.doubleClass,     self.objectClass, "Double")
 
         # Load methods and fields into the system classes
-        self._load_system_class(self._objectClass)
-        self._load_system_class(self._classClass)
-        self._load_system_class(self._metaclassClass)
-        self._load_system_class(self._nilClass)
-        self._load_system_class(self._arrayClass)
-        self._load_system_class(self._methodClass)
-        self._load_system_class(self._symbolClass)
-        self._load_system_class(self._integerClass)
-        self._load_system_class(self._bigintegerClass)
-        self._load_system_class(self._frameClass)
-        self._load_system_class(self._primitiveClass)
-        self._load_system_class(self._stringClass)
-        self._load_system_class(self._doubleClass)
+        self._load_system_class(self.objectClass)
+        self._load_system_class(self.classClass)
+        self._load_system_class(self.metaclassClass)
+        self._load_system_class(self.nilClass)
+        self._load_system_class(self.arrayClass)
+        self._load_system_class(self.methodClass)
+        self._load_system_class(self.symbolClass)
+        self._load_system_class(self.integerClass)
+        self._load_system_class(self.bigintegerClass)
+        self._load_system_class(self.frameClass)
+        self._load_system_class(self.primitiveClass)
+        self._load_system_class(self.stringClass)
+        self._load_system_class(self.doubleClass)
 
         # Load the generic block class
-        self._blockClass = self.load_class(self.symbol_for("Block"))
+        self.blockClass = self.load_class(self.symbol_for("Block"))
 
         # Setup the true and false objects
-        self._trueObject  = self.new_instance(self.load_class(self.symbol_for("True")))
-        self._falseObject = self.new_instance(self.load_class(self.symbol_for("False")))
+        self.trueObject  = self.new_instance(self.load_class(self.symbol_for("True")))
+        self.falseObject = self.new_instance(self.load_class(self.symbol_for("False")))
 
         # Load the system class and create an instance of it
-        self._systemClass = self.load_class(self.symbol_for("System"))
-        system_object = self.new_instance(self._systemClass)
+        self.systemClass = self.load_class(self.symbol_for("System"))
+        system_object = self.new_instance(self.systemClass)
 
         # Put special objects and classes into the dictionary of globals
-        self.set_global(self.symbol_for("nil"),    self._nilObject)
-        self.set_global(self.symbol_for("true"),   self._trueObject)
-        self.set_global(self.symbol_for("false"),  self._falseObject)
+        self.set_global(self.symbol_for("nil"),    self.nilObject)
+        self.set_global(self.symbol_for("true"),   self.trueObject)
+        self.set_global(self.symbol_for("false"),  self.falseObject)
         self.set_global(self.symbol_for("system"), system_object)
-        self.set_global(self.symbol_for("System"), self._systemClass)
-        self.set_global(self.symbol_for("Block"),  self._blockClass)
+        self.set_global(self.symbol_for("System"), self.systemClass)
+        self.set_global(self.symbol_for("Block"),  self.blockClass)
         return system_object
     
     def symbol_for(self, string):
@@ -347,11 +285,11 @@ class Universe(object):
     
     def new_array_with_length(self, length):
         # Allocate a new array and set its class to be the array class
-        result = Array(self._nilObject)
-        result.set_class(self._arrayClass)
+        result = Array(self.nilObject)
+        result.set_class(self.arrayClass)
 
         # Set the number of indexable fields to the given value (length)
-        result.set_number_of_indexable_fields_and_clear(length, self._nilObject)
+        result.set_number_of_indexable_fields_and_clear(length, self.nilObject)
 
         # Return the freshly allocated array
         return result
@@ -380,7 +318,7 @@ class Universe(object):
     
     def new_block(self, method, context_frame, arguments):
         # Allocate a new block and set its class to be the block class
-        result = Block(self._nilObject)
+        result = Block(self.nilObject)
         result.set_class(self._get_block_class(arguments))
 
         # Set the method and context of block
@@ -400,8 +338,8 @@ class Universe(object):
 
     def new_frame(self, previous_frame, method):
         # Allocate a new frame and set its class to be the frame class
-        result = Frame(self._nilObject)
-        result.set_class(self._frameClass)
+        result = Frame(self.nilObject)
+        result.set_class(self.frameClass)
 
         # Compute the maximum number of stack locations (including arguments,
         # locals and extra buffer to support doesNotUnderstand) and set the
@@ -409,7 +347,7 @@ class Universe(object):
         length = (method.get_number_of_arguments() +
                   method.get_number_of_locals().get_embedded_integer() +
                   method.get_maximum_number_of_stack_elements().get_embedded_integer() + 2)
-        result.set_number_of_indexable_fields_and_clear(length, self._nilObject)
+        result.set_number_of_indexable_fields_and_clear(length, self.nilObject)
 
         # Set the method of the frame and the previous frame
         result.set_method(method)
@@ -425,20 +363,20 @@ class Universe(object):
 
     def new_method(self, signature, num_bytecodes, num_literals):
         # Allocate a new method and set its class to be the method class
-        result = Method(self._nilObject)
-        result.set_class(self._methodClass)
+        result = Method(self.nilObject)
+        result.set_class(self.methodClass)
 
         # Set the signature and the number of bytecodes
         result.set_signature(signature)
         result.set_number_of_bytecodes(num_bytecodes)
-        result.set_number_of_indexable_fields_and_clear(num_literals, self._nilObject)
+        result.set_number_of_indexable_fields_and_clear(num_literals, self.nilObject)
 
         # Return the freshly allocated method
         return result
 
     def new_instance(self, instance_class):
         # Allocate a new instance and set its class to be the given class
-        result = Object(self._nilObject, instance_class.get_number_of_instance_fields())
+        result = Object(self.nilObject, instance_class.get_number_of_instance_fields())
         result.set_class(instance_class)
  
         # Return the freshly allocated instance
@@ -447,8 +385,8 @@ class Universe(object):
  
     def new_integer(self, value):
         # Allocate a new integer and set its class to be the integer class
-        result = Integer(self._nilObject)
-        result.set_class(self._integerClass)
+        result = Integer(self.nilObject)
+        result.set_class(self.integerClass)
      
         # Set the embedded integer of the newly allocated integer
         result.set_embedded_integer(value)
@@ -458,8 +396,8 @@ class Universe(object):
  
     def new_biginteger(self, value):
         # Allocate a new integer and set its class to be the integer class
-        result = BigInteger(self._nilObject)
-        result.set_class(self._bigintegerClass)
+        result = BigInteger(self.nilObject)
+        result.set_class(self.bigintegerClass)
  
         # Set the embedded integer of the newly allocated integer
         result.set_embedded_biginteger(value)
@@ -470,8 +408,8 @@ class Universe(object):
  
     def new_double(self, value):
         # Allocate a new integer and set its class to be the double class
-        result = Double(self._nilObject)
-        result.set_class(self._doubleClass)
+        result = Double(self.nilObject)
+        result.set_class(self.doubleClass)
  
         # Set the embedded double of the newly allocated double
         result.set_embedded_double(value)
@@ -492,8 +430,8 @@ class Universe(object):
 
     def new_string(self, embedded_string):
         # Allocate a new string and set its class to be the string class
-        result = String(self._nilObject)
-        result.set_class(self._stringClass)
+        result = String(self.nilObject)
+        result.set_class(self.stringClass)
  
         # Put the embedded string into the new string
         result.set_embedded_string(embedded_string)
@@ -503,8 +441,8 @@ class Universe(object):
     
     def new_symbol(self, string):
         # Allocate a new symbol and set its class to be the symbol class
-        result = Symbol(self._nilObject)
-        result.set_class(self._symbolClass)
+        result = Symbol(self.nilObject)
+        result.set_class(self.symbolClass)
 
         # Put the string into the symbol
         result.set_string(string)
@@ -521,7 +459,7 @@ class Universe(object):
 
         # Setup the metaclass hierarchy
         system_class.set_class(Class(self))
-        system_class.get_class().set_class(self._metaclassClass)
+        system_class.get_class().set_class(self.metaclassClass)
 
         # Return the freshly allocated system class
         return system_class
@@ -532,7 +470,7 @@ class Universe(object):
             system_class.set_super_class(super_class)
             system_class.get_class().set_super_class(super_class.get_class())
         else:
-            system_class.get_class().set_super_class(self._classClass)
+            system_class.get_class().set_super_class(self.classClass)
     
 
         # Initialize the array of instance fields
@@ -571,7 +509,7 @@ class Universe(object):
     def _get_block_class(self, number_of_arguments = None):
         if not number_of_arguments:
             # Get the generic block class
-            return self._blockClass
+            return self.blockClass
         
         # Compute the name of the block class with the given number of
         # arguments
@@ -618,7 +556,7 @@ class Universe(object):
 
     def _load_class(self, name, system_class):
         # Try loading the class from all different paths
-        for cpEntry in self._classpath:
+        for cpEntry in self.classpath:
             try:
                 # Load the class from a file and return the loaded class
                 result = sourcecode_compiler.compile_class_from_file(cpEntry, name.get_string(), system_class, self)
@@ -644,16 +582,17 @@ class Universe(object):
         return result
 
 def error_print(msg):
-    print(msg, file=sys.stderr, end="")
+    os.write(2, msg)
 
 def error_println(msg = ""):
-    print(msg, file=sys.stderr)
+    os.write(2, msg + "\n")
 
 def std_print(msg):
-    print(msg, end="")
+    print msg,
 
 def std_println(msg=""):
-    print(msg)
+    print msg
+
 
 def main(args):
     u = Universe()
@@ -661,7 +600,8 @@ def main(args):
     u.exit(0)
 
 if __name__ == '__main__':
-    main(sys.argv)
-
-def target(*args):
-    return main, None
+    import sys
+    try:
+        main(sys.argv)
+    except Exit as e:
+        sys.exit(e.code)

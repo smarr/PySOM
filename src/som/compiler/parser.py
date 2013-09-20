@@ -7,18 +7,18 @@ from som.vmobjects.integer import integer_value_fits
 
 class Parser(object):
     
-    _single_op_syms        = (Symbol.Not,  Symbol.And,  Symbol.Or,    Symbol.Star,
+    _single_op_syms        = [Symbol.Not,  Symbol.And,  Symbol.Or,    Symbol.Star,
                               Symbol.Div,  Symbol.Mod,  Symbol.Plus,  Symbol.Equal,
                               Symbol.More, Symbol.Less, Symbol.Comma, Symbol.At,
-                              Symbol.Per,  Symbol.NONE)
+                              Symbol.Per,  Symbol.NONE]
     
-    _binary_op_syms        = (Symbol.Or,   Symbol.Comma, Symbol.Minus, Symbol.Equal,
+    _binary_op_syms        = [Symbol.Or,   Symbol.Comma, Symbol.Minus, Symbol.Equal,
                               Symbol.Not,  Symbol.And,   Symbol.Or,    Symbol.Star,
                               Symbol.Div,  Symbol.Mod,   Symbol.Plus,  Symbol.Equal,
                               Symbol.More, Symbol.Less,  Symbol.Comma, Symbol.At,
-                              Symbol.Per,  Symbol.NONE)
+                              Symbol.Per,  Symbol.NONE]
     
-    _keyword_selector_syms = (Symbol.Keyword, Symbol.KeywordSequence)
+    _keyword_selector_syms = [Symbol.Keyword, Symbol.KeywordSequence]
   
     def __init__(self, reader, universe):
         self._universe = universe

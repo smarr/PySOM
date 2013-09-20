@@ -1,6 +1,8 @@
 # An 'interface', or common super class for methods and primitives. 
 class Invokable(object):
 
+    _mixin_ = True
+
     # Tells whether this is a primitive
     def is_primitive(self):
         raise NotImplementedError()

@@ -9,12 +9,12 @@ class Lexer(object):
         self._line_number = 0
         self._chars_read  = 0 # all characters read, excluding the current line
         self._infile      = input_file
-        self._sym         = None
-        self._symc        = None
+        self._sym         = Symbol.NONE
+        self._symc        = '\0'
         self._text        = ""
         self._peek_done   = False
-        self._next_sym    = None
-        self._next_symc   = None
+        self._next_sym    = Symbol.NONE
+        self._next_symc   = '\0'
         self._next_text   = ""
         self._buf         = ""
         self._bufp        = 0
@@ -43,7 +43,7 @@ class Lexer(object):
         
         if self._current_char() == '\'':
             self._sym = Symbol.STString
-            self._symc = 0
+            self._symc = '\0'
             
             self._bufp += 1
             self._text = self._bufchar(self._bufp)
@@ -62,7 +62,7 @@ class Lexer(object):
             if self._bufchar(self._bufp + 1) == '=':
                 self._bufp += 2
                 self._sym = Symbol.Assign
-                self._symc = 0
+                self._symc = '\0'
                 self._text = ":="
             else:
                 self._bufp += 1
@@ -81,7 +81,7 @@ class Lexer(object):
         elif self._current_char() == '.':
             self._match(Symbol.Period)
         elif self._current_char() == '-':
-            if self._buf.startswith(self._SEPARATOR, self._bufp):
+            if self._buf[self._bufp:].startswith(self._SEPARATOR):
                 self._text = ""
                 while self._current_char() == '-':
                     self._text += self._bufchar(self._bufp)
@@ -96,7 +96,7 @@ class Lexer(object):
         elif self._is_operator(self._current_char()):
             if self._is_operator(self._bufchar(self._bufp + 1)):
                 self._sym  = Symbol.OperatorSequence
-                self._symc = 0
+                self._symc = '\0'
                 self._text = ""
                 while self._is_operator(self._current_char()):
                     self._text += self._bufchar(self._bufp)
@@ -128,13 +128,13 @@ class Lexer(object):
             elif self._current_char() == '%':
                 self._match(Symbol.Per)
 
-        elif self._buf.startswith(self._PRIMITIVE, self._bufp):
+        elif self._buf[self._bufp:].startswith(self._PRIMITIVE):
             self._bufp += len(self._PRIMITIVE)
             self._sym  = Symbol.Primitive
-            self._symc = 0
+            self._symc = '\0'
             self._text = self._PRIMITIVE
         elif self._current_char().isalpha():
-            self._symc = 0
+            self._symc = '\0'
             self._text = ""
             while self._current_char().isalnum() or self._current_char() == '_':
                 self._text += self._bufchar(self._bufp)
@@ -151,7 +151,7 @@ class Lexer(object):
                         self._bufp += 1
         elif self._current_char().isdigit():
             self._sym  = Symbol.Integer
-            self._symc = 0
+            self._symc = '\0'
             self._text = self._bufchar(self._bufp)
             self._bufp += 1
             while self._current_char().isdigit():

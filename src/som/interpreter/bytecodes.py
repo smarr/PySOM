@@ -1,3 +1,5 @@
+from rpython.rlib.unroll import unrolling_iterable
+
 class Bytecodes(object):
     
     # Bytecodes used by the Simple Object Machine (SOM)
@@ -76,8 +78,16 @@ def bytecode_as_str(bytecode):
     if not isinstance(bytecode, int):
         raise ValueError('bytecode is expected to be an integer.')
     
-    for key, val in Bytecodes.__dict__.iteritems():
+    bytecodes = unrolling_iterable(int_constants_of(Bytecodes))
+    for key, val in bytecodes:
         if val == bytecode:
             return key.upper()
         
     raise ValueError('No defined defined for the value %d.' % bytecode)
+
+def int_constants_of(cls):
+    out = {}
+    for key, value in cls.__dict__.items():
+        if isinstance(value, int):
+            out[key] = value
+    return out

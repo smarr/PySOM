@@ -8,7 +8,7 @@ class Block(Object):
     NUMBER_OF_BLOCK_FIELDS = 1 + CONTEXT_INDEX
     
     def __init__(self, nilObject):
-        super(Block, self).__init__(nilObject)
+        Object.__init__(self, nilObject)
         self._number_of_arguments = 0
         
     def get_method(self):
@@ -47,7 +47,7 @@ class Block(Object):
                 new_frame.copy_arguments_from(frame)
                 new_frame.set_context(context)
             
-            super(Block.Evaluation, self).__init__(self._compute_signature_string(num_args), universe, _invoke)
+            Primitive.__init__(self, self._compute_signature_string(num_args), universe, _invoke)
             self._number_of_arguments = num_args
 
         def _compute_signature_string(self, num_args):

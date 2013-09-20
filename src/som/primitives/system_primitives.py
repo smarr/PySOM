@@ -8,7 +8,7 @@ import time
 class SystemPrimitives(Primitives):
     
     def __init__(self, universe):
-        super(SystemPrimitives, self).__init__(universe)
+        Primitives.__init__(self, universe)
         self._start_time = time.time() # a float of the time in seconds
     
     def install_primitives(self):

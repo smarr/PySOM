@@ -1,3 +1,5 @@
+from rpython.rlib.unroll import unrolling_iterable
+
 # Symbol is a 'lightweight' enum, in Python 3.4, we could use Enum as superclass
 class Symbol(object):
     NONE             = -1
@@ -33,9 +35,16 @@ class Symbol(object):
     KeywordSequence  = 29
     OperatorSequence = 30
 
-
 def symbol_as_str(symbol):
-    for key, val in Symbol.__dict__:
+    symbols = unrolling_iterable(int_constants_of(Symbol))
+    for (key, val) in symbols:
         if val == symbol:
             return key
-    raise ValueError('No Symbol defined for the value %d.' % symbol)
+            raise ValueError('No Symbol defined for the value %d.' % symbol)
+
+def int_constants_of(cls):
+    out = {}
+    for key, value in cls.__dict__.items():
+        if isinstance(value, int):
+            out[key] = value
+    return out

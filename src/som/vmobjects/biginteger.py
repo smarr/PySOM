@@ -2,7 +2,7 @@ from som.vmobjects.object import Object
 
 class BigInteger(Object):
     def __init__(self, nilObject):
-        super(BigInteger, self).__init__(nilObject)
+        Object.__init__(self, nilObject)
         self._embedded_biginteger = None
     
     def get_embedded_biginteger(self):

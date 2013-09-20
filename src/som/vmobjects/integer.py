@@ -3,7 +3,7 @@ from som.vmobjects.object import Object
 class Integer(Object):
     
     def __init__(self, nilObject):
-        super(Integer, self).__init__(nilObject)
+        Object.__init__(self, nilObject)
         self._embedded_integer = 0
     
     def get_embedded_integer(self):

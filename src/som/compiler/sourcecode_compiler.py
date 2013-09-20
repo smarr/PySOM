@@ -1,4 +1,7 @@
 import os
+
+from rpython.rlib.streamio import open_file_as_stream
+
 from StringIO import StringIO
 
 from som.compiler.parser                   import Parser
@@ -17,10 +20,16 @@ class _SourcecodeCompiler(object):
     
     def compile(self, path, filename, system_class, universe):
         fname = path + os.sep + filename + ".som"
-        
-        with open(fname, "r") as input_file:
-            self._parser = Parser(input_file, universe)
-            result = self._compile(system_class, universe)
+
+        try:
+            input_file = open_file_as_stream(fname, "r")
+            try:
+                self._parser = Parser(input_file, universe)
+                result = self._compile(system_class, universe)
+            finally:
+                input_file.close()
+        except OSError as e:
+            raise IOError()
 
         cname = result.get_name()
         cnameC = cname.get_string()

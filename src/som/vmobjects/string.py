@@ -3,7 +3,7 @@ from som.vmobjects.object import Object
 class String(Object):
     
     def __init__(self, nilObject):
-        super(String, self).__init__(nilObject)
+        Object.__init__(self, nilObject)
         self._string = None
     
     def get_embedded_string(self):

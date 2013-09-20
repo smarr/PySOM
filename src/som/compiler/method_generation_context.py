@@ -6,10 +6,10 @@ class MethodGenerationContext(object):
     def __init__(self):
         self._holder_genc = None
         self._outer_genc  = None
-        self._block_method = None
+        self._block_method = False
         self._signature   = None
         self._arguments   = []
-        self._primitive   = None
+        self._primitive   = False # to be changed
         self._locals      = []
         self._literals    = []
         self._finished    = False

@@ -20,7 +20,7 @@ class Frame(Array):
     NUMBER_OF_FRAME_FIELDS = 1 + METHOD_INDEX
 
     def __init__(self, nilObject):
-        super(Frame, self).__init__(nilObject)
+        Array.__init__(self, nilObject)
         self._stack_pointer  = None
         self._bytecode_index = None
         self._local_offset   = None

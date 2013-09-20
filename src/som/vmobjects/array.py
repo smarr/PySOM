@@ -3,7 +3,7 @@ from som.vmobjects.object import Object
 class Array(Object):
     
     def __init__(self, nilObject):
-        super(Array, self).__init__(nilObject)
+        Object.__init__(self, nilObject)
         
         # Private array of indexable fields
         self._indexable_fields = None

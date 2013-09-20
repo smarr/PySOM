@@ -5,9 +5,9 @@ class ClassGenerationContext(object):
 
         self._name       = None
         self._super_name = None
-        self._class_side = None
-        self._number_of_instance_fields_of_super = None
-        self._number_of_class_fields_of_super = None
+        self._class_side = False # to be overridden
+        self._number_of_instance_fields_of_super = -1
+        self._number_of_class_fields_of_super = -1
         self._instance_fields  = []
         self._instance_methods = []
         self._class_fields     = []
