@@ -24,6 +24,7 @@ class SomTest(unittest.TestCase):
         ("SelfBlock"     ,),
         ("Super"         ,),
 
+        ("String"        ,),
         ("Symbol"        ,),
         ("Vector"        ,)])
     def test_som_test(self, test_name):

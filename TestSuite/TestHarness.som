@@ -43,6 +43,7 @@ TestHarness = (
           SuperTest,
           SymbolTest, 
           VectorTest,
+          StringTest,
           BlockTest
     )
     

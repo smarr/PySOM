@@ -1,0 +1,30 @@
+StringTest = (
+
+    run: harness = (
+        | str |
+        str := '1234567890'.
+        
+        str = '1234567890' ifFalse: [
+            harness fail: self because: '#= gives wrong result for literals'].
+        
+        str length = 10 ifFalse: [
+            harness fail: self because: '#length gives wrong result'].
+        
+        str + str = '12345678901234567890' ifFalse: [
+            harness fail: self because: '#+ gives wrong result'].
+        
+        (str charAt: 1) = '1' ifFalse: [
+            harness fail: self because: '#charAt: gives wrong result. Expected 1, got: ' + (str charAt: 1)].
+        (str charAt: 7) = '7' ifFalse: [
+            harness fail: self because: '#charAt: gives wrong result'].
+        
+        (str beginsWith: '23') ifTrue: [
+            harness fail: self because: '#beginsWith: gives wrong result'].
+        (str beginsWith: '123') ifFalse: [
+            harness fail: self because: '#beginsWith: gives wrong result'].
+        
+        (str substringFrom: 2 to: 4) = '234' ifFalse: [
+            harness fail: self because: '#substringFrom:to: gives wrong result'].
+    )
+
+)
