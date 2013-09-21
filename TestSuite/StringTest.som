@@ -19,9 +19,9 @@ StringTest = (
             harness fail: self because: '#charAt: gives wrong result'].
         
         (str beginsWith: '23') ifTrue: [
-            harness fail: self because: '#beginsWith: gives wrong result'].
+            harness fail: self because: '#beginsWith: gives wrong result (case 1)'].
         (str beginsWith: '123') ifFalse: [
-            harness fail: self because: '#beginsWith: gives wrong result'].
+            harness fail: self because: '#beginsWith: gives wrong result (case 2)'].
         
         (str substringFrom: 2 to: 4) = '234' ifFalse: [
             harness fail: self because: '#substringFrom:to: gives wrong result'].
