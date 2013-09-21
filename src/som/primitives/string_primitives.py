@@ -19,7 +19,7 @@ class StringPrimitives(Primitives):
 
         def _length(ivkbl, frame, interpreter):
             rcvr = frame.pop()
-            frame.push(self._universe.new_integer(rcvr.get_embedded_string().length()))
+            frame.push(self._universe.new_integer(len(rcvr.get_embedded_string())))
         self._install_instance_primitive(Primitive("length", self._universe, _length))
 
         def _equals(ivkbl, frame, interpreter):
@@ -39,7 +39,7 @@ class StringPrimitives(Primitives):
 
             try:
                 frame.push(self._universe.new_string(rcvr.get_embedded_string()[
-                                        start.get_embedded_integer():end.get_embedded_integer() + 1]))
+                                        start.get_embedded_integer() - 1:end.get_embedded_integer()]))
             except IndexError, e:
                 frame.push(self._universe.new_string("Error - index out of bounds: %s" % e))
         self._install_instance_primitive(Primitive("primSubstringFrom:to:", self._universe, _substring))
