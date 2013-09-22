@@ -77,3 +77,8 @@ class DoublePrimitives(Primitives):
             else:
                 frame.push(self._universe.falseObject)
         self._install_instance_primitive(Primitive("<", self._universe, _lessThan))
+        
+        def _round(ivkbl, frame, interpreter):
+            rcvr = frame.pop()
+            frame.push(self._universe.new_integer(int(round(rcvr.get_embedded_double()))))
+        self._install_instance_primitive(Primitive("round", self._universe, _round))
