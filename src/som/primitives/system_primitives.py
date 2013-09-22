@@ -1,6 +1,7 @@
 from som.primitives.primitives import Primitives
 from som.vmobjects.primitive   import Primitive
 
+import gc
 import time
 
 class SystemPrimitives(Primitives):
@@ -57,6 +58,7 @@ class SystemPrimitives(Primitives):
         self._install_instance_primitive(Primitive("ticks", self._universe, _ticks))
 
         def _fullGC(ivkbl, frame, interpreter):
-            # naught - GC is entirely left to Python
-            pass
+            frame.pop()
+            gc.collect()
+            frame.push(self._universe.trueObject)
         self._install_instance_primitive(Primitive("fullGC", self._universe, _fullGC))
