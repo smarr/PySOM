@@ -3,6 +3,7 @@ from som.vmobjects.primitive   import Primitive
 from som.vmobjects.biginteger  import BigInteger
 from som.vmobjects.integer     import Integer
 from som.vmobjects.double      import Double
+from som.vmobjects.string      import String
 
 import math
 import random
@@ -206,3 +207,14 @@ class IntegerPrimitives(Primitives):
                     frame.push(self._universe.falseObject)
         self._install_instance_primitive(Primitive("<", self._universe, _lessThan))
         
+        def _fromString(ivkbl, frame, interpreter):
+            param = frame.pop()
+            frame.pop()
+            
+            if not isinstance(param, String):
+                frame.push(self._universe.nilObject)
+                return
+            
+            int_value = int(param.get_embedded_string())
+            frame.push(self._universe.new_integer(int_value))
+        self._install_class_primitive(Primitive("fromString:", self._universe, _fromString))
