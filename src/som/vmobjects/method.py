@@ -10,11 +10,9 @@ from array import array
 class Method(Array, Invokable):
     
     # Static field indices and number of method fields
-    NUMBER_OF_LOCALS_INDEX                 = 1 + Array.CLASS_INDEX
-    MAXIMUM_NUMBER_OF_STACK_ELEMENTS_INDEX = 1 + NUMBER_OF_LOCALS_INDEX
-    SIGNATURE_INDEX                        = 1 + MAXIMUM_NUMBER_OF_STACK_ELEMENTS_INDEX
-    HOLDER_INDEX                           = 1 + SIGNATURE_INDEX
-    NUMBER_OF_METHOD_FIELDS                = 1 + HOLDER_INDEX
+    SIGNATURE_INDEX                 = 1 + Array.CLASS_INDEX
+    HOLDER_INDEX                    = 1 + SIGNATURE_INDEX
+    NUMBER_OF_METHOD_FIELDS         = 1 + HOLDER_INDEX
 
     
     def __init__(self, nilObject):
@@ -29,25 +27,28 @@ class Method(Array, Invokable):
         self._bytecodes              = None
         self._inline_cache_class     = None
         self._inline_cache_invokable = None
+        
+        self._number_of_locals       = -1
+        self._maximum_number_of_stack_elements = -1
     
     def is_primitive(self):
         return False
   
     def get_number_of_locals(self):
         # Get the number of locals (converted to a Java integer)
-        return self.get_field(self.NUMBER_OF_LOCALS_INDEX)
+        return self._number_of_locals
 
     def set_number_of_locals(self, value):
         # Set the number of locals
-        self.set_field(self.NUMBER_OF_LOCALS_INDEX, value)
+        self._number_of_locals = value
 
     def get_maximum_number_of_stack_elements(self):
         # Get the maximum number of stack elements
-        return self.get_field(self.MAXIMUM_NUMBER_OF_STACK_ELEMENTS_INDEX)
+        return self._maximum_number_of_stack_elements
   
     def set_maximum_number_of_stack_elements(self, value):
         # Set the maximum number of stack elements
-        self.set_field(self.MAXIMUM_NUMBER_OF_STACK_ELEMENTS_INDEX, value)
+        self._maximum_number_of_stack_elements = value
 
     def get_signature(self):
         # Get the signature of this method by reading the field with signature
