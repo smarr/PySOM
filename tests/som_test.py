@@ -26,6 +26,7 @@ class SomTest(unittest.TestCase):
 
         ("String"        ,),
         ("Symbol"        ,),
+        ("System"        ,),
         ("Vector"        ,)])
     def test_som_test(self, test_name):
         args = ["-cp", "Smalltalk", "TestSuite/TestHarness.som", test_name]
