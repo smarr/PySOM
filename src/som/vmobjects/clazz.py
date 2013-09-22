@@ -14,7 +14,7 @@ class Class(Object):
     NUMBER_OF_CLASS_FIELDS    = 1 + INSTANCE_INVOKABLES_INDEX
 
     
-    def __init__(self, universe, number_of_fields = None):
+    def __init__(self, universe, number_of_fields = -1):
         super(Class, self).__init__(universe.nilObject, number_of_fields)
         self._invokables_table = {}
         self._universe = universe

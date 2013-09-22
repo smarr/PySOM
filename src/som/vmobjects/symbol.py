@@ -5,7 +5,7 @@ class Symbol(Object):
     def __init__(self, nilObject):
         super(Symbol, self).__init__(nilObject)
         self._string = None
-        self._number_of_signature_arguments = None
+        self._number_of_signature_arguments = 0 # updated later
     
     def get_string(self):
         # Get the string associated to this symbol

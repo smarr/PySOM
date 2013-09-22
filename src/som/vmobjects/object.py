@@ -4,8 +4,8 @@ class Object(object):
     CLASS_INDEX             = 0
     NUMBER_OF_OBJECT_FIELDS = 1 + CLASS_INDEX
 
-    def __init__(self, nilObject, number_of_fields = None):
-        num_fields = number_of_fields if number_of_fields else self._get_default_number_of_fields()
+    def __init__(self, nilObject, number_of_fields = -1):
+        num_fields = number_of_fields if number_of_fields != -1 else self._get_default_number_of_fields()
         self._fields = None
         self.set_number_of_fields_and_clear(num_fields, nilObject)
     

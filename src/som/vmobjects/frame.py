@@ -21,9 +21,9 @@ class Frame(Array):
 
     def __init__(self, nilObject):
         super(Frame, self).__init__(nilObject)
-        self._stack_pointer  = None
-        self._bytecode_index = None
-        self._local_offset   = None
+        self._stack_pointer  = 0
+        self._bytecode_index = 0
+        self._local_offset   = 0
     
     def get_previous_frame(self):
         # Get the previous frame by reading the field with previous frame index
