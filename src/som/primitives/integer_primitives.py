@@ -35,7 +35,12 @@ class IntegerPrimitives(Primitives):
 
         def _sqrt(ivkbl, frame, interpreter):
             rcvr = frame.pop()
-            frame.push(self._universe.new_double(math.sqrt(rcvr.get_embedded_integer())))
+            
+            res = math.sqrt(rcvr.get_embedded_integer())
+            if res == float(int(res)):
+                frame.push(self._universe.new_integer(int(res)))
+            else:
+                frame.push(self._universe.new_double(res))
         self._install_instance_primitive(Primitive("sqrt", self._universe, _sqrt))
 
         def _atRandom(ivkbl, frame, interpreter):
