@@ -22,7 +22,7 @@ import som.compiler.sourcecode_compiler as sourcecode_compiler
 import os
 import time
 
-
+from rlib.cell  import Cell
 from rlib.exit  import Exit
 from rlib.osext import path_split
 
@@ -470,20 +470,28 @@ class Universe(object):
 
         # Insert the system class into the dictionary of globals
         self.set_global(system_class.get_name(), system_class)
-    
-    
-    def get_global(self, name):
-        # Return the global with the given name if it's in the dictionary of globals
-        if self.has_global(name):
-            return self._globals[name]
 
-        # Global not found
-        return None
+    @jit.elidable
+    def _get_global_cell(self, name):
+        return self._globals.get(name, None)
+
+    def get_global(self, name):
+        # Return the global with the given name
+        # if it's in the dictionary of globals
+        cell = self._get_global_cell(name)
+        if cell is not None:
+            return cell.get()
+        else:
+            # Global not found
+            return None
 
     def set_global(self, name, value):
         # Insert the given value into the dictionary of globals
-        self._globals[name] = value
-  
+        cell = self._get_global_cell(name)
+        if cell is not None:
+            cell.set(value)
+        else:
+            self._globals[name] = Cell(value)
 
     def has_global(self, name):
         # Returns if the universe has a value for the global of the given name
