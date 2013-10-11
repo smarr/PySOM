@@ -1,4 +1,5 @@
 from rpython.rlib.rrandom import Random
+from rpython.rlib         import jit
 
 from som.interpreter.interpreter import Interpreter
 from som.interpreter.bytecodes   import Bytecodes 
