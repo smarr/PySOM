@@ -55,10 +55,9 @@ class Block(Object):
             signature_string = "value"
             if num_args > 1:
                 signature_string += ":"
-
-            # Add extra value: selector elements if necessary
-            for _ in range(2, num_args):
-                signature_string += "with:"
+                if num_args > 2:
+                    # Add extra with: selector elements if necessary
+                    signature_string += "with:" * (num_args - 2)
           
             # Return the signature string
             return signature_string
