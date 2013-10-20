@@ -2,16 +2,13 @@ from som.vmobjects.object import Object
 
 class Integer(Object):
     
-    def __init__(self, nilObject):
+    def __init__(self, nilObject, value):
         Object.__init__(self, nilObject)
-        self._embedded_integer = 0
+        self._embedded_integer = value
     
     def get_embedded_integer(self):
         return self._embedded_integer
-    
-    def set_embedded_integer(self, value):
-        self._embedded_integer = value
-    
+        
     def get_embedded_value(self):
         """This Method is polymorphic with BigInteger"""
         return self._embedded_integer

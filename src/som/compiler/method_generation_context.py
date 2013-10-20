@@ -31,14 +31,13 @@ class MethodGenerationContext(object):
     def assemble(self, universe):
         # create a method instance with the given number of bytecodes and literals
         num_literals = len(self._literals)
-
-        meth = universe.new_method(self._signature, len(self._bytecode), num_literals)
-
-        # populate the fields that are immediately available
-        num_locals = len(self._locals)
-        meth.set_number_of_locals(universe.new_integer(num_locals))
-
-        meth.set_maximum_number_of_stack_elements(universe.new_integer(self._compute_stack_depth()))
+        num_locals   = len(self._locals)
+        
+        meth = universe.new_method(self._signature,
+                                   len(self._bytecode),
+                                   num_literals,
+                                   universe.new_integer(num_locals),
+                                   universe.new_integer(self._compute_stack_depth()))
 
         # copy literals into the method
         i = 0

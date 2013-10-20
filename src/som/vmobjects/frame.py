@@ -19,11 +19,14 @@ class Frame(Array):
     METHOD_INDEX           = 1 + CONTEXT_INDEX
     NUMBER_OF_FRAME_FIELDS = 1 + METHOD_INDEX
 
-    def __init__(self, nilObject):
-        Array.__init__(self, nilObject)
+    def __init__(self, nilObject, num_elements, method, context, previous_frame):
+        Array.__init__(self, nilObject, num_elements)
         self._stack_pointer  = 0
         self._bytecode_index = 0
         self._local_offset   = 0
+        self._method         = method
+        self._context        = context
+        self._previous_frame = previous_frame if previous_frame else nilObject
     
     def get_previous_frame(self):
         # Get the previous frame by reading the field with previous frame index

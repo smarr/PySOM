@@ -2,11 +2,11 @@ from som.vmobjects.object import Object
 
 class Array(Object):
     
-    def __init__(self, nilObject):
+    def __init__(self, nilObject, number_of_indexable_fields):
         Object.__init__(self, nilObject)
         
         # Private array of indexable fields
-        self._indexable_fields = None
+        self._indexable_fields = [nilObject] * number_of_indexable_fields
         
     def get_indexable_field(self, index):
         # Get the indexable field with the given index
@@ -19,10 +19,6 @@ class Array(Object):
     def get_number_of_indexable_fields(self):
         # Get the number of indexable fields in this array
         return len(self._indexable_fields)
-  
-    def set_number_of_indexable_fields_and_clear(self, value, nilObject):
-        # Allocate a new array of indexable fields, initialized with nil
-        self._indexable_fields = [nilObject] * value
 
     def copy_and_extend_with(self, value, universe):
         # Allocate a new array which has one indexable field more than this

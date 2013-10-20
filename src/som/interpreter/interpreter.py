@@ -22,6 +22,9 @@ class Interpreter(object):
                                 self._do_return_local,
                                 self._do_return_non_local]
     
+    def get_universe(self):
+        return self._universe
+
     class InterpreterHalt(Exception):
         pass
     
@@ -198,9 +201,9 @@ class Interpreter(object):
         except self.InterpreterHalt:
             return self.get_frame().get_stack_element(0)
             
-    def push_new_frame(self, method):
+    def push_new_frame(self, method, context):
         # Allocate a new frame and make it the current one
-        self._frame = self._universe.new_frame(self._frame, method)
+        self._frame = self._universe.new_frame(self._frame, method, context)
 
         # Return the freshly allocated and pushed frame
         return self._frame
