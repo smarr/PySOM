@@ -215,9 +215,11 @@ class Universe(object):
                 got_classpath = True
             elif arguments[i] == "-d":
                 self._dump_bytecodes = True
+            elif arguments[i] in ["-h", "--help", "-?"]:
+                self._print_usage_and_exit()
             else:
                 remaining_args.append(arguments[i])
-            i += 1 
+            i += 1
     
         if not got_classpath:
             # Get the default class path of the appropriate size
@@ -257,6 +259,7 @@ class Universe(object):
         self.std_println("    -cp <directories separated by " + os.pathsep     + ">")
         self.std_println("                  set search path for application classes")
         self.std_println("    -d            enable disassembling")
+        self.std_println("    -h  print this help")
 
         # Exit
         self.exit(0)
