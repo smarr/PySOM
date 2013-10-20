@@ -587,6 +587,13 @@ class Universe(object):
         # Load the system class
         result = self._load_class(system_class.get_name(), system_class)
 
+        if not result:
+            error_println(system_class.get_name().get_string()
+                   + " class could not be loaded. It is likely that the "
+                   + " class path has not been initialized properly. "
+                   + "Please make sure that the '-cp' parameter is given on the command-line.")
+            self.exit(200)
+
         # Load primitives if necessary
         if result.has_primitives():
             result.load_primitives()
