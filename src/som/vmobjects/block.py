@@ -34,9 +34,8 @@ class Block(Object):
     
                 # Push a new frame and set its context to be the one specified in
                 # the block
-                new_frame = interpreter.push_new_frame(rcvr.get_method())
+                new_frame = interpreter.push_new_frame(rcvr.get_method(), context)
                 new_frame.copy_arguments_from(frame)
-                new_frame.set_context(context)
             
             Primitive.__init__(self, self._compute_signature_string(num_args), universe, _invoke)
             self._number_of_arguments = num_args
