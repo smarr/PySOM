@@ -62,12 +62,9 @@ class Frame(Array):
         frame = self
 
         # Iterate through the context chain until the given level is reached
-        while level > 0:
+        for _ in range(level, 0, -1):
             # Get the context of the current frame
             frame = frame.get_context()
-
-            # Go to the next level
-            level = level - 1
 
         # Return the found context
         return frame
