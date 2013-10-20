@@ -322,8 +322,13 @@ class Universe(object):
         self._blockClass = self.load_class(self.symbol_for("Block"))
 
         # Setup the true and false objects
-        self._trueObject  = self.new_instance(self.load_class(self.symbol_for("True")))
-        self._falseObject = self.new_instance(self.load_class(self.symbol_for("False")))
+        trueClassName    = self.symbol_for("True")
+        trueClass        = self.load_class(trueClassName)
+        self._trueObject = self.new_instance(trueClass)
+
+        falseClassName    = self.symbol_for("False")
+        falseClass        = self.load_class(falseClassName)
+        self._falseObject = self.new_instance(falseClass)
 
         # Load the system class and create an instance of it
         self._systemClass = self.load_class(self.symbol_for("System"))
@@ -336,6 +341,12 @@ class Universe(object):
         self.set_global(self.symbol_for("system"), system_object)
         self.set_global(self.symbol_for("System"), self._systemClass)
         self.set_global(self.symbol_for("Block"),  self._blockClass)
+
+        self.set_global(self.symbol_for("Nil"),    self.nilClass)
+        
+        self.set_global( trueClassName,  trueClass)
+        self.set_global(falseClassName, falseClass)
+
         return system_object
     
     def symbol_for(self, string):
