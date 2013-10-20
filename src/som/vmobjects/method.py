@@ -87,77 +87,11 @@ class Method(Array, Invokable):
         # Set the bytecode at the given index to the given value
         self._bytecodes[index] = value
 
-    # TODO: remove these things
-    def increase_invocation_counter(self):
-        self._invocation_count += 1
-
-    # TODO: remove these things
-    def get_invocation_count(self):
-        return self._invocation_count
-
     def invoke(self, frame, interpreter):
-        # Increase the invocation counter
-        self._invocation_count += 1
-    
         # Allocate and push a new frame on the interpreter stack
         new_frame = interpreter.push_new_frame(self,
                                     interpreter.get_universe().nilObject)
         new_frame.copy_arguments_from(frame)
-
-    def replace_bytecodes(self):
-        newbc = array('b', [0] * len(self._bytecodes))
-        idx = 0
-
-        i = 0
-        while i < len(self._bytecodes):
-            bc1 = self._bytecodes[i]
-            len1 = Bytecodes.get_bytecode_length(bc1)
-
-            if i + len1 >= len(self._bytecodes):
-                # we're over target, so just copy bc1
-                for j in range(i, i + len1):
-                    newbc[idx] = self._bytecodes[j]
-                    idx += 1
-                break
-    
-
-            newbc[idx] = bc1
-            idx += 1
-
-            # copy args to bc1
-            for j in range(i + 1, i + len1):
-                newbc[idx] = self._bytecodes[j]
-                idx += 1
-
-            i += len1 # update i to point on bc2
-    
-
-        # we copy the new array because it may be shorter, and we don't
-        # want to upset whatever dependence there is on the length
-        self._bytecodes = array('b', [0] * idx)
-        for i in range(0, idx):
-            self._bytecodes[i] = newbc[i]
-
-    # TODO: remove these things
-    def get_receiver_class(self, index):
-        return self._receiver_class_table[index]
-
-    # TODO: remove these things
-    def get_invoked_method(self, index):
-        # return the last invoked method for a particular send
-        return self._invoked_methods[index]
-
-    # TODO: remove these things
-    def add_receiver_class_and_method(self, rcvr_class, invokable):
-        self._receiver_class_table.append(self._receiver_class_index, rcvr_class)
-        self._invoked_methods.append(self._receiver_class_index, invokable)
-        self._receiver_class_index += 1
-
-        return self._receiver_class_index - 1
-
-    # TODO: remove these things
-    def is_receiver_class_table_full(self):
-        return self._receiver_class_index == 255
 
     def __str__(self):
         return "Method(" + self.get_holder().get_name().get_string() + ">>" + str(self.get_signature()) + ")"

@@ -183,13 +183,6 @@ class Class(Object):
                   issubclass(element, Primitives) and
                   element is not Primitives):
                 element(self._universe).install_primitives_in(self)
-  
-    def replace_bytecodes(self):
-        cnt = self.get_number_of_instance_invokables()
-        for i in range(0, cnt):
-            inv = self.get_instance_invokable(i)
-            if not inv.is_primitive():
-                inv.replace_bytecodes()  
 
     def __str__(self):
         return "Class(" + self.get_name().get_string() + ")"
