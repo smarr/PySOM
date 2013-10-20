@@ -14,10 +14,7 @@ from som.vmobjects.array import Array
 class Frame(Array):
     
     # Static field indices and number of frame fields
-    PREVIOUS_FRAME_INDEX   = 1 + Array.CLASS_INDEX
-    CONTEXT_INDEX          = 1 + PREVIOUS_FRAME_INDEX
-    METHOD_INDEX           = 1 + CONTEXT_INDEX
-    NUMBER_OF_FRAME_FIELDS = 1 + METHOD_INDEX
+    NUMBER_OF_FRAME_FIELDS = Array.NUMBER_OF_OBJECT_FIELDS
 
     def __init__(self, nilObject, num_elements, method, context, previous_frame):
         Array.__init__(self, nilObject, num_elements)
@@ -30,32 +27,24 @@ class Frame(Array):
     
     def get_previous_frame(self):
         # Get the previous frame by reading the field with previous frame index
-        return self.get_field(self.PREVIOUS_FRAME_INDEX)
-
-    def set_previous_frame(self, value):
-        # Set the previous frame by writing to the field with previous frame index
-        self.set_field(self.PREVIOUS_FRAME_INDEX, value)
+        return self._previous_frame
 
     def clear_previous_frame(self, nilObject):
         # Set the previous frame to nil
-        self.set_field(self.PREVIOUS_FRAME_INDEX, nilObject)
+        self._previous_frame = nilObject
 
     def has_previous_frame(self, nilObject):
-        return self.get_field(self.PREVIOUS_FRAME_INDEX) != nilObject
+        return self._previous_frame != nilObject
 
     def is_bootstrap_frame(self, nilObject):
         return not self.has_previous_frame(nilObject)
 
     def get_context(self):
         # Get the context by reading the field with context index
-        return self.get_field(self.CONTEXT_INDEX)
-
-    def set_context(self, value):
-        # Set the context by writing to the field with context index
-        self.set_field(self.CONTEXT_INDEX, value)
+        return self._context
 
     def has_context(self, nilObject):
-        return self.get_field(self.CONTEXT_INDEX) != nilObject
+        return self._context != nilObject
 
     def _get_context(self, level):
         # Get the context frame at the given level
@@ -82,11 +71,7 @@ class Frame(Array):
 
     def get_method(self):
         # Get the method by reading the field with method index
-        return self.get_field(self.METHOD_INDEX)
-
-    def set_method(self, value):
-        # Set the method by writing to the field with method index
-        self.set_field(self.METHOD_INDEX, value)
+        return self._method
 
     def _get_default_number_of_fields(self):
         # Return the default number of fields in a frame

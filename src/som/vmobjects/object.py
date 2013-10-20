@@ -1,21 +1,18 @@
 class Object(object):
     
     # Static field indices and number of object fields
-    CLASS_INDEX             = 0
-    NUMBER_OF_OBJECT_FIELDS = 1 + CLASS_INDEX
+    NUMBER_OF_OBJECT_FIELDS = 0
 
     def __init__(self, nilObject, number_of_fields = -1):
         num_fields = number_of_fields if number_of_fields != -1 else self._get_default_number_of_fields()
-        self._fields = None
-        self.set_number_of_fields_and_clear(num_fields, nilObject)
-    
+        self._fields = [nilObject] * num_fields
+        self._class = nilObject
+
     def get_class(self):
-        # Get the class of this object by reading the field with class index
-        return self.get_field(self.CLASS_INDEX)
+        return self._class
 
     def set_class(self, value):
-        # Set the class of this object by writing to the field with class index
-        self.set_field(self.CLASS_INDEX, value)
+        self._class = value
 
     def get_field_name(self, index):
         # Get the name of the field with the given index
@@ -28,10 +25,6 @@ class Object(object):
     def get_number_of_fields(self):
         # Get the number of fields in this object
         return len(self._fields)
-
-    def set_number_of_fields_and_clear(self, value, nilObject):
-        # Allocate a new array of fields
-        self._fields = [nilObject] * value
 
     def _get_default_number_of_fields(self):
         # Return the default number of fields in an object

@@ -3,30 +3,21 @@ from som.vmobjects.primitive import Primitive
 
 class Block(Object):
     
-    METHOD_INDEX           = 1 + Object.CLASS_INDEX
-    CONTEXT_INDEX          = 1 + METHOD_INDEX
-    NUMBER_OF_BLOCK_FIELDS = 1 + CONTEXT_INDEX
+    NUMBER_OF_BLOCK_FIELDS = Object.NUMBER_OF_OBJECT_FIELDS
     
-    def __init__(self, nilObject):
+    def __init__(self, nilObject, method, context):
         Object.__init__(self, nilObject)
         self._number_of_arguments = 0
+        self._method  = method
+        self._context = context
         
     def get_method(self):
         # Get the method of this block by reading the field with method index
-        return self.get_field(self.METHOD_INDEX)
-  
-
-    def set_method(self, value):
-        # Set the method of this block by writing to the field with method index
-        self.set_field(self.METHOD_INDEX, value)
-  
+        return self._method
+    
     def get_context(self):
         # Get the context of this block by reading the field with context index
-        return self.get_field(self.CONTEXT_INDEX)
-
-    def set_context(self, value):
-        # Set the context of this block by writing to the field with context index
-        return self.set_field(self.CONTEXT_INDEX, value)
+        return self._context
 
     def _get_default_number_of_fields(self):
         # Return the default number of fields for a block

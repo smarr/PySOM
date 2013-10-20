@@ -7,7 +7,7 @@ import inspect
 class Class(Object):
     
     # Static field indices and number of class fields
-    SUPER_CLASS_INDEX         = 1 + Object.CLASS_INDEX
+    SUPER_CLASS_INDEX         = Object.NUMBER_OF_OBJECT_FIELDS
     NAME_INDEX                = 1 + SUPER_CLASS_INDEX
     INSTANCE_FIELDS_INDEX     = 1 + NAME_INDEX
     INSTANCE_INVOKABLES_INDEX = 1 + INSTANCE_FIELDS_INDEX
@@ -30,7 +30,6 @@ class Class(Object):
     def has_super_class(self):
         # Check whether or not this class has a super class
         return self.get_field(self.SUPER_CLASS_INDEX) != self._universe.nilObject
-
 
     def get_name(self):
         # Get the name of this class by reading the field with name index
@@ -169,7 +168,6 @@ class Class(Object):
             # Get the next invokable in the instance invokable array
             if self.get_instance_invokable(i).is_primitive():
                 return True
-        
         return False
   
     def load_primitives(self):

@@ -6,7 +6,7 @@ import types
 class Primitive(Object, Invokable):
     
     # Static field indices and number of primitive fields
-    SIGNATURE_INDEX            = 1 + Object.CLASS_INDEX
+    SIGNATURE_INDEX            = Object.NUMBER_OF_OBJECT_FIELDS
     HOLDER_INDEX               = 1 + SIGNATURE_INDEX
     NUMBER_OF_PRIMITIVE_FIELDS = 1 + HOLDER_INDEX
     

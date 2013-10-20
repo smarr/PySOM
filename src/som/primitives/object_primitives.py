@@ -73,3 +73,8 @@ class ObjectPrimitives(Primitives):
 
             rcvr.set_field(idx.get_embedded_integer() - 1, val)
         self._install_instance_primitive(Primitive("instVarAt:put:", self._universe, _instVarAtPut))
+
+        def _class(ivkbl, frame, interpreter):
+            rcvr = frame.pop()
+            frame.push(rcvr.get_class())
+        self._install_instance_primitive(Primitive("class", self._universe, _class))
