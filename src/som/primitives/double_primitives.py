@@ -59,6 +59,26 @@ class DoublePrimitives(Primitives):
             frame.push(self._universe.new_double(op2.get_embedded_double()
                                                  % op1.get_embedded_double()))
         self._install_instance_primitive(Primitive("%", self._universe, _mod))
+        
+        def _and(ivkbl, frame, interpreter):
+            op1 = self._coerce_to_double(frame.pop())
+            op2 = frame.pop()
+            
+            left  = int(op2.get_embedded_double())
+            right = int(op1.get_embedded_double())
+            result = float(left & right)
+            frame.push(interpreter.get_universe().new_double(result))
+        self._install_instance_primitive(Primitive("&", self._universe, _and))
+
+        def _bitXor(ivkbl, frame, interpreter):
+            op1 = self._coerce_to_double(frame.pop())
+            op2 = frame.pop()
+            
+            left  = int(op2.get_embedded_double())
+            right = int(op1.get_embedded_double())
+            result = float(left ^ right)
+            frame.push(interpreter.get_universe().new_double(result))
+        self._install_instance_primitive(Primitive("bitXor:", self._universe, _bitXor))
 
         def _equals(ivkbl, frame, interpreter):
             op1 = self._coerce_to_double(frame.pop())
