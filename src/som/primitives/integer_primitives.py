@@ -14,7 +14,7 @@ class IntegerPrimitives(Primitives):
     def _push_long_result(self, frame, result):
         # Check with integer bounds and push:
         if Integer.value_fits(result):
-            frame.push(self._universe.new_integer(result))
+            frame.push(self._universe.new_integer(int(result)))
         else:
             frame.push(self._universe.new_biginteger(result))
 
@@ -46,7 +46,7 @@ class IntegerPrimitives(Primitives):
 
         def _atRandom(ivkbl, frame, interpreter):
             rcvr = frame.pop()
-            frame.push(self._universe.new_integer(rcvr.get_embedded_integer() * random.random()))
+            frame.push(self._universe.new_integer(int(rcvr.get_embedded_integer() * random.random())))
         self._install_instance_primitive(Primitive("atRandom", self._universe, _atRandom))
 
         def _plus(ivkbl, frame, interpreter):
