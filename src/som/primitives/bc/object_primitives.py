@@ -46,24 +46,6 @@ def _perform_with_arguments(ivkbl, frame, interpreter):
     invokable.invoke(frame, interpreter)
 
 
-def _inst_var_at_put(ivkbl, frame, interpreter):
-    val  = frame.pop()
-    idx  = frame.pop()
-    rcvr = frame.top()
-
-    rcvr.set_field(idx.get_embedded_integer() - 1, val)
-
-
-def _halt(ivkbl, frame, interpreter):
-    # noop
-    print("BREAKPOINT")
-
-
-def _class(ivkbl, frame, interpreter):
-    rcvr = frame.pop()
-    frame.push(rcvr.get_class(interpreter.get_universe()))
-
-
 class ObjectPrimitives(_Base):
 
     def install_primitives(self):
@@ -74,9 +56,3 @@ class ObjectPrimitives(_Base):
             Primitive("perform:inSuperclass:", self._universe, _perform_in_superclass))
         self._install_instance_primitive(
             Primitive("perform:withArguments:", self._universe, _perform_with_arguments))
-
-        self._install_instance_primitive(
-            Primitive("instVarAt:put:", self._universe, _inst_var_at_put))
-
-        self._install_instance_primitive(Primitive("halt", self._universe, _halt))
-        self._install_instance_primitive(Primitive("class", self._universe, _class))
