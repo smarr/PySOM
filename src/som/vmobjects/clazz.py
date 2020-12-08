@@ -1,92 +1,88 @@
-from som.vmobjects.object      import Object
-from som.primitives.primitives import Primitives
+from rlib import jit
+from som.interp_type import is_ast_interpreter
+from som.vm.globals import nilObject
 
-from importlib import import_module
-import inspect
+if is_ast_interpreter():
+    from som.vmobjects.object_with_layout import ObjectWithLayout as Object
+    from som.vmobjects.array_strategy import Array
+    from som.interpreter.objectstorage.object_layout import ObjectLayout
+else:
+    from som.vmobjects.object import Object
+    from som.vmobjects.array import Array
 
-class Class(Object):
-    
-    # Static field indices and number of class fields
-    SUPER_CLASS_INDEX         = Object.NUMBER_OF_OBJECT_FIELDS
-    NAME_INDEX                = 1 + SUPER_CLASS_INDEX
-    INSTANCE_FIELDS_INDEX     = 1 + NAME_INDEX
-    INSTANCE_INVOKABLES_INDEX = 1 + INSTANCE_FIELDS_INDEX
-    NUMBER_OF_CLASS_FIELDS    = 1 + INSTANCE_INVOKABLES_INDEX
 
-    
-    def __init__(self, universe, number_of_fields = -1):
-        Object.__init__(self, universe.nilObject, number_of_fields)
+class _Class(Object):
+
+    _immutable_fields_ = ["_super_class"
+                          "_name",
+                          "_instance_fields"
+                          "_instance_invokables",
+                          "_invokables_table",
+                          "_universe"]
+
+    def __init__(self, universe, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
+        Object.__init__(self, obj_class, number_of_fields)
+        self._super_class = nilObject
+        self._name        = None
+        self._instance_fields = None
+        self._instance_invokables = None
         self._invokables_table = {}
         self._universe = universe
-        
+
     def get_super_class(self):
-        # Get the super class by reading the field with super class index
-        return self.get_field(self.SUPER_CLASS_INDEX)
+        return self._super_class
 
     def set_super_class(self, value):
-        # Set the super class by writing to the field with super class index
-        self.set_field(self.SUPER_CLASS_INDEX, value)
-    
+        self._super_class = value
+
     def has_super_class(self):
-        # Check whether or not this class has a super class
-        return self.get_field(self.SUPER_CLASS_INDEX) != self._universe.nilObject
+        return self._super_class is not nilObject
 
     def get_name(self):
-        # Get the name of this class by reading the field with name index
-        return self.get_field(self.NAME_INDEX)
-  
+        return self._name
+
     def set_name(self, value):
-        # Set the name of this class by writing to the field with name index
-        self.set_field(self.NAME_INDEX, value)
+        self._name = value
 
     def get_instance_fields(self):
-        # Get the instance fields by reading the field with the instance fields index
-        return self.get_field(self.INSTANCE_FIELDS_INDEX)
+        return self._instance_fields
 
     def set_instance_fields(self, value):
-        # Set the instance fields by writing to the field with the instance fields index
-        self.set_field(self.INSTANCE_FIELDS_INDEX, value)
-  
-    def get_instance_invokables(self):
-        # Get the instance invokables by reading the field with the instance
-        # invokables index
-        return self.get_field(self.INSTANCE_INVOKABLES_INDEX)
+        assert isinstance(value, Array)
+        self._instance_fields = value
 
- 
+    def get_instance_invokables(self):
+        return self._instance_invokables
+
     def set_instance_invokables(self, value):
-        # Set the instance invokables by writing to the field with the instance
-        # invokables index
-        self.set_field(self.INSTANCE_INVOKABLES_INDEX, value)
- 
+        self._instance_invokables = value
+
         # Make sure this class is the holder of all invokables in the array
         for i in range(0, self.get_number_of_instance_invokables()):
-            self.get_instance_invokable(i).set_holder(self)
-    
+            invokable = self.get_instance_invokable(i)
+            assert invokable is not None
+            invokable.set_holder(self)
+
     def get_number_of_instance_invokables(self):
-        # Return the number of instance invokables in this class
+        """ Return the number of instance invokables in this class """
         return self.get_instance_invokables().get_number_of_indexable_fields()
-  
+
     def get_instance_invokable(self, index):
-        # Get the instance invokable with the given index
+        """ Get the instance invokable with the given index """
         return self.get_instance_invokables().get_indexable_field(index)
- 
+
     def set_instance_invokable(self, index, value):
         # Set this class as the holder of the given invokable
         value.set_holder(self)
- 
-        # Set the instance method with the given index to the given value
         self.get_instance_invokables().set_indexable_field(index, value)
-  
-    def _get_default_number_of_fields(self):
-        # Return the default number of fields in a class
-        return self.NUMBER_OF_CLASS_FIELDS
-  
+
+    @jit.elidable_promote("all")
     def lookup_invokable(self, signature):
         # Lookup invokable and return if found
         invokable = self._invokables_table.get(signature, None)
         if invokable:
             return invokable
- 
+
         # Lookup invokable with given signature in array of instance invokables
         for i in range(0, self.get_number_of_instance_invokables()):
             invokable = self.get_instance_invokable(i)
@@ -94,93 +90,125 @@ class Class(Object):
             if invokable.get_signature() == signature:
                 self._invokables_table[signature] = invokable
                 return invokable
-      
+
         # Traverse the super class chain by calling lookup on the super class
         if self.has_super_class():
             invokable = self.get_super_class().lookup_invokable(signature)
             if invokable:
                 self._invokables_table[signature] = invokable
                 return invokable
- 
+
         # Invokable not found
         return None
- 
-    def lookup_field_index(self, fieldName):
+
+    def lookup_field_index(self, field_name):
         # Lookup field with given name in array of instance fields
         i = self.get_number_of_instance_fields() - 1
         while i >= 0:
             # Return the current index if the name matches
-            if fieldName == self.get_instance_field_name(i):
+            if field_name == self.get_instance_field_name(i):
                 return i
             i -= 1
 
         # Field not found
         return -1
 
-
     def add_instance_invokable(self, value):
         # Add the given invokable to the array of instance invokables
         for i in range(0, self.get_number_of_instance_invokables()):
             # Get the next invokable in the instance invokable array
             invokable = self.get_instance_invokable(i)
-  
+
             # Replace the invokable with the given one if the signature matches
             if invokable.get_signature() == value.get_signature():
                 self.set_instance_invokable(i, value)
                 return False
-  
+
         # Append the given method to the array of instance methods
-        self.set_instance_invokables(self.get_instance_invokables().copy_and_extend_with(value, self._universe))
+        self.set_instance_invokables(self.get_instance_invokables().copy_and_extend_with(value))
         return True
-  
-    def add_instance_primitive(self, value):
-        if self.add_instance_invokable(value):
-            self._universe.std_print("Warning: Primitive " + value.get_signature().get_string())
-            self._universe.std_println(" is not in class definition for class " + self.get_name().get_string())
-  
+
+    def add_instance_primitive(self, value, warn_if_not_existing):
+        if self.add_instance_invokable(value) and warn_if_not_existing:
+            from som.vm.universe import std_print, std_println
+            std_print("Warning: Primitive " + value.get_signature().get_embedded_string())
+            std_println(
+                " is not in class definition for class " + self.get_name().get_embedded_string())
+
     def get_instance_field_name(self, index):
-        # Get the name of the instance field with the given index
-        if index >= self._get_number_of_super_instance_fields():
-            # Adjust the index to account for fields defined in the super class
-            index -= self._get_number_of_super_instance_fields()
-  
-            # Return the symbol representing the instance fields name
-            return self.get_instance_fields().get_indexable_field(index)
-        else:
-            # Ask the super class to return the name of the instance field
-            return self.get_super_class().get_instance_field_name(index)
- 
+        return self.get_instance_fields().get_indexable_field(index)
+
+    @jit.elidable_promote('all')
     def get_number_of_instance_fields(self):
         # Get the total number of instance fields in this class
-        return (self.get_instance_fields().get_number_of_indexable_fields() +
-                self._get_number_of_super_instance_fields())
+        return self.get_instance_fields().get_number_of_indexable_fields()
 
-    def _get_number_of_super_instance_fields(self):
-        # Get the total number of instance fields defined in super classes
-        if self.has_super_class():
-            return self.get_super_class().get_number_of_instance_fields()
-        else:
-            return 0
-  
-    def has_primitives(self):
-        # Lookup invokable with given signature in array of instance invokables
-        for i in range(0, self.get_number_of_instance_invokables()):
+    @staticmethod
+    def _includes_primitives(clazz):
+        for i in range(0, clazz.get_number_of_instance_invokables()):
             # Get the next invokable in the instance invokable array
-            if self.get_instance_invokable(i).is_primitive():
+            if clazz.get_instance_invokable(i).is_primitive():
                 return True
         return False
-  
-    def load_primitives(self):
-        # determine module name for the primitives of the class
-        module_name = "som.primitives." + self.get_name().get_string().lower() + "_primitives"
-        
-        # Try loading the primitives
-        module = import_module(module_name)
-        for name, element in inspect.getmembers(module):
-            if (inspect.isclass(element) and 
-                  issubclass(element, Primitives) and
-                  element is not Primitives):
-                element(self._universe).install_primitives_in(self)
+
+    def has_primitives(self):
+        return (self._includes_primitives(self) or
+                self._includes_primitives(self._class))
+
+    def load_primitives(self, display_warning):
+        from som.primitives.known import (primitives_for_class,
+                                          PrimitivesNotFound)
+        try:
+            prims = primitives_for_class(self)
+            prims(self._universe).install_primitives_in(self)
+        except PrimitivesNotFound:
+            if display_warning:
+                from som.vm.universe import error_println
+                error_println("Loading of primitives failed for %s. Currently, "
+                              "we support primitives only for known classes" % self.get_name())
 
     def __str__(self):
-        return "Class(" + self.get_name().get_string() + ")"
+        return "Class(" + self.get_name().get_embedded_string() + ")"
+
+
+class _ClassWithLayout(_Class):
+    _immutable_fields_ = ["_layout_for_instances?"]
+
+    def __init__(self, universe, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
+        _Class.__init__(self, universe, number_of_fields, obj_class)
+        if number_of_fields >= 0:
+            self._layout_for_instances = ObjectLayout(number_of_fields, self)
+        else:
+            self._layout_for_instances = None
+
+    def set_instance_fields(self, value):
+        assert isinstance(value, Array)
+        self._instance_fields = value
+        if (self._layout_for_instances is None or
+                value.get_number_of_indexable_fields() !=
+                self._layout_for_instances.get_number_of_fields()):
+            self._layout_for_instances = ObjectLayout(
+                value.get_number_of_indexable_fields(), self)
+
+    def get_layout_for_instances(self):
+        return self._layout_for_instances
+
+    def update_instance_layout_with_initialized_field(self, field_idx,
+                                                      spec_type):
+        updated = self._layout_for_instances.with_initialized_field(field_idx,
+                                                                    spec_type)
+        if updated is not self._layout_for_instances:
+            self._layout_for_instances = updated
+        return self._layout_for_instances
+
+    def update_instance_layout_with_generalized_field(self, field_idx):
+        updated = self._layout_for_instances.with_generalized_field(field_idx)
+        if updated is not self._layout_for_instances:
+            self._layout_for_instances = updated
+        return self._layout_for_instances
+
+
+if is_ast_interpreter():
+    Class = _ClassWithLayout
+else:
+    Class = _Class

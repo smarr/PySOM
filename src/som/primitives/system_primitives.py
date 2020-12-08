@@ -1,64 +1,78 @@
-from som.primitives.primitives import Primitives
-from som.vmobjects.primitive   import Primitive
-
-import gc
 import time
 
-class SystemPrimitives(Primitives):
-    
-    def __init__(self, universe):
-        Primitives.__init__(self, universe)
-        self._start_time = time.time() # a float of the time in seconds
-    
+from rlib import rgc, jit
+
+from som.primitives.primitives import Primitives
+from som.vm.globals import nilObject, trueObject, falseObject
+from som.vm.universe import get_current, std_print, std_println
+from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
+
+
+def _load(rcvr, arg):
+    result = get_current().load_class(arg)
+    return result if result else nilObject
+
+
+def _exit(rcvr, error):
+    return get_current().exit(error.get_embedded_integer())
+
+
+def _global(rcvr, argument):
+    result = get_current().get_global(argument)
+    return result if result else nilObject
+
+
+def _has_global(rcvr, arg):
+    if get_current().has_global(arg):
+        return trueObject
+    else:
+        return falseObject
+
+
+def _global_put(rcvr, argument, value):
+    get_current().set_global(argument, value)
+    return value
+
+
+def _print_string(rcvr, argument):
+    std_print(argument.get_embedded_string())
+    return rcvr
+
+
+def _print_newline(rcvr):
+    std_println()
+    return rcvr
+
+
+def _time(rcvr):
+    from som.vmobjects.integer import Integer
+    since_start = time.time() - get_current().start_time
+    return Integer(int(since_start * 1000))
+
+
+def _ticks(rcvr):
+    from som.vmobjects.integer import Integer
+    since_start = time.time() - get_current().start_time
+    return Integer(int(since_start * 1000000))
+
+
+@jit.dont_look_inside
+def _full_gc(rcvr):
+    rgc.collect()
+    return trueObject
+
+
+class SystemPrimitivesBase(Primitives):
+
     def install_primitives(self):
-        def _load(ivkbl, frame, interpreter):
-            argument = frame.pop()
-            frame.pop() # not required
-            result = self._universe.load_class(argument)
-            frame.push(result if result else self._universe.nilObject)
-        self._install_instance_primitive(Primitive("load:", self._universe, _load))
+        self._install_instance_primitive(BinaryPrimitive("load:", self._universe, _load))
+        self._install_instance_primitive(BinaryPrimitive("exit:", self._universe, _exit))
+        self._install_instance_primitive(BinaryPrimitive("hasGlobal:", self._universe, _has_global))
+        self._install_instance_primitive(BinaryPrimitive("global:", self._universe, _global))
+        self._install_instance_primitive(TernaryPrimitive("global:put:", self._universe, _global_put))
+        self._install_instance_primitive(BinaryPrimitive("printString:", self._universe, _print_string))
+        self._install_instance_primitive(UnaryPrimitive("printNewline", self._universe, _print_newline))
 
-        def _exit(ivkbl, frame, interpreter):
-            error = frame.pop()
-            self._universe.exit(error.get_embedded_integer())
-        self._install_instance_primitive(Primitive("exit:", self._universe, _exit))
-
-        def _global(ivkbl, frame, interpreter):
-            argument = frame.pop()
-            frame.pop() # not required
-            result = self._universe.get_global(argument)
-            frame.push(result if result else self._universe.nilObject)
-        self._install_instance_primitive(Primitive("global:", self._universe, _global))
-
-        def _global_put(ivkbl, frame, interpreter):
-            value    = frame.pop()
-            argument = frame.pop()
-            self._universe.set_global(argument, value)
-        self._install_instance_primitive(Primitive("global:put:", self._universe, _global_put))
-
-        def _print_string(ivkbl, frame, interpreter):
-            argument = frame.pop()
-            self._universe.std_print(argument.get_embedded_string())
-        self._install_instance_primitive(Primitive("printString:", self._universe, _print_string))
-
-        def _print_newline(ivkbl, frame, interpreter):
-            self._universe.std_println()
-        self._install_instance_primitive(Primitive("printNewline", self._universe, _print_newline))
-
-        def _time(ivkbl, frame, interpreter):
-            frame.pop() # ignore
-            _time = time.time() - self._start_time
-            frame.push(self._universe.new_integer(_time * 1000))
-        self._install_instance_primitive(Primitive("time", self._universe, _time))
-
-        def _ticks(ivkbl, frame, interpreter):
-            frame.pop() # ignore
-            _time = time.time() - self._start_time
-            frame.push(self._universe.new_integer(_time * 1000000))
-        self._install_instance_primitive(Primitive("ticks", self._universe, _ticks))
-
-        def _fullGC(ivkbl, frame, interpreter):
-            frame.pop()
-            gc.collect()
-            frame.push(self._universe.trueObject)
-        self._install_instance_primitive(Primitive("fullGC", self._universe, _fullGC))
+        self._install_instance_primitive(UnaryPrimitive("time", self._universe, _time))
+        self._install_instance_primitive(UnaryPrimitive("ticks", self._universe, _ticks))
+        self._install_instance_primitive(UnaryPrimitive("fullGC", self._universe, _full_gc))

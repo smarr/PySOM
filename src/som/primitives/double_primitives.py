@@ -1,104 +1,107 @@
+from rlib.float import round_double, INFINITY
+from math import cos, sin
+
 from som.primitives.primitives import Primitives
-from som.vmobjects.primitive   import Primitive
-from som.vmobjects.double      import Double
-from som.vmobjects.integer     import Integer
+from som.vmobjects.double import Double
+from som.vmobjects.primitive   import UnaryPrimitive, BinaryPrimitive
 
 import math
 
+
+def _as_string(rcvr):
+    return rcvr.prim_as_string()
+
+
+def _sqrt(rcvr):
+    return Double(math.sqrt(rcvr.get_embedded_double()))
+
+
+def _plus(left, right):
+    return left.prim_add(right)
+
+
+def _minus(left, right):
+    return left.prim_subtract(right)
+
+
+def _mult(left, right):
+    return left.prim_multiply(right)
+
+
+def _double_div(left, right):
+    return left.prim_double_div(right)
+
+
+def _mod(left, right):
+    return left.prim_modulo(right)
+
+
+def _equals(left, right):
+    return left.prim_equals(right)
+
+
+def _unequals(left, right):
+    return left.prim_unequals(right)
+
+
+def _less_than(left, right):
+    return left.prim_less_than(right)
+
+
+def _less_than_or_equal(left, right):
+    return left.prim_less_than_or_equal(right)
+
+
+def _greater_than(left, right):
+    return left.prim_greater_than(right)
+
+
+def _round(rcvr):
+    from som.vmobjects.integer import Integer
+    int_value = int(round_double(rcvr.get_embedded_double(), 0))
+    return Integer(int_value)
+
+
+def _as_integer(rcvr):
+    from som.vmobjects.integer import Integer
+    return Integer(int(rcvr.get_embedded_double()))
+
+
+def _cos(rcvr):
+    result = cos(rcvr.get_embedded_double())
+    return Double(result)
+
+
+def _sin(rcvr):
+    result = sin(rcvr.get_embedded_double())
+    return Double(result)
+
+
+def _positive_infinity(_rcvr):
+    return Double(INFINITY)
+
+
 class DoublePrimitives(Primitives):
 
-    def _coerce_to_double(self, obj):
-        if isinstance(obj, Double):
-            return obj
-        if isinstance(obj, Integer):
-            return self._universe.new_double(obj.get_embedded_integer())
-        raise ValueError("Cannot coerce %s to Double!" % obj)
+    def install_primitives(self):
+        self._install_instance_primitive(UnaryPrimitive("asString", self._universe, _as_string))
+        self._install_instance_primitive(UnaryPrimitive("round",    self._universe, _round))
+        self._install_instance_primitive(UnaryPrimitive("asInteger", self._universe, _as_integer))
 
-    def install_primitives(self):        
-        def _asString(ivkbl, frame, interpreter):
-            rcvr = frame.pop()
-            frame.push(self._universe.new_string(str(rcvr.get_embedded_double())))
-        self._install_instance_primitive(Primitive("asString", self._universe, _asString))
+        self._install_instance_primitive(UnaryPrimitive("sqrt",     self._universe, _sqrt))
+        self._install_instance_primitive(BinaryPrimitive("+",        self._universe, _plus))
+        self._install_instance_primitive(BinaryPrimitive("-",        self._universe, _minus))
+        self._install_instance_primitive(BinaryPrimitive("*",        self._universe, _mult))
+        self._install_instance_primitive(BinaryPrimitive("//",       self._universe, _double_div))
+        self._install_instance_primitive(BinaryPrimitive("%",        self._universe, _mod))
+        self._install_instance_primitive(BinaryPrimitive("=",        self._universe, _equals))
+        self._install_instance_primitive(BinaryPrimitive("<",        self._universe, _less_than))
+        self._install_instance_primitive(BinaryPrimitive("<=",       self._universe, _less_than_or_equal))
+        self._install_instance_primitive(BinaryPrimitive(">",        self._universe, _greater_than))
+        self._install_instance_primitive(BinaryPrimitive("<>",       self._universe, _unequals))
+        self._install_instance_primitive(BinaryPrimitive("~=",       self._universe, _unequals))
 
-        def _sqrt(ivkbl, frame, interpreter):
-            rcvr = frame.pop()
-            frame.push(self._universe.new_double(math.sqrt(rcvr.get_embedded_double())))
-        self._install_instance_primitive(Primitive("sqrt", self._universe, _sqrt))
+        self._install_instance_primitive(UnaryPrimitive("sin", self._universe, _sin))
+        self._install_instance_primitive(UnaryPrimitive("cos", self._universe, _cos))
 
-        def _plus(ivkbl, frame, interpreter):
-            op1 = self._coerce_to_double(frame.pop())
-            op2 = frame.pop()
-            frame.push(self._universe.new_double(op1.get_embedded_double()
-                                                 + op2.get_embedded_double()))
-        self._install_instance_primitive(Primitive("+", self._universe, _plus))
-
-        def _minus(ivkbl, frame, interpreter):
-            op1 = self._coerce_to_double(frame.pop())
-            op2 = frame.pop()
-            frame.push(self._universe.new_double(op2.get_embedded_double()
-                                                 - op1.get_embedded_double()))
-        self._install_instance_primitive(Primitive("-", self._universe, _minus))
-
-        def _mult(ivkbl, frame, interpreter):
-            op1 = self._coerce_to_double(frame.pop())
-            op2 = frame.pop()
-            frame.push(self._universe.new_double(op2.get_embedded_double()
-                                                 * op1.get_embedded_double()))
-        self._install_instance_primitive(Primitive("*", self._universe, _mult))
-
-        def _doubleDiv(ivkbl, frame, interpreter):
-            op1 = self._coerce_to_double(frame.pop())
-            op2 = frame.pop()
-            frame.push(self._universe.new_double(op2.get_embedded_double()
-                                                   / op1.get_embedded_double()))
-        self._install_instance_primitive(Primitive("//", self._universe, _doubleDiv))
-
-        def _mod(ivkbl, frame, interpreter):
-            op1 = self._coerce_to_double(frame.pop())
-            op2 = frame.pop()
-            frame.push(self._universe.new_double(op2.get_embedded_double()
-                                                 % op1.get_embedded_double()))
-        self._install_instance_primitive(Primitive("%", self._universe, _mod))
-        
-        def _and(ivkbl, frame, interpreter):
-            op1 = self._coerce_to_double(frame.pop())
-            op2 = frame.pop()
-            
-            left  = int(op2.get_embedded_double())
-            right = int(op1.get_embedded_double())
-            result = float(left & right)
-            frame.push(interpreter.get_universe().new_double(result))
-        self._install_instance_primitive(Primitive("&", self._universe, _and))
-
-        def _bitXor(ivkbl, frame, interpreter):
-            op1 = self._coerce_to_double(frame.pop())
-            op2 = frame.pop()
-            
-            left  = int(op2.get_embedded_double())
-            right = int(op1.get_embedded_double())
-            result = float(left ^ right)
-            frame.push(interpreter.get_universe().new_double(result))
-        self._install_instance_primitive(Primitive("bitXor:", self._universe, _bitXor))
-
-        def _equals(ivkbl, frame, interpreter):
-            op1 = self._coerce_to_double(frame.pop())
-            op2 = frame.pop()
-            if op1.get_embedded_double() == op2.get_embedded_double():
-                frame.push(self._universe.trueObject)
-            else:
-                frame.push(self._universe.falseObject)
-        self._install_instance_primitive(Primitive("=", self._universe, _equals))
-
-        def _lessThan(ivkbl, frame, interpreter):
-            op1 = self._coerce_to_double(frame.pop())
-            op2 = frame.pop()
-            if op2.get_embedded_double() < op1.get_embedded_double():
-                frame.push(self._universe.trueObject)
-            else:
-                frame.push(self._universe.falseObject)
-        self._install_instance_primitive(Primitive("<", self._universe, _lessThan))
-        
-        def _round(ivkbl, frame, interpreter):
-            rcvr = frame.pop()
-            frame.push(self._universe.new_integer(int(round(rcvr.get_embedded_double()))))
-        self._install_instance_primitive(Primitive("round", self._universe, _round))
+        self._install_class_primitive(UnaryPrimitive("PositiveInfinity", self._universe, _positive_infinity))

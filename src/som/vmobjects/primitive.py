@@ -1,64 +1,176 @@
-from som.vmobjects.object    import Object
-from som.vmobjects.invokable import Invokable
+from som.interp_type import is_ast_interpreter
+from som.vmobjects.abstract_object import AbstractObject
 
-import types
 
-class Primitive(Object, Invokable):
-    
-    # Static field indices and number of primitive fields
-    SIGNATURE_INDEX            = Object.NUMBER_OF_OBJECT_FIELDS
-    HOLDER_INDEX               = 1 + SIGNATURE_INDEX
-    NUMBER_OF_PRIMITIVE_FIELDS = 1 + HOLDER_INDEX
-    
-    def __init__(self, signature_string, universe, invoke, is_empty=False):
-        Object.__init__(self, universe.nilObject)
-        
-        # Set the class of this primitive to be the universal primitive class
-        self.set_class(universe.primitiveClass)
+class _AbstractPrimitive(AbstractObject):
+    _immutable_fields_ = ["_is_empty", "_signature", "_holder", "_universe"]
 
-        # Set the signature of this primitive
-        self._set_signature(universe.symbol_for(signature_string))
-        
-        self.invoke = types.MethodType(invoke, self)
-        if is_empty:
-            self.is_empty = is_empty
+    def __init__(self, signature_string, universe, is_empty=False):
+        AbstractObject.__init__(self)
 
-    def is_primitive(self):
+        self._signature = universe.symbol_for(signature_string)
+        self._is_empty  = is_empty
+        self._holder    = None
+        self._universe  = universe
+
+    def get_universe(self):
+        return self._universe
+
+    @staticmethod
+    def is_primitive():
+        return True
+
+    @staticmethod
+    def is_invokable():
+        """ We use this method to identify methods and primitives """
         return True
 
     def get_signature(self):
-        # Get the signature by reading the field with signature index
-        return self.get_field(self.SIGNATURE_INDEX)
-
-    def _set_signature(self, value):
-        # Set the signature by writing to the field with signature index
-        self.set_field(self.SIGNATURE_INDEX, value)
-
+        return self._signature
 
     def get_holder(self):
-        # Get the holder of this method by reading the field with holder index
-        return self.get_field(self.HOLDER_INDEX)
+        return self._holder
 
     def set_holder(self, value):
-        # Set the holder of this method by writing to the field with holder index
-        self.set_field(self.HOLDER_INDEX, value)
-
-    def _get_default_number_of_fields(self):
-        # Return the default number of fields for a primitive
-        return self.NUMBER_OF_PRIMITIVE_FIELDS
+        self._holder = value
 
     def is_empty(self):
         # By default a primitive is not empty
-        return False
+        return self._is_empty
 
-    @classmethod
-    def get_empty_primitive(cls, signature_string, universe):
-        # Return an empty primitive with the given signature
-        def _invoke(ivkbl, frame, interpreter):
-            # Write a warning to the screen
-            universe.std_println("Warning: undefined primitive " +
-                             ivkbl.get_signature().get_string() + " called")
-      
-        # The empty primitives are empty
-        def _is_empty(self): return True
-        return Primitive(signature_string, universe, _invoke, _is_empty)
+    def get_class(self, universe):
+        return universe.primitiveClass
+
+    def __str__(self):
+        if self._holder:
+            holder = self.get_holder().get_name().get_embedded_string()
+        else:
+            holder = "nil"
+        return ("Primitive(" + holder + ">>" + str(self.get_signature()) + ")")
+
+
+class _AstPrimitive(_AbstractPrimitive):
+    _immutable_fields_ = ["_prim_fn"]
+
+    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+        self._prim_fn = prim_fn
+
+    def invoke(self, rcvr, args):
+        prim_fn = self._prim_fn
+        return prim_fn(self, rcvr, args)
+
+
+class _AstUnaryPrimitive(_AbstractPrimitive):
+    _immutable_fields_ = ["_prim_fn"]
+
+    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+        self._prim_fn = prim_fn
+
+    def invoke(self, rcvr, args):
+        prim_fn = self._prim_fn
+        return prim_fn(rcvr)
+
+
+class _AstBinaryPrimitive(_AbstractPrimitive):
+    _immutable_fields_ = ["_prim_fn"]
+
+    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+        self._prim_fn = prim_fn
+
+    def invoke(self, rcvr, args):
+        prim_fn = self._prim_fn
+        return prim_fn(rcvr, args[0])
+
+
+class _AstTernaryPrimitive(_AbstractPrimitive):
+    _immutable_fields_ = ["_prim_fn"]
+
+    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+        self._prim_fn = prim_fn
+
+    def invoke(self, rcvr, args):
+        prim_fn = self._prim_fn
+        return prim_fn(rcvr, args[0], args[1])
+
+
+class _BcPrimitive(_AbstractPrimitive):
+    _immutable_fields_ = ["_prim_fn"]
+
+    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+        self._prim_fn = prim_fn
+
+    def invoke(self, frame, interpreter):
+        prim_fn = self._prim_fn
+        prim_fn(self, frame, interpreter)
+
+
+class _BcUnaryPrimitive(_AbstractPrimitive):
+    _immutable_fields_ = ["_prim_fn"]
+
+    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+        self._prim_fn = prim_fn
+
+    def invoke(self, frame, interpreter):
+        prim_fn = self._prim_fn
+        rcvr = frame.top()
+        result = prim_fn(rcvr)
+        frame.set_top(result)
+
+
+class _BcBinaryPrimitive(_AbstractPrimitive):
+    _immutable_fields_ = ["_prim_fn"]
+
+    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+        self._prim_fn = prim_fn
+
+    def invoke(self, frame, interpreter):
+        prim_fn = self._prim_fn
+        arg = frame.pop()
+        rcvr = frame.top()
+        result = prim_fn(rcvr, arg)
+        frame.set_top(result)
+
+
+class _BcTernaryPrimitive(_AbstractPrimitive):
+    _immutable_fields_ = ["_prim_fn"]
+
+    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+        self._prim_fn = prim_fn
+
+    def invoke(self, frame, interpreter):
+        prim_fn = self._prim_fn
+        arg2 = frame.pop()
+        arg1 = frame.pop()
+        rcvr = frame.top()
+        result = prim_fn(rcvr, arg1, arg2)
+        frame.set_top(result)
+
+
+def _empty_invoke(ivkbl, _a, _b):
+    """ Write a warning to the screen """
+    print("Warning: undefined primitive %s called" % str(ivkbl.get_signature()))
+
+
+if is_ast_interpreter():
+    Primitive = _AstPrimitive
+    UnaryPrimitive = _AstUnaryPrimitive
+    BinaryPrimitive = _AstBinaryPrimitive
+    TernaryPrimitive = _AstTernaryPrimitive
+else:
+    Primitive = _BcPrimitive
+    UnaryPrimitive = _BcUnaryPrimitive
+    BinaryPrimitive = _BcBinaryPrimitive
+    TernaryPrimitive = _BcTernaryPrimitive
+
+
+def empty_primitive(signature_string, universe):
+    """ Return an empty primitive with the given signature """
+    return Primitive(signature_string, universe, _empty_invoke, True)
