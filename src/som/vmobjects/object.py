@@ -1,14 +1,24 @@
-class Object(object):
-    
+from .abstract_object import AbstractObject
+from .object_without_fields import ObjectWithoutFields
+from som.vm.globals import nilObject
+
+
+class Object(ObjectWithoutFields):
+
+    _immutable_fields_ = ["_fields"]
+
     # Static field indices and number of object fields
     NUMBER_OF_OBJECT_FIELDS = 0
 
-    def __init__(self, nilObject, number_of_fields = -1):
-        num_fields = number_of_fields if number_of_fields != -1 else self._get_default_number_of_fields()
-        self._fields = [nilObject] * num_fields
-        self._class = nilObject
+    def __init__(self, obj_class, number_of_fields = NUMBER_OF_OBJECT_FIELDS):
+        cls = obj_class if obj_class is not None else nilObject
+        ObjectWithoutFields.__init__(self, cls)
 
-    def get_class(self):
+        num_fields = (number_of_fields if number_of_fields != -1
+                      else self._get_default_number_of_fields())
+        self._fields = [nilObject] * num_fields
+
+    def get_class(self, universe):
         return self._class
 
     def set_class(self, value):
@@ -16,11 +26,11 @@ class Object(object):
 
     def get_field_name(self, index):
         # Get the name of the field with the given index
-        return self.get_class().get_instance_field_name(index)
+        return self._class.get_instance_field_name(index)
 
     def get_field_index(self, name):
         # Get the index for the field with the given name
-        return self.get_class().lookup_field_fndex(name)
+        return self._class.lookup_field_index(name)
 
     def get_number_of_fields(self):
         # Get the number of fields in this object
@@ -29,59 +39,14 @@ class Object(object):
     def _get_default_number_of_fields(self):
         # Return the default number of fields in an object
         return self.NUMBER_OF_OBJECT_FIELDS
-    
+
     def get_field(self, index):
         # Get the field with the given index
+        assert isinstance(index, int)
         return self._fields[index]
-  
+
     def set_field(self, index, value):
         # Set the field with the given index to the given value
+        assert isinstance(index, int)
+        assert isinstance(value, AbstractObject)
         self._fields[index] = value
-    
-    def send(self, selector_string, arguments, universe, interpreter):
-        # Turn the selector string into a selector
-        selector = universe.symbol_for(selector_string)
-
-        # Push the receiver onto the stack
-        interpreter.get_frame().push(self)
-
-        # Push the arguments onto the stack
-        for arg in arguments:
-            interpreter.get_frame().push(arg)
-
-        # Lookup the invokable
-        invokable = self.get_class().lookup_invokable(selector)
-
-        # Invoke the invokable
-        invokable.invoke(interpreter.get_frame(), interpreter)
-  
-
-    def send_does_not_understand(self, selector, universe, interpreter):
-        # Compute the number of arguments
-        number_of_arguments = selector.get_number_of_signature_arguments()
-
-        frame = interpreter.get_frame()
-
-        # Allocate an array with enough room to hold all arguments
-        arguments_array = universe.new_array_with_length(number_of_arguments)
-
-        # Remove all arguments and put them in the freshly allocated array
-        i = number_of_arguments - 1
-        
-        while i >= 0:
-            arguments_array.set_indexable_field(i, frame.pop())
-            i -= 1
-            
-        args = (selector, arguments_array)
-        self.send("doesNotUnderstand:arguments:", args, universe, interpreter)
-
-    def send_unknown_global(self, global_name, universe, interpreter):
-        arguments = (global_name, )
-        self.send("unknownGlobal:", arguments, universe, interpreter)
-
-    def send_escaped_block(self, block, universe, interpreter):
-        arguments = (block, )
-        self.send("escapedBlock:", arguments, universe, interpreter)
-
-    def __str__(self):
-        return "a " + self.get_class().get_name().get_string()

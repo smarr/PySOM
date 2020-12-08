@@ -1,4 +1,4 @@
-This file lists all people who have contributed to the SOM VM.
+This file lists all people who have contributed to the RPySOM VM.
 
 SOM was originally implemented at the University of Aarhus (Denmark) in
 2001/2002. The implementation of SOM was done by Jakob Roland Andersen, Kasper
@@ -11,7 +11,13 @@ University and Technische Universitaet Darmstadt (Germany) in VM courses in
 2006. During that time, some changes were applied to SOM by Michael Haupt and
 Sebastian Kanthak.
 
-PySOM is a port by Stefan Marr of SOM's Java implementation.
+PySOM is a port by Stefan Marr of SOM's Java implementation. Later it became
+RPySOM by porting it to RPython, and then it was changed from using a bytecode
+interpreter to use an AST-based interpreter to become RTruffleSOM.
+RTruffleSOM contains contributions from Carl Friedrich Bolz and Tobias Pape.
+In the now current version, it merges RPySOM and RTruffleSOM to be in a single
+repository, but preserving the option to use either AST or bytecode-based
+interpretation.
 
-2013-09-14, Stefan Marr
+2020-09-02, Stefan Marr
 <mail@stefan-marr.de>

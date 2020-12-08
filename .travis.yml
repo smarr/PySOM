@@ -1,7 +1,57 @@
+dist: xenial
 language: python
 
 python:
-  - "2.7"
+  - pypy
 
-# command to run tests
-script: nosetests
+jobs:
+  fast_finish: true
+  include:
+    - name: AST-based VM
+      before_script:
+        - export SOM_INTERP=AST
+        - export SOM_BIN=som-ast-interp
+        
+    - name: Bytecode-based VM
+      before_script:
+        - export SOM_INTERP=BC
+        - export SOM_BIN=som-bc-interp
+    
+    - name: Python 2.7
+      dist: focal
+      python: "2.7"
+      install: []
+      before_script:
+        - export PYTHON=python
+        - export PYTHONPATH=src
+      script:
+        - SOM_INTERP=AST pytest
+        - SOM_INTERP=BC  pytest
+        - SOM_INTERP=AST ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+        - SOM_INTERP=BC  ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+
+    - name: Python 3.8
+      dist: focal
+      python: "3.8"
+      install: []
+      before_script:
+        - export PYTHON=python
+        - export PYTHONPATH=src
+      script:
+        - SOM_INTERP=AST pytest
+        - SOM_INTERP=BC  pytest
+        - SOM_INTERP=AST ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+        - SOM_INTERP=BC  ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+
+install:
+  - travis_retry wget https://downloads.python.org/pypy/pypy2.7-v7.3.1-src.tar.bz2
+  - tar -xjf pypy2.7-v7.3.1-src.tar.bz2
+  - mv pypy2.7-v7.3.1-src .pypy
+
+script:
+  - PYTHONPATH=$PYTHONPATH:.pypy:src pytest
+  - PYTHONPATH=$PYTHONPATH:.pypy ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+  - PYTHONPATH=$PYTHONPATH:.pypy .pypy/rpython/bin/rpython --batch src/main-rpython.py
+  - ./$SOM_BIN -cp Smalltalk TestSuite/TestHarness.som
+  #- PYTHONPATH=$PYTHONPATH:pypy pypy/rpython/bin/rpython --batch -Ojit src/main-rpython.py
+  #- ./som-bc-jit -cp Smalltalk TestSuite/TestHarness.som
