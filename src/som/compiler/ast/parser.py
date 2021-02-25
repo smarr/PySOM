@@ -37,14 +37,7 @@ class Parser(ParserBase):
         self._expect(Symbol.EndTerm)
         return method_body
 
-    def _block_contents(self, mgenc):
-        if self._accept(Symbol.Or):
-            self._locals(mgenc)
-            self._expect(Symbol.Or)
-
-        return self._block_body(mgenc)
-
-    def _block_body(self, mgenc):
+    def _block_body(self, mgenc, _seen_period):
         coordinate = self._lexer.get_source_coordinate()
         expressions = []
 
@@ -214,12 +207,6 @@ class Parser(ParserBase):
                self._sym_in(self._binary_op_syms)):
             operand = self._binary_message(mgenc, operand)
         return operand
-
-    def _nested_term(self, mgenc):
-        self._expect(Symbol.NewTerm)
-        exp = self._expression(mgenc)
-        self._expect(Symbol.EndTerm)
-        return exp
 
     def _literal(self):
         coord = self._lexer.get_source_coordinate()
