@@ -113,6 +113,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
         else:
             return False
 
+    def get_max_context_level(self):
+        if self._outer_genc is None:
+            return 0
+        return 1 + self._outer_genc.get_max_context_level()
+
     def add_bytecode(self, bc):
         self._bytecode.append(bc)
 

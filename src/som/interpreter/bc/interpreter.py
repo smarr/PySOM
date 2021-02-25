@@ -47,9 +47,10 @@ class Interpreter(object):
     def _do_push_field(self, bytecode_index, frame, method):
         # Handle the push field bytecode
         field_index = method.get_bytecode(bytecode_index + 1)
+        ctx_level = method.get_bytecode(bytecode_index + 2)
 
         # Push the field with the computed index onto the stack
-        frame.push(self.get_self(frame).get_field(field_index))
+        frame.push(self.get_self(frame, ctx_level).get_field(field_index))
 
     def _do_push_block(self, bytecode_index, frame, method):
         # Handle the push block bytecode
@@ -76,7 +77,7 @@ class Interpreter(object):
             frame.push(glob)
         else:
             # Send 'unknownGlobal:' to self
-            self._send_unknown_global(self.get_self(frame), frame, global_name)
+            self._send_unknown_global(self.get_self_dynamically(frame), frame, global_name)
 
     @staticmethod
     def _do_pop(frame):
@@ -100,9 +101,10 @@ class Interpreter(object):
     def _do_pop_field(self, bytecode_index, frame, method):
         # Handle the pop field bytecode
         field_index = method.get_bytecode(bytecode_index + 1)
+        ctx_level = method.get_bytecode(bytecode_index + 2)
 
         # Set the field with the computed index to the value popped from the stack
-        self.get_self(frame).set_field(field_index, frame.pop())
+        self.get_self(frame, ctx_level).set_field(field_index, frame.pop())
 
     def _do_super_send(self, bytecode_index, frame, method):
         # Handle the super send bytecode
@@ -129,12 +131,12 @@ class Interpreter(object):
         return frame.top()
 
     @jit.unroll_safe
-    def _do_return_non_local(self, frame):
+    def _do_return_non_local(self, frame, ctx_level):
         # get result from stack
         result = frame.top()
 
         # Compute the context for the non-local return
-        context = frame.get_outer_context()
+        context = frame.get_context_at(ctx_level)
 
         # Make sure the block context is still on the stack
         if not context.has_previous_frame():
@@ -229,7 +231,7 @@ class Interpreter(object):
             elif bytecode == Bytecodes.return_local:                    # BC:14
                 return self._do_return_local(frame)
             elif bytecode == Bytecodes.return_non_local:                # BC:15
-                return self._do_return_non_local(frame)
+                return self._do_return_non_local(frame, method.get_bytecode(current_bc_idx + 1))
             elif bytecode == Bytecodes.add:
                 self._do_add(current_bc_idx, frame, method)
             elif bytecode == Bytecodes.multiply:
@@ -240,7 +242,12 @@ class Interpreter(object):
             current_bc_idx = next_bc_idx
 
     @staticmethod
-    def get_self(frame):
+    def get_self(frame, ctx_level):
+        # Get the self object from the interpreter
+        return frame.get_argument(0, ctx_level)
+
+    @staticmethod
+    def get_self_dynamically(frame):
         # Get the self object from the interpreter
         return frame.get_outer_context().get_argument(0, 0)
 

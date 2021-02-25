@@ -13,7 +13,7 @@ class BytecodeGenerator(object):
         self._emit1(mgenc, BC.return_local)
 
     def emitRETURNNONLOCAL(self, mgenc):
-        self._emit1(mgenc, BC.return_non_local)
+        self._emit2(mgenc, BC.return_non_local, mgenc.get_max_context_level())
 
     def emitDUP(self, mgenc):
         self._emit1(mgenc, BC.dup)
@@ -25,7 +25,8 @@ class BytecodeGenerator(object):
         self._emit3(mgenc, BC.push_local, idx, ctx)
 
     def emitPUSHFIELD(self, mgenc, field_name):
-        self._emit2(mgenc, BC.push_field, mgenc.get_field_index(field_name))
+        self._emit3(mgenc, BC.push_field,
+                    mgenc.get_field_index(field_name), mgenc.get_max_context_level())
 
     def emitPUSHGLOBAL(self, mgenc, glob):
         self._emit2(mgenc, BC.push_global, mgenc.find_literal_index(glob))
@@ -37,7 +38,8 @@ class BytecodeGenerator(object):
         self._emit3(mgenc, BC.pop_local, idx, ctx)
 
     def emitPOPFIELD(self, mgenc, field_name):
-        self._emit2(mgenc, BC.pop_field, mgenc.get_field_index(field_name))
+        self._emit3(mgenc, BC.pop_field,
+                    mgenc.get_field_index(field_name), mgenc.get_max_context_level())
 
     def emitSUPERSEND(self, mgenc, msg):
         self._emit2(mgenc, BC.super_send, mgenc.find_literal_index(msg))

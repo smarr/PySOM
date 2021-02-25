@@ -32,18 +32,18 @@ class Bytecodes(object):
                          1,  # dup
                          3,  # push_local
                          3,  # push_argument
-                         2,  # push_field
+                         3,  # push_field
                          2,  # push_block
                          2,  # push_constant
                          2,  # push_global
                          1,  # pop
                          3,  # pop_local
                          3,  # pop_argument
-                         2,  # pop_field
+                         3,  # pop_field
                          2,  # send
                          2,  # super_send
                          1,  # return_local
-                         1,  # return_non_local
+                         2,  # return_non_local
 
                          1,  # add
                          1,  # multiply

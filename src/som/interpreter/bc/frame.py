@@ -44,7 +44,7 @@ class Frame(object):
         return self._context is not None
 
     @jit.unroll_safe
-    def _get_context(self, level):
+    def get_context_at(self, level):
         """ Get the context frame at the given level """
         frame = self
 
@@ -120,24 +120,24 @@ class Frame(object):
 
     def get_local(self, index, context_level):
         # Get the local with the given index in the given context
-        return self._get_context(context_level)._get_local(index)
+        return self.get_context_at(context_level)._get_local(index)
 
     def set_local(self, index, context_level, value):
         # Set the local with the given index in the given context to the given
         # value
         assert value is not None
-        self._get_context(context_level)._set_local(index, value)
+        self.get_context_at(context_level)._set_local(index, value)
 
     def get_argument(self, index, context_level):
         # Get the context
-        context = self._get_context(context_level)
+        context = self.get_context_at(context_level)
 
         # Get the argument with the given index
         return context._stack[index]
 
     def set_argument(self, index, context_level, value):
         # Get the context
-        context = self._get_context(context_level)
+        context = self.get_context_at(context_level)
 
         # Set the argument with the given index to the given value
         context._stack[index] = value
