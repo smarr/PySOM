@@ -55,7 +55,6 @@ jobs:
           SOM_INTERP=BC  pytest
           SOM_INTERP=AST ./som.sh -cp Smalltalk TestSuite/TestHarness.som
           SOM_INTERP=BC  ./som.sh -cp Smalltalk TestSuite/TestHarness.som
-          
 
       - name: Full Tests
         if: matrix.id != 'basic'
@@ -65,3 +64,7 @@ jobs:
           PYTHONPATH=$PYTHONPATH:.pypy ./som.sh -cp Smalltalk TestSuite/TestHarness.som
           PYTHONPATH=$PYTHONPATH:.pypy .pypy/rpython/bin/rpython --batch src/main-rpython.py
           ./som-${{ matrix.id }}-interp -cp Smalltalk TestSuite/TestHarness.som
+
+concurrency:
+  group: "workflow = ${{ github.workflow }}, ref = ${{ github.event.ref }}, pr = ${{ github.event.pull_request.id }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
