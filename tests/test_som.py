@@ -32,7 +32,6 @@ from som.vm.universe import create_universe, set_current
         "System"        ,
         "Vector"        ])
 def test_som(test_name):
-    print(test_name)
     args = ["-cp", "Smalltalk", "TestSuite/TestHarness.som", test_name]
     u = create_universe(True)
     set_current(u)

@@ -56,7 +56,7 @@ class AstMethod(AbstractObject):
             holder = self._holder.get_name().get_embedded_string()
         else:
             holder = 'nil'
-        return ("Method(" + holder + ">>" + str(self.get_signature()) + ")")
+        return "Method(" + holder + ">>" + str(self.get_signature()) + ")"
 
     def get_class(self, universe):
         return universe.methodClass

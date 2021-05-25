@@ -208,6 +208,12 @@ class ParserBase(object):
         else:
             return self._evaluation(mgenc)
 
+    def _nested_term(self, mgenc):
+        self._expect(Symbol.NewTerm)
+        exp = self._expression(mgenc)
+        self._expect(Symbol.EndTerm)
+        return exp
+
     def _literal_decimal(self, negate_value):
         if self._sym == Symbol.Integer:
             return self._literal_integer(negate_value)
@@ -293,6 +299,13 @@ class ParserBase(object):
             return self._primitive_block()
         else:
             return self._method_block(mgenc)
+
+    def _block_contents(self, mgenc):
+        if self._accept(Symbol.Or):
+            self._locals(mgenc)
+            self._expect(Symbol.Or)
+
+        return self._block_body(mgenc, False)
 
     def _primitive_block(self):
         self._expect(Symbol.Primitive)

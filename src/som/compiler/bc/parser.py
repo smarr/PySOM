@@ -28,13 +28,6 @@ class Parser(ParserBase):
         self._expect(Symbol.EndTerm)
         return None
 
-    def _block_contents(self, mgenc):
-        if self._accept(Symbol.Or):
-            self._locals(mgenc)
-            self._expect(Symbol.Or)
-
-        self._block_body(mgenc, False)
-
     def _block_body(self, mgenc, seen_period):
         if self._accept(Symbol.Exit):
             self._result(mgenc)
@@ -234,11 +227,6 @@ class Parser(ParserBase):
 
         while self._sym == Symbol.OperatorSequence or self._sym_in(self._binary_op_syms):
             self._binary_message(mgenc, False)
-
-    def _nested_term(self, mgenc):
-        self._expect(Symbol.NewTerm)
-        self._expression(mgenc)
-        self._expect(Symbol.EndTerm)
 
     def _literal(self, mgenc):
         if self._sym == Symbol.Pound:
