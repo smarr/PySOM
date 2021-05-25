@@ -1,0 +1,67 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test_som:
+    runs-on: ubuntu-20.04 # ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: AST Interpreter PyPy2
+            id:   ast
+            interp: AST
+            python-version: pypy2 
+          - name: Bytecode Interpreter PyPy2
+            id:   bc
+            interp: BC
+            python-version: pypy2
+          - name: Basics Python 2.7
+            python-version: 2.7
+            id: basic
+          - name: Basics Python 3.8
+            python-version: 3.8
+            id: basic
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Set up PyPy
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download PyPy Sources
+        if: matrix.id != 'basic'
+        run: |
+          curl https://downloads.python.org/pypy/pypy2.7-v7.3.1-src.tar.bz2 -o pypy.tar.bz2
+          tar -xjf pypy.tar.bz2
+          mv pypy2.7-v7.3.1-src .pypy
+
+      - name: Install PyTest
+        run: |
+           pip install pytest
+
+      - name: Tests
+        if: matrix.id == 'basic'
+        run: |
+          export PYTHON=python
+          export PYTHONPATH=src
+          SOM_INTERP=AST pytest
+          SOM_INTERP=BC  pytest
+          SOM_INTERP=AST ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+          SOM_INTERP=BC  ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+          
+
+      - name: Full Tests
+        if: matrix.id != 'basic'
+        run: |
+          export SOM_INTERP=${{ matrix.interp }}
+          PYTHONPATH=$PYTHONPATH:.pypy:src pytest
+          PYTHONPATH=$PYTHONPATH:.pypy ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+          PYTHONPATH=$PYTHONPATH:.pypy .pypy/rpython/bin/rpython --batch src/main-rpython.py
+          ./som-${{ matrix.id }}-interp -cp Smalltalk TestSuite/TestHarness.som
