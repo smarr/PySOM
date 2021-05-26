@@ -1,4 +1,4 @@
-from rlib.arithmetic import ovfcheck, LONG_BIT, bigint_from_int
+from rlib.arithmetic import ovfcheck, LONG_BIT, bigint_from_int, string_to_int, bigint_from_str, ParseStringOverflowError
 from rlib.llop import as_32_bit_unsigned_value, unsigned_right_shift
 
 from som.primitives.primitives import Primitives
@@ -151,8 +151,16 @@ def _from_string(rcvr, param):
     if not isinstance(param, String):
         return nilObject
 
-    int_value = int(param.get_embedded_string())
-    return Integer(int_value)
+    str_val = param.get_embedded_string()
+
+    from som.vmobjects.integer import Integer
+    try:
+        i = string_to_int(str_val)
+        return Integer(i)
+    except ParseStringOverflowError:
+        from som.vmobjects.biginteger import BigInteger
+        bigint = bigint_from_str(str_val)
+        return BigInteger(bigint)
 
 
 class IntegerPrimitivesBase(Primitives):
