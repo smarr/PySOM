@@ -1,3 +1,4 @@
+import os
 import pytest
 
 from som.compiler.parse_error import ParseError
@@ -40,6 +41,11 @@ from som.vmobjects.symbol  import Symbol
         ("IfTrueIfFalse", "test2", 33, Integer),
         ("IfTrueIfFalse", "test3",  4, Integer),
 
+        ("IfTrueIfFalse", "testIfTrueTrueResult",   "Integer", Class),
+        ("IfTrueIfFalse", "testIfTrueFalseResult",  "Nil",     Class),
+        ("IfTrueIfFalse", "testIfFalseTrueResult",  "Nil",     Class),
+        ("IfTrueIfFalse", "testIfFalseFalseResult", "Integer", Class),
+
         ("CompilerSimplification", "testReturnConstantSymbol",  "constant", Symbol),
         ("CompilerSimplification", "testReturnConstantInt",     42, Integer),
         ("CompilerSimplification", "testReturnSelf",            "CompilerSimplification", Class),
@@ -62,8 +68,14 @@ from som.vmobjects.symbol  import Symbol
         ("BlockInlining", "testOneLevelInliningWithLocalShadowTrue", 2, Integer),
         ("BlockInlining", "testOneLevelInliningWithLocalShadowFalse", 1, Integer),
 
+        ("BlockInlining", "testShadowDoesntStoreWrongLocal",    33, Integer),
+        ("BlockInlining", "testShadowDoesntReadUnrelated",   "Nil", Class),
+
         ("BlockInlining", "testBlockNestedInIfTrue",                2, Integer),
         ("BlockInlining", "testBlockNestedInIfFalse",              42, Integer),
+
+        ("BlockInlining", "testStackDisciplineTrue",    1, Integer),
+        ("BlockInlining", "testStackDisciplineFalse",   2, Integer),
 
         ("BlockInlining", "testDeepNestedInlinedIfTrue",            3, Integer),
         ("BlockInlining", "testDeepNestedInlinedIfFalse",          42, Integer),
@@ -87,12 +99,15 @@ from som.vmobjects.symbol  import Symbol
 
         ("BinaryOperation", "test", 3 + 8, Integer),
 
-        ("NumberOfTests", "numberOfTests", 57, Integer),
+        ("NumberOfTests", "numberOfTests", 65, Integer),
     ])
 def test_basic_interpreter_behavior(test_class, test_selector, expected_result, result_type):
     u = create_universe()
     set_current(u)
-    u.setup_classpath("Smalltalk:TestSuite/BasicInterpreterTests")
+
+    core_lib_path = os.path.dirname(os.path.abspath(__file__)) + "/../core-lib/"
+    u.setup_classpath(core_lib_path + "Smalltalk:"
+                      + core_lib_path + "TestSuite/BasicInterpreterTests")
 
     try:
         actual_result = u.execute_method(test_class, test_selector)

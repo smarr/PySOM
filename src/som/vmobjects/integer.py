@@ -100,6 +100,10 @@ class Integer(AbstractObject):
         from .string import String
         return String(str(self._embedded_integer))
 
+    def prim_as_double(self):
+        from .double import Double
+        return Double(float(self._embedded_integer))
+
     def prim_abs(self):
         return Integer(abs(self._embedded_integer))
 

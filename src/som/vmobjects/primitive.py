@@ -156,7 +156,8 @@ class _BcTernaryPrimitive(_AbstractPrimitive):
 
 def _empty_invoke(ivkbl, _a, _b):
     """ Write a warning to the screen """
-    print("Warning: undefined primitive %s called" % str(ivkbl.get_signature()))
+    print("Warning: undefined primitive #%s called" %
+          ivkbl.get_signature().get_embedded_string())
 
 
 if is_ast_interpreter():

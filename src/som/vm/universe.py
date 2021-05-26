@@ -144,20 +144,22 @@ class Universe(object):
     def handle_arguments(self, arguments):
         got_classpath  = False
         remaining_args = []
+        saw_others = False
 
         i = 0
         while i < len(arguments):
-            if arguments[i] == "-cp":
+            if arguments[i] == "-cp" and not saw_others:
                 if i + 1 >= len(arguments):
                     self._print_usage_and_exit()
                 self.setup_classpath(arguments[i + 1])
                 i += 1    # skip class path
                 got_classpath = True
-            elif arguments[i] == "-d":
+            elif arguments[i] == "-d" and not saw_others:
                 self._dump_bytecodes = True
-            elif arguments[i] in ["-h", "--help", "-?"]:
+            elif arguments[i] in ["-h", "--help", "-?"] and not saw_others:
                 self._print_usage_and_exit()
             else:
+                saw_others = True
                 remaining_args.append(arguments[i])
             i += 1
 
@@ -166,15 +168,13 @@ class Universe(object):
             self.classpath = self._default_classpath()
 
         # check remaining args for class paths, and strip file extension
-        i = 0
-        while i < len(remaining_args):
-            split = self._get_path_class_ext(remaining_args[i])
+        if remaining_args:
+            split = self._get_path_class_ext(remaining_args[0])
 
             if split[0] != "":  # there was a path
                 self.classpath.insert(0, split[0])
 
-            remaining_args[i] = split[1]
-            i += 1
+            remaining_args[0] = split[1]
 
         return remaining_args
 

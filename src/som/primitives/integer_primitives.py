@@ -1,4 +1,4 @@
-from rlib.arithmetic import ovfcheck, LONG_BIT, bigint_from_int
+from rlib.arithmetic import ovfcheck, LONG_BIT, bigint_from_int, string_to_int, bigint_from_str, ParseStringOverflowError
 from rlib.llop import as_32_bit_unsigned_value, unsigned_right_shift
 
 from som.primitives.primitives import Primitives
@@ -15,6 +15,10 @@ import math
 
 def _as_string(rcvr):
     return rcvr.prim_as_string()
+
+
+def _as_double(rcvr):
+    return rcvr.prim_as_double()
 
 
 def _as_32_bit_signed_value(rcvr):
@@ -147,14 +151,23 @@ def _from_string(rcvr, param):
     if not isinstance(param, String):
         return nilObject
 
-    int_value = int(param.get_embedded_string())
-    return Integer(int_value)
+    str_val = param.get_embedded_string()
+
+    from som.vmobjects.integer import Integer
+    try:
+        i = string_to_int(str_val)
+        return Integer(i)
+    except ParseStringOverflowError:
+        from som.vmobjects.biginteger import BigInteger
+        bigint = bigint_from_str(str_val)
+        return BigInteger(bigint)
 
 
 class IntegerPrimitivesBase(Primitives):
 
     def install_primitives(self):
         self._install_instance_primitive(UnaryPrimitive("asString", self._universe, _as_string))
+        self._install_instance_primitive(UnaryPrimitive("asDouble", self._universe, _as_double))
         self._install_instance_primitive(
             UnaryPrimitive("as32BitSignedValue", self._universe, _as_32_bit_signed_value))
         self._install_instance_primitive(
