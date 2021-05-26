@@ -1,6 +1,7 @@
 import time
 
 from rlib import rgc, jit
+from rlib.streamio import open_file_as_stream, readall_from_stream
 
 from som.primitives.primitives import Primitives
 from som.vm.globals import nilObject, trueObject, falseObject
@@ -67,6 +68,21 @@ def _ticks(rcvr):
 
 
 @jit.dont_look_inside
+def _load_file(rcvr, file_name):
+    try:
+        input_file = open_file_as_stream(file_name.get_embedded_string(), "r")
+        try:
+            result = readall_from_stream(input_file)
+            from som.vmobjects.string import String
+            return String(result)
+        finally:
+            input_file.close()
+    except (OSError, IOError):
+        pass
+    return nilObject
+
+
+@jit.dont_look_inside
 def _full_gc(rcvr):
     rgc.collect()
     return trueObject
@@ -88,3 +104,5 @@ class SystemPrimitivesBase(Primitives):
         self._install_instance_primitive(UnaryPrimitive("time", self._universe, _time))
         self._install_instance_primitive(UnaryPrimitive("ticks", self._universe, _ticks))
         self._install_instance_primitive(UnaryPrimitive("fullGC", self._universe, _full_gc))
+
+        self._install_instance_primitive(BinaryPrimitive("loadFile:", self._universe, _load_file))
