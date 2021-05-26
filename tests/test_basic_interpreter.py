@@ -1,3 +1,4 @@
+import os
 import pytest
 
 from som.compiler.parse_error import ParseError
@@ -103,7 +104,10 @@ from som.vmobjects.symbol  import Symbol
 def test_basic_interpreter_behavior(test_class, test_selector, expected_result, result_type):
     u = create_universe()
     set_current(u)
-    u.setup_classpath("Smalltalk:TestSuite/BasicInterpreterTests")
+
+    core_lib_path = os.path.dirname(os.path.abspath(__file__)) + "/../core-lib/"
+    u.setup_classpath(core_lib_path + "Smalltalk:"
+                      + core_lib_path + "TestSuite/BasicInterpreterTests")
 
     try:
         actual_result = u.execute_method(test_class, test_selector)
