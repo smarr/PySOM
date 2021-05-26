@@ -17,6 +17,10 @@ def _as_string(rcvr):
     return rcvr.prim_as_string()
 
 
+def _as_double(rcvr):
+    return rcvr.prim_as_double()
+
+
 def _as_32_bit_signed_value(rcvr):
     return rcvr.prim_as_32_bit_signed_value()
 
@@ -155,6 +159,7 @@ class IntegerPrimitivesBase(Primitives):
 
     def install_primitives(self):
         self._install_instance_primitive(UnaryPrimitive("asString", self._universe, _as_string))
+        self._install_instance_primitive(UnaryPrimitive("asDouble", self._universe, _as_double))
         self._install_instance_primitive(
             UnaryPrimitive("as32BitSignedValue", self._universe, _as_32_bit_signed_value))
         self._install_instance_primitive(

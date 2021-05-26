@@ -81,6 +81,14 @@ def _positive_infinity(_rcvr):
     return Double(INFINITY)
 
 
+def _from_string(_rcvr, string):
+    try:
+        return Double(float(string.get_embedded_string()))
+    except ValueError:
+        from som.vm.globals import nilObject
+        return nilObject
+
+
 class DoublePrimitives(Primitives):
 
     def install_primitives(self):
@@ -105,3 +113,4 @@ class DoublePrimitives(Primitives):
         self._install_instance_primitive(UnaryPrimitive("cos", self._universe, _cos))
 
         self._install_class_primitive(UnaryPrimitive("PositiveInfinity", self._universe, _positive_infinity))
+        self._install_class_primitive(BinaryPrimitive("fromString:", self._universe, _from_string))

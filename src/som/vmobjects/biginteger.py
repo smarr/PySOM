@@ -95,6 +95,10 @@ class BigInteger(AbstractObject):
         from .string import String
         return String(self._embedded_biginteger.str())
 
+    def prim_as_double(self):
+        from .double import Double
+        return Double(self._embedded_biginteger.tofloat())
+
     def prim_abs(self):
         return BigInteger(self._embedded_biginteger.abs())
 
