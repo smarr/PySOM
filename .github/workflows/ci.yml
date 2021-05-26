@@ -64,6 +64,20 @@ jobs:
           PYTHONPATH=$PYTHONPATH:.pypy ./som.sh -cp Smalltalk TestSuite/TestHarness.som
           PYTHONPATH=$PYTHONPATH:.pypy .pypy/rpython/bin/rpython --batch src/main-rpython.py
           ./som-${{ matrix.id }}-interp -cp Smalltalk TestSuite/TestHarness.som
+      
+      - name: SomSom Tests Basic
+        if: matrix.id == 'basic'
+        run: |
+          SOM_INTERP=AST ./som.sh -cp core-lib/Smalltalk:core-lib/TestSuite:core-lib/SomSom/src/compiler:core-lib/SomSom/src/vm:core-lib/SomSom/src/vmobjects:core-lib/SomSom/src/interpreter:core-lib/SomSom/src/primitives \
+            core-lib/SomSom/tests/SomSomTests.som
+          SOM_INTERP=BC  ./som.sh -cp core-lib/Smalltalk:core-lib/TestSuite:core-lib/SomSom/src/compiler:core-lib/SomSom/src/vm:core-lib/SomSom/src/vmobjects:core-lib/SomSom/src/interpreter:core-lib/SomSom/src/primitives \
+            core-lib/SomSom/tests/SomSomTests.som
+
+      - name: SomSom Tests Compiled
+        if: matrix.id != 'basic'
+        run: |
+          ./som-${{ matrix.id }}-interp -cp core-lib/Smalltalk:core-lib/TestSuite:core-lib/SomSom/src/compiler:core-lib/SomSom/src/vm:core-lib/SomSom/src/vmobjects:core-lib/SomSom/src/interpreter:core-lib/SomSom/src/primitives \
+            core-lib/SomSom/tests/SomSomTests.som
 
 concurrency:
   group: "workflow = ${{ github.workflow }}, ref = ${{ github.event.ref }}, pr = ${{ github.event.pull_request.id }}"

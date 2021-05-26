@@ -31,7 +31,7 @@ bc_build_test_benchmark_job:
     - ./som-bc-jit -cp Smalltalk TestSuite/TestHarness.som
     
     # Run Benchmarks
-    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf RPySOM e:RPySOM-bc-jit e:RPySOM-bc-interp
+    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf all e:RPySOM-bc-jit e:RPySOM-bc-interp e:SomSom-bc-interp
     # - rebench --experiment="CI ID $CI_PIPELINE_ID" --report-completion rebench.conf
 
 ast_build_test_benchmark_job:
@@ -57,5 +57,5 @@ ast_build_test_benchmark_job:
     - ./som-ast-jit -cp Smalltalk TestSuite/TestHarness.som
     
     # Run Benchmarks
-    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf RPySOM e:RPySOM-ast-jit e:RPySOM-ast-interp
+    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf all e:RPySOM-ast-jit e:RPySOM-ast-interp e:SomSom-ast-interp
     - rebench --experiment="CI ID $CI_PIPELINE_ID" --report-completion rebench.conf
