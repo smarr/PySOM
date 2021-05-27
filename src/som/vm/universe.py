@@ -390,6 +390,9 @@ class Universe(object):
             self._globals[name] = assoc
         return assoc
 
+    def get_globals_association_or_none(self, name):
+        return self._globals.get(name, None)
+
     def _get_block_class(self, number_of_arguments):
         return self.blockClasses[number_of_arguments]
 

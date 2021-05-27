@@ -3,7 +3,22 @@ from .expression_node import ExpressionNode
 from som.vm.globals import nilObject, trueObject, falseObject
 
 
-class UninitializedGlobalReadNode(ExpressionNode):
+def create_global_node(global_name, universe, source_section):
+    glob = global_name.get_embedded_string()
+    if glob == "true":
+        return _ConstantGlobalReadNode(trueObject, source_section)
+    if glob == "false":
+        return _ConstantGlobalReadNode(falseObject, source_section)
+    if glob == "nil":
+        return _ConstantGlobalReadNode(nilObject, source_section)
+
+    assoc = universe.get_globals_association_or_none(global_name)
+    if assoc is not None:
+        return _CachedGlobalReadNode(assoc, source_section)
+
+    return _UninitializedGlobalReadNode(global_name, universe, source_section)
+
+class _UninitializedGlobalReadNode(ExpressionNode):
 
     _immutable_fields_ = ["_global_name", "_universe"]
 
@@ -25,23 +40,12 @@ class UninitializedGlobalReadNode(ExpressionNode):
         return lookup_and_send(receiver, "unknownGlobal:", arguments, universe)
 
     def _specialize(self):
-        glob = self._global_name.get_embedded_string()
-        if glob == "true":
-            cached = ConstantGlobalReadNode(trueObject,
-                                            self.get_source_section())
-        elif glob == "false":
-            cached = ConstantGlobalReadNode(falseObject,
-                                            self.get_source_section())
-        elif glob == "nil":
-            cached = ConstantGlobalReadNode(nilObject,
-                                            self.get_source_section())
-        else:
-            assoc = self._universe.get_globals_association(self._global_name)
-            cached = CachedGlobalReadNode(assoc, self.get_source_section())
+        assoc = self._universe.get_globals_association(self._global_name)
+        cached = _CachedGlobalReadNode(assoc, self.get_source_section())
         return self.replace(cached)
 
 
-class CachedGlobalReadNode(ExpressionNode):
+class _CachedGlobalReadNode(ExpressionNode):
 
     _immutable_fields_ = ['_assoc']
 
@@ -49,11 +53,11 @@ class CachedGlobalReadNode(ExpressionNode):
         ExpressionNode.__init__(self, source_section)
         self._assoc = assoc
 
-    def execute(self, frame):
+    def execute(self, _frame):
         return self._assoc.get_value()
 
 
-class ConstantGlobalReadNode(ExpressionNode):
+class _ConstantGlobalReadNode(ExpressionNode):
 
     _immutable_fields_ = ['_value']
 
@@ -61,5 +65,5 @@ class ConstantGlobalReadNode(ExpressionNode):
         ExpressionNode.__init__(self, source_section)
         self._value = value
 
-    def execute(self, frame):
+    def execute(self, _frame):
         return self._value
