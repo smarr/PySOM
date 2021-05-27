@@ -20,9 +20,9 @@ class Parser(ParserBase):
         # terminating the last expression, so the last expression's value must
         # be popped off the stack and a ^self be generated
         if not mgenc.is_finished():
-            self._bc_gen.emitPOP(mgenc)
-            self._bc_gen.emitPUSHARGUMENT(mgenc, 0, 0)
-            self._bc_gen.emitRETURNLOCAL(mgenc)
+            # with RETURN_SELF, we don't need the extra stack space
+            # self._bc_gen.emitPOP(mgenc)
+            self._bc_gen.emitRETURNSELF(mgenc)
             mgenc.set_finished()
 
         self._expect(Symbol.EndTerm)
@@ -50,8 +50,7 @@ class Parser(ParserBase):
             # it does not matter whether a period has been seen, as the end of
             # the method has been found (EndTerm) - so it is safe to emit a
             # "return self"
-            self._bc_gen.emitPUSHARGUMENT(mgenc, 0, 0)
-            self._bc_gen.emitRETURNLOCAL(mgenc)
+            self._bc_gen.emitRETURNSELF(mgenc)
             mgenc.set_finished()
         else:
             self._expression(mgenc)

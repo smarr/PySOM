@@ -232,6 +232,8 @@ class Interpreter(object):
                 return self._do_return_local(frame)
             elif bytecode == Bytecodes.return_non_local:                # BC:15
                 return self._do_return_non_local(frame, method.get_bytecode(current_bc_idx + 1))
+            elif bytecode == Bytecodes.return_self:
+                return frame.get_argument(0, 0)
             elif bytecode == Bytecodes.add:
                 self._do_add(current_bc_idx, frame, method)
             elif bytecode == Bytecodes.multiply:

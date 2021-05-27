@@ -20,13 +20,14 @@ class Bytecodes(object):
     super_send       = 13
     return_local     = 14
     return_non_local = 15
+    return_self      = 16
 
     # quick sends, short cutting well known operations
-    add              = 16
-    multiply         = 17
-    subtract         = 18
+    add              = 17
+    multiply         = 18
+    subtract         = 19
 
-    _num_bytecodes   = 19
+    _num_bytecodes   = 20
 
     _bytecode_length = [ 1, # halt
                          1,  # dup
@@ -44,6 +45,7 @@ class Bytecodes(object):
                          2,  # super_send
                          1,  # return_local
                          2,  # return_non_local
+                         1,  # return_self
 
                          1,  # add
                          1,  # multiply
@@ -68,10 +70,12 @@ class Bytecodes(object):
                               _stack_effect_depends_on_message, # super_send
                                0,                               # return_local
                                0,                               # return_non_local
+                               0,                               # return_self
                               -1,                               # add
                               -1,                               # multiply
                               -1,                               # subtract
                               ]
+
 
 @jit.elidable
 def bytecode_length(bytecode):
@@ -83,7 +87,8 @@ def bytecode_length(bytecode):
 def bytecode_stack_effect(bytecode, number_of_arguments_of_message_send = 0):
     assert 0 <= bytecode < len(Bytecodes._bytecode_stack_effect)
     if bytecode_stack_effect_depends_on_send(bytecode):
-        return -number_of_arguments_of_message_send + 1 # +1 in order to account for the return value
+        # +1 in order to account for the return value
+        return -number_of_arguments_of_message_send + 1
     else:
         return Bytecodes._bytecode_stack_effect[bytecode]
 

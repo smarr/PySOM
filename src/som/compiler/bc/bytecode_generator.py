@@ -9,6 +9,9 @@ class BytecodeGenerator(object):
     def emitPUSHARGUMENT(self, mgenc, idx, ctx):
         self._emit3(mgenc, BC.push_argument, idx, ctx)
 
+    def emitRETURNSELF(self, mgenc):
+        self._emit1(mgenc, BC.return_self)
+
     def emitRETURNLOCAL(self, mgenc):
         self._emit1(mgenc, BC.return_local)
 
