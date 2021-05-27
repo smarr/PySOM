@@ -22,6 +22,9 @@ class Bytecodes(object):
     return_non_local = 15
     return_self      = 16
 
+    inc              = 17
+    dec              = 18
+
     _num_bytecodes   = 17
 
     _bytecode_length = [ 1, # halt
@@ -41,6 +44,8 @@ class Bytecodes(object):
                          1,  # return_local
                          2,  # return_non_local
                          1,  # return_self
+                         1,  # inc
+                         1,  # dec
                          ]
 
     _stack_effect_depends_on_message = -1000  # chose a unreasonable number to be recognizable
@@ -62,6 +67,8 @@ class Bytecodes(object):
                                0,                               # return_local
                                0,                               # return_non_local
                                0,                               # return_self
+                               0,                               # inc
+                               0,                               # dec
                               ]
 
 

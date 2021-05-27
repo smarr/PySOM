@@ -3,6 +3,12 @@ from som.interpreter.bc.bytecodes import Bytecodes as BC
 
 class BytecodeGenerator(object):
 
+    def emitINC(self, mgenc):
+        self._emit1(mgenc, BC.inc)
+
+    def emitDEC(self, mgenc):
+        self._emit1(mgenc, BC.dec)
+
     def emitPOP(self, mgenc):
         self._emit1(mgenc, BC.pop)
 

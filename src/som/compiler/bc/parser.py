@@ -173,9 +173,24 @@ class Parser(ParserBase):
         else:
             self._bc_gen.emitSEND(mgenc, msg)
 
+    def _try_inc_or_dec_bytecodes(self, msg, is_super_send, mgenc):
+        is_inc_or_dec = msg is self._universe.symPlus or msg is self._universe.symMinus
+        if is_inc_or_dec and not is_super_send:
+            if self._sym == Symbol.Integer and self._text == "1":
+                self._expect(Symbol.Integer)
+                if msg is self._universe.symPlus:
+                    self._bc_gen.emitINC(mgenc)
+                else:
+                    self._bc_gen.emitDEC(mgenc)
+                return True
+        return False
+
     def _binary_message(self, mgenc, is_super_send):
         msg = self._binary_selector()
         mgenc.add_literal_if_absent(msg)
+
+        if self._try_inc_or_dec_bytecodes(msg, is_super_send, mgenc):
+            return
 
         self._binary_operand(mgenc)
 
@@ -305,7 +320,7 @@ class Parser(ParserBase):
         # a return
         if not mgenc.is_finished():
             if not mgenc.has_bytecode():
-                nil_sym = self._universe.symbol_for("nil")
+                nil_sym = self._universe.symNil
                 mgenc.add_literal_if_absent(nil_sym)
                 self._bc_gen.emitPUSHGLOBAL(mgenc, nil_sym)
             self._bc_gen.emitRETURNLOCAL(mgenc)

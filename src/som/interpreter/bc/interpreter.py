@@ -165,8 +165,44 @@ class Interpreter(object):
                 return self._do_return_non_local(frame, method.get_bytecode(current_bc_idx + 1))
             elif bytecode == Bytecodes.return_self:
                 return frame.get_argument(0, 0)
+            elif bytecode == Bytecodes.inc:
+                val = frame.top()
+                from som.vmobjects.integer import Integer
+                from som.vmobjects.double import Double
+                from som.vmobjects.biginteger import BigInteger
+                if isinstance(val, Integer):
+                    result = val.prim_inc()
+                elif isinstance(val, Double):
+                    result = val.prim_inc()
+                elif isinstance(val, BigInteger):
+                    result = val.prim_inc()
+                else:
+                    return self._not_yet_implemented()
+                frame.set_top(result)
+            elif bytecode == Bytecodes.dec:
+                val = frame.top()
+                from som.vmobjects.integer import Integer
+                from som.vmobjects.double import Double
+                from som.vmobjects.biginteger import BigInteger
+                if isinstance(val, Integer):
+                    result = val.prim_dec()
+                elif isinstance(val, Double):
+                    result = val.prim_dec()
+                elif isinstance(val, BigInteger):
+                    result = val.prim_dec()
+                else:
+                    return self._not_yet_implemented()
+                frame.set_top(result)
+            else:
+                self._unknown_bytecode(bytecode)
 
             current_bc_idx = next_bc_idx
+
+    def _not_yet_implemented(self):
+        raise Exception("Not yet implemented")
+
+    def _unknown_bytecode(self, bytecode):
+        raise Exception("Unknown bytecode: " + str(bytecode))
 
     @staticmethod
     def get_self(frame, ctx_level):

@@ -104,6 +104,12 @@ class BigInteger(AbstractObject):
             return right
         return self
 
+    def prim_inc(self):
+        return BigInteger(bigint_from_int(1).add(self._embedded_biginteger))
+
+    def prim_dec(self):
+        return BigInteger(bigint_from_int(1).sub(self._embedded_biginteger))
+
     def prim_add(self, right):
         from .double import Double
         if isinstance(right, BigInteger):

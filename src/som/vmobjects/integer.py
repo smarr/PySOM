@@ -105,6 +105,26 @@ class Integer(AbstractObject):
             return right
         return self
 
+    def prim_inc(self):
+        from .biginteger import BigInteger
+        l = self._embedded_integer
+        try:
+            result = ovfcheck(l + 1)
+            return Integer(result)
+        except OverflowError:
+            return BigInteger(
+                bigint_from_int(l).add(bigint_from_int(1)))
+
+    def prim_dec(self):
+        from .biginteger import BigInteger
+        l = self._embedded_integer
+        try:
+            result = ovfcheck(l - 1)
+            return Integer(result)
+        except OverflowError:
+            return BigInteger(
+                bigint_from_int(l).sub(bigint_from_int(1)))
+
     def prim_add(self, right):
         from .double import Double
         from .biginteger import BigInteger
