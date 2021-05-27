@@ -173,11 +173,6 @@ class Parser(ParserBase):
         else:
             self._bc_gen.emitSEND(mgenc, msg)
 
-    @staticmethod
-    def _is_quick_send(msg):
-        m = msg.get_embedded_string()
-        return m == "+" or m == "-" or m == "*"
-
     def _binary_message(self, mgenc, is_super_send):
         msg = self._binary_selector()
         mgenc.add_literal_if_absent(msg)
@@ -186,8 +181,6 @@ class Parser(ParserBase):
 
         if is_super_send:
             self._bc_gen.emitSUPERSEND(mgenc, msg)
-        elif self._is_quick_send(msg):
-            self._bc_gen.emitQUICKSEND(mgenc, msg)
         else:
             self._bc_gen.emitSEND(mgenc, msg)
 

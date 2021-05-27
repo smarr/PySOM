@@ -22,12 +22,7 @@ class Bytecodes(object):
     return_non_local = 15
     return_self      = 16
 
-    # quick sends, short cutting well known operations
-    add              = 17
-    multiply         = 18
-    subtract         = 19
-
-    _num_bytecodes   = 20
+    _num_bytecodes   = 17
 
     _bytecode_length = [ 1, # halt
                          1,  # dup
@@ -46,13 +41,9 @@ class Bytecodes(object):
                          1,  # return_local
                          2,  # return_non_local
                          1,  # return_self
-
-                         1,  # add
-                         1,  # multiply
-                         1,  # subtract
                          ]
 
-    _stack_effect_depends_on_message = -1000 # chose a unresonable number to be recognizable
+    _stack_effect_depends_on_message = -1000  # chose a unreasonable number to be recognizable
 
     _bytecode_stack_effect = [ 0,                               # halt
                                1,                               # dup
@@ -71,9 +62,6 @@ class Bytecodes(object):
                                0,                               # return_local
                                0,                               # return_non_local
                                0,                               # return_self
-                              -1,                               # add
-                              -1,                               # multiply
-                              -1,                               # subtract
                               ]
 
 
@@ -112,4 +100,6 @@ def _sorted_bytecode_names(cls):
     return [key.upper() for value, key in
             sorted([(value, key) for key, value in cls.__dict__.items()
                     if isinstance(value, int) and key[0] != "_"])]
+
+
 _bytecode_names = _sorted_bytecode_names(Bytecodes)

@@ -23,24 +23,6 @@ class Integer(AbstractObject):
     def get_class(self, universe):
         return universe.integerClass
 
-    def quick_add(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.top()
-        frame.pop()
-        frame.pop()
-        frame.push(self.prim_add(right))
-
-    def quick_multiply(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.top()
-        frame.pop()
-        frame.pop()
-        frame.push(self.prim_multiply(right))
-
-    def quick_subtract(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.top()
-        frame.pop()
-        frame.pop()
-        frame.push(self.prim_subtract(right))
-
     def _to_double(self):
         from .double import Double
         return Double(float(self._embedded_integer))

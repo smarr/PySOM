@@ -514,7 +514,6 @@ class _BCUniverse(Universe):
 
     def _initialize_object_system(self):
         system_object = Universe._initialize_object_system(self)
-        self._interpreter.initialize_known_quick_sends()
         return system_object
 
 
