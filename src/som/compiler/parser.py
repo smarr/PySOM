@@ -36,6 +36,7 @@ class ParserBase(object):
         self._text     = None
         self._next_sym = Symbol.NONE
         self._get_symbol_from_lexer()
+        self._super_send = False
 
     def classdef(self, cgenc):
         cgenc.set_name(self._universe.symbol_for(self._text))
@@ -79,18 +80,13 @@ class ParserBase(object):
         else:
             super_name = self._universe.symbol_for("Object")
 
-        cgenc.set_super_name(super_name)
-
         # Load the super class, if it is not nil (break the dependency cycle)
         if super_name.get_embedded_string() != "nil":
             super_class = self._universe.load_class(super_name)
             if not super_class:
                 raise ParseError("Super class %s could not be loaded"
                                  % super_name.get_embedded_string(), Symbol.NONE, self)
-            cgenc.set_instance_fields_of_super(
-                super_class.get_instance_fields())
-            cgenc.set_class_fields_of_super(
-                super_class.get_class(self._universe).get_instance_fields())
+            cgenc.set_super_class(super_class)
 
     def _sym_in(self, symbol_list):
         return self._sym in symbol_list

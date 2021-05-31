@@ -246,10 +246,10 @@ class Universe(object):
         self._load_system_class(self.nilClass)
         self._load_system_class(self.arrayClass)
         self._load_system_class(self.methodClass)
+        self._load_system_class(self.stringClass)
         self._load_system_class(self.symbolClass)
         self._load_system_class(self.integerClass)
         self._load_system_class(self.primitiveClass)
-        self._load_system_class(self.stringClass)
         self._load_system_class(self.doubleClass)
 
         # Load the generic block class

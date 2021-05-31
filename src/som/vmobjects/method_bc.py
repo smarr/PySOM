@@ -91,6 +91,9 @@ class BcMethod(AbstractObject):
     def get_number_of_arguments(self):
         return self._number_of_arguments
 
+    def get_number_of_signature_arguments(self):
+        return self._number_of_arguments
+
     def get_number_of_bytecodes(self):
         # Get the number of bytecodes in this method
         return len(self._bytecodes)

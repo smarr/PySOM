@@ -1,7 +1,7 @@
 from som.interpreter.ast.nodes.variable_node import UninitializedReadNode, \
     UninitializedWriteNode, LocalSharedWriteNode, LocalUnsharedWriteNode, \
-    NonLocalArgumentReadNode, NonLocalArgumentWriteNode, LocalSuperReadNode, \
-    NonLocalTempReadNode, NonLocalTempWriteNode, NonLocalSuperReadNode, \
+    NonLocalArgumentReadNode, NonLocalArgumentWriteNode, \
+    NonLocalTempReadNode, NonLocalTempWriteNode, \
     LocalArgumentReadNode, LocalArgumentWriteNode, LocalSelfReadNode, NonLocalSelfReadNode, \
     LocalUnsharedTempReadNode, LocalSharedTempReadNode
 
@@ -73,17 +73,6 @@ class Argument(_Variable):
 
     def get_argument_index(self):
         return self._arg_idx
-
-    def get_super_read_node(self, context_level, holder_class_name,
-                            on_class_side, universe):
-        self._is_read = True
-        if context_level > 0:
-            self._is_read_out_of_context = True
-            return NonLocalSuperReadNode(context_level, holder_class_name,
-                                         on_class_side, universe)
-        else:
-            return LocalSuperReadNode(holder_class_name, on_class_side,
-                                      universe, None)
 
     def is_self(self):
         return self._name == "self"

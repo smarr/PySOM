@@ -123,20 +123,6 @@ class _CachedDnuObjectCheckNode(_AbstractCachedDispatchNode):
             return self._next.execute_dispatch(rcvr, args)
 
 
-class SuperDispatchNode(_AbstractDispatchNode):
-
-    _immutable_fields_ = ['_cached_method']
-
-    def __init__(self, selector, lookup_class, universe):
-        _AbstractDispatchNode.__init__(self, universe)
-        self._cached_method = lookup_class.lookup_invokable(selector)
-        if self._cached_method is None:
-            raise RuntimeError("#dnu support for super missing")
-
-    def execute_dispatch(self, rcvr, args):
-        return self._cached_method.invoke(rcvr, args)
-
-
 # @jit.unroll_safe
 def _prepare_dnu_arguments(arguments, selector, universe):
     # Compute the number of arguments

@@ -40,23 +40,19 @@ class Interpreter(object):
 
     def _do_super_send(self, bytecode_index, frame, method):
         # Handle the super send bytecode
-        signature = method.get_constant(bytecode_index)
-
-        # Send the message
-        # Lookup the invokable with the given signature
-        invokable = method.get_holder().get_super_class().lookup_invokable(signature)
+        invokable = method.get_constant(bytecode_index)
 
         if invokable:
             # Invoke the invokable in the current frame
             invokable.invoke(frame, self)
         else:
             # Compute the number of arguments
-            num_args = signature.get_number_of_signature_arguments()
+            num_args = invokable.get_number_of_signature_arguments()
 
             # Compute the receiver
             receiver = frame.get_stack_element(num_args - 1)
 
-            self._send_does_not_understand(receiver, frame, signature)
+            self._send_does_not_understand(receiver, frame, invokable.get_signature())
 
     @jit.unroll_safe
     def _do_return_non_local(self, frame, ctx_level):
