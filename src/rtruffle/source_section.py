@@ -1,17 +1,11 @@
 class SourceCoordinate(object):
 
-    _immutable_fields_ = ['_start_line', '_start_column', '_char_idx']
+    _immutable_fields_ = ['start_line', 'start_column', 'char_idx']
 
     def __init__(self, start_line, start_column, char_idx):
-        self._start_line   = start_line
-        self._start_column = start_column
-        self._char_idx     = char_idx
-
-    def get_start_line(self):
-        return self._start_line
-
-    def get_start_column(self):
-        return self._start_column
+        self.start_line   = start_line
+        self.start_column = start_column
+        self.char_idx     = char_idx
 
 
 class SourceSection(object):
@@ -33,5 +27,5 @@ class SourceSection(object):
         self._identifier  = identifier
 
     def __str__(self):
-        return "%s:%d:%d" % (self._file, self._coord.get_start_line(),
-                             self._coord.get_start_column())
+        return "%s:%d:%d" % (self._file, self._coord.start_line,
+                             self._coord.start_column)
