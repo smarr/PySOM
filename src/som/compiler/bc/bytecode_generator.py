@@ -1,75 +1,96 @@
 from som.interpreter.bc.bytecodes import Bytecodes as BC
 
 
-class BytecodeGenerator(object):
+def emit_inc(mgenc):
+    _emit1(mgenc, BC.inc)
 
-    def emitINC(self, mgenc):
-        self._emit1(mgenc, BC.inc)
 
-    def emitDEC(self, mgenc):
-        self._emit1(mgenc, BC.dec)
+def emit_dec(mgenc):
+    _emit1(mgenc, BC.dec)
 
-    def emitPOP(self, mgenc):
-        self._emit1(mgenc, BC.pop)
 
-    def emitPUSHARGUMENT(self, mgenc, idx, ctx):
-        self._emit3(mgenc, BC.push_argument, idx, ctx)
+def emit_pop(mgenc):
+    _emit1(mgenc, BC.pop)
 
-    def emitRETURNSELF(self, mgenc):
-        self._emit1(mgenc, BC.return_self)
 
-    def emitRETURNLOCAL(self, mgenc):
-        self._emit1(mgenc, BC.return_local)
+def emit_push_argument(mgenc, idx, ctx):
+    _emit3(mgenc, BC.push_argument, idx, ctx)
 
-    def emitRETURNNONLOCAL(self, mgenc):
-        self._emit2(mgenc, BC.return_non_local, mgenc.get_max_context_level())
 
-    def emitDUP(self, mgenc):
-        self._emit1(mgenc, BC.dup)
+def emit_return_self(mgenc):
+    _emit1(mgenc, BC.return_self)
 
-    def emitPUSHBLOCK(self, mgenc, block_method):
-        self._emit2(mgenc, BC.push_block, mgenc.find_literal_index(block_method))
 
-    def emitPUSHLOCAL(self, mgenc, idx, ctx):
-        self._emit3(mgenc, BC.push_local, idx, ctx)
+def emit_return_local(mgenc):
+    _emit1(mgenc, BC.return_local)
 
-    def emitPUSHFIELD(self, mgenc, field_name):
-        self._emit3(mgenc, BC.push_field,
-                    mgenc.get_field_index(field_name), mgenc.get_max_context_level())
 
-    def emitPUSHGLOBAL(self, mgenc, glob):
-        self._emit2(mgenc, BC.push_global, mgenc.find_literal_index(glob))
+def emit_return_non_local(mgenc):
+    _emit2(mgenc, BC.return_non_local, mgenc.get_max_context_level())
 
-    def emitPOPARGUMENT(self, mgenc, idx, ctx):
-        self._emit3(mgenc, BC.pop_argument, idx, ctx)
 
-    def emitPOPLOCAL(self, mgenc, idx, ctx):
-        self._emit3(mgenc, BC.pop_local, idx, ctx)
+def emit_dup(mgenc):
+    _emit1(mgenc, BC.dup)
 
-    def emitPOPFIELD(self, mgenc, field_name):
-        self._emit3(mgenc, BC.pop_field,
-                    mgenc.get_field_index(field_name), mgenc.get_max_context_level())
 
-    def emitSUPERSEND(self, mgenc, msg):
-        self._emit2(mgenc, BC.super_send, mgenc.find_literal_index(msg))
+def emit_push_block(mgenc, block_method):
+    _emit2(mgenc, BC.push_block, mgenc.find_literal_index(block_method))
 
-    def emitSEND(self, mgenc, msg):
-        self._emit2(mgenc, BC.send, mgenc.find_literal_index(msg))
 
-    def emitPUSHCONSTANT(self, mgenc, lit):
-        self._emit2(mgenc, BC.push_constant, mgenc.find_literal_index(lit))
+def emit_push_local(mgenc, idx, ctx):
+    _emit3(mgenc, BC.push_local, idx, ctx)
 
-    def emitPUSHCONSTANT_index(self, mgenc, lit_index):
-        self._emit2(mgenc, BC.push_constant, lit_index)
 
-    def _emit1(self, mgenc, code):
-        mgenc.add_bytecode(code)
+def emit_push_field(mgenc, field_name):
+    _emit3(mgenc, BC.push_field,
+           mgenc.get_field_index(field_name), mgenc.get_max_context_level())
 
-    def _emit2(self, mgenc, code, idx):
-        mgenc.add_bytecode(code)
-        mgenc.add_bytecode(idx)
 
-    def _emit3(self, mgenc, code, idx, ctx):
-        mgenc.add_bytecode(code)
-        mgenc.add_bytecode(idx)
-        mgenc.add_bytecode(ctx)
+def emit_push_global(mgenc, glob):
+    _emit2(mgenc, BC.push_global, mgenc.find_literal_index(glob))
+
+
+def emit_pop_argument(mgenc, idx, ctx):
+    _emit3(mgenc, BC.pop_argument, idx, ctx)
+
+
+def emit_pop_local(mgenc, idx, ctx):
+    _emit3(mgenc, BC.pop_local, idx, ctx)
+
+
+def emit_pop_field(mgenc, field_name):
+    _emit3(mgenc, BC.pop_field,
+                mgenc.get_field_index(field_name), mgenc.get_max_context_level())
+
+
+def emit_super_send(mgenc, msg):
+    idx = mgenc.add_literal_if_absent(msg)
+    _emit2(mgenc, BC.super_send, idx)
+
+
+def emit_send(mgenc, msg):
+    idx = mgenc.add_literal_if_absent(msg)
+    _emit2(mgenc, BC.send, idx)
+
+
+def emit_push_constant(mgenc, lit):
+    _emit2(mgenc, BC.push_constant, mgenc.find_literal_index(lit))
+
+
+def emit_push_constant_index(mgenc, lit_index):
+    _emit2(mgenc, BC.push_constant, lit_index)
+
+
+def _emit1(mgenc, code):
+    mgenc.add_bytecode(code)
+
+
+def _emit2(mgenc, code, idx):
+    mgenc.add_bytecode(code)
+    mgenc.add_bytecode(idx)
+
+
+def _emit3(mgenc, code, idx, ctx):
+    mgenc.add_bytecode(code)
+    mgenc.add_bytecode(idx)
+    mgenc.add_bytecode(ctx)
