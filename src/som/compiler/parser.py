@@ -57,7 +57,7 @@ class ParserBase(object):
             cgenc.add_instance_method(mgenc.assemble(self._method(mgenc)))
 
         if self._accept(Symbol.Separator):
-            cgenc.set_class_side(True)
+            cgenc.switch_to_class_side()
             self._class_fields(cgenc)
 
             while (self._sym_is_identifier()      or

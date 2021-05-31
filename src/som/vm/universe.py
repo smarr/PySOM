@@ -363,10 +363,6 @@ class Universe(object):
         system_class.set_instance_fields(self.new_array_with_length(0))
         system_class.get_class(self).set_instance_fields(self.new_array_with_length(0))
 
-        # Initialize the array of instance invokables
-        system_class.set_instance_invokables(self.new_array_with_length(0))
-        system_class.get_class(self).set_instance_invokables(self.new_array_with_length(0))
-
         # Initialize the name of the system class
         system_class.set_name(self.symbol_for(name))
         system_class.get_class(self).set_name(self.symbol_for(name + " class"))
@@ -415,7 +411,7 @@ class Universe(object):
         result = self._load_class(name, None)
 
         # Add the appropriate value primitive to the block class
-        result.add_instance_primitive(
+        result.add_primitive(
             block_evaluation_primitive(number_of_arguments, self), True)
 
         # Insert the block class into the dictionary of globals

@@ -16,10 +16,10 @@ class Primitives(object):
 
     def _install_instance_primitive(self, primitive, warn_if_not_existing = False):
         # Install the given primitive as an instance primitive in the holder class
-        self._holder.add_instance_primitive(primitive, warn_if_not_existing)
+        self._holder.add_primitive(primitive, warn_if_not_existing)
 
     def _install_class_primitive(self, primitive, warn_if_not_existing = False):
         # Install the given primitive as an instance primitive in the class of
         # the holder class
         self._holder.get_class(
-            self._universe).add_instance_primitive(primitive, warn_if_not_existing)
+            self._universe).add_primitive(primitive, warn_if_not_existing)

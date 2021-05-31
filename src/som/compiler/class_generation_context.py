@@ -1,3 +1,8 @@
+from collections import OrderedDict
+
+from som.vmobjects.primitive import Primitive
+
+
 class ClassGenerationContext(object):
 
     def __init__(self, universe):
@@ -7,9 +12,13 @@ class ClassGenerationContext(object):
         self._super_name = None
         self._class_side = False  # to be overridden
         self._instance_fields  = []
-        self._instance_methods = []
         self._class_fields     = []
-        self._class_methods    = []
+
+        self._instance_methods = OrderedDict()
+        self._class_methods    = OrderedDict()
+
+        self._instance_has_primitives = False
+        self._class_has_primitives = False
 
     def get_name(self):
         return self._name
@@ -29,13 +38,17 @@ class ClassGenerationContext(object):
             self._class_fields.append(field_names.get_indexable_field(i))
 
     def add_instance_method(self, method):
-        self._instance_methods.append(method)
+        self._instance_methods[method.get_signature()] = method
+        if method.is_primitive():
+            self._instance_has_primitives = True
 
-    def set_class_side(self, boolean):
-        self._class_side = boolean
+    def switch_to_class_side(self):
+        self._class_side = True
 
     def add_class_method(self, method):
-        self._class_methods.append(method)
+        self._class_methods[method.get_signature()] = method
+        if method.is_primitive():
+            self._class_has_primitives = True
 
     def add_instance_field(self, field):
         self._instance_fields.append(field)
@@ -69,8 +82,8 @@ class ClassGenerationContext(object):
         # Initialize the class of the resulting class
         result_class.set_instance_fields(self._universe.new_array_from_list(
             self._class_fields[:]))
-        result_class.set_instance_invokables(self._universe.new_array_from_list(
-            self._class_methods[:]))
+        result_class.set_instance_invokables(
+            self._class_methods, self._class_has_primitives)
         result_class.set_name(self._universe.symbol_for(cc_name))
 
         super_m_class = super_class.get_class(self._universe)
@@ -84,20 +97,20 @@ class ClassGenerationContext(object):
         result.set_super_class(super_class)
         result.set_instance_fields(self._universe.new_array_from_list(
             self._instance_fields[:]))
-        result.set_instance_invokables(self._universe.new_array_from_list(
-            self._instance_methods[:]))
+        result.set_instance_invokables(
+            self._instance_methods, self._instance_has_primitives)
 
         return result
 
     def assemble_system_class(self, system_class):
         system_class.set_instance_invokables(
-            self._universe.new_array_from_list(self._instance_methods[:]))
+            self._instance_methods, self._instance_has_primitives)
         system_class.set_instance_fields(
             self._universe.new_array_from_list(self._instance_fields[:]))
 
         # class-bound == class-instance-bound
         super_m_class = system_class.get_class(self._universe)
         super_m_class.set_instance_invokables(
-            self._universe.new_array_from_list(self._class_methods[:]))
+            self._class_methods, self._class_has_primitives)
         super_m_class.set_instance_fields(
             self._universe.new_array_from_list(self._class_fields[:]))
