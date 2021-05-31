@@ -436,7 +436,7 @@ class Universe(object):
     def _load_primitives(clazz, is_system_class):
         if not clazz: return
 
-        if clazz.has_primitives() or is_system_class:
+        if clazz.needs_primitives() or is_system_class:
             clazz.load_primitives(not is_system_class)
 
     def _load_system_class(self, system_class):

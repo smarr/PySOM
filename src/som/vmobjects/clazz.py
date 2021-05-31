@@ -16,7 +16,7 @@ class _Class(Object):
                           "_name",
                           "_instance_fields"
                           "_invokables_table",
-                          "_has_primitives",
+                          "has_primitives",
                           "_universe"]
 
     def __init__(self, universe, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
@@ -25,7 +25,7 @@ class _Class(Object):
         self._name        = None
         self._instance_fields = None
         self._invokables_table = None
-        self._has_primitives = False
+        self.has_primitives = False
         self._universe = universe
 
     def get_super_class(self):
@@ -64,7 +64,7 @@ class _Class(Object):
         return Array.from_objects(result)
 
     def set_instance_invokables(self, value, has_primitives):
-        self._has_primitives = has_primitives
+        self.has_primitives = has_primitives
 
         if not value:
             assert self._invokables_table is None
@@ -134,8 +134,14 @@ class _Class(Object):
         # Get the total number of instance fields in this class
         return self.get_instance_fields().get_number_of_indexable_fields()
 
-    def has_primitives(self):
-        return self._has_primitives or self._class._has_primitives
+    def needs_primitives(self):
+        if self.has_primitives:
+            return True
+        # a bit involved to make RPython's type inferencer happy
+        clazz = self._class
+        if isinstance(clazz, Class):
+            return clazz.has_primitives
+        return False
 
     def load_primitives(self, display_warning):
         from som.primitives.known import (primitives_for_class,
