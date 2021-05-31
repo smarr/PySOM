@@ -20,19 +20,19 @@ def create_global_node(global_name, universe, source_section):
 
 class _UninitializedGlobalReadNode(ExpressionNode):
 
-    _immutable_fields_ = ["_global_name", "_universe"]
+    _immutable_fields_ = ["_global_name", "universe"]
 
     def __init__(self, global_name, universe, source_section = None):
         ExpressionNode.__init__(self, source_section)
         self._global_name = global_name
-        self._universe    = universe
+        self.universe    = universe
 
     def execute(self, frame):
-        if self._universe.has_global(self._global_name):
+        if self.universe.has_global(self._global_name):
             return self._specialize().execute(frame)
         else:
             return self.send_unknown_global(
-                frame.get_self(), self._global_name, self._universe)
+                frame.get_self(), self._global_name, self.universe)
 
     @staticmethod
     def send_unknown_global(receiver, global_name, universe):
@@ -40,7 +40,7 @@ class _UninitializedGlobalReadNode(ExpressionNode):
         return lookup_and_send(receiver, "unknownGlobal:", arguments, universe)
 
     def _specialize(self):
-        assoc = self._universe.get_globals_association(self._global_name)
+        assoc = self.universe.get_globals_association(self._global_name)
         cached = _CachedGlobalReadNode(assoc, self.get_source_section())
         return self.replace(cached)
 

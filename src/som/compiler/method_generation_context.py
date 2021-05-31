@@ -7,7 +7,7 @@ class MethodGenerationContextBase(object):
         self._signature    = None
         self._primitive    = False  # to be changed
 
-        self._universe = universe
+        self.universe = universe
 
     def set_holder(self, cgenc):
         self._holder_genc = cgenc

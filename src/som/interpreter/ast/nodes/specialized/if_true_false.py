@@ -6,7 +6,7 @@ from .....vmobjects.block_ast import AstBlock
 class IfTrueIfFalseNode(ExpressionNode):
 
     _immutable_fields_ = ['_rcvr_expr?', '_true_expr?', '_false_expr?',
-                          '_universe']
+                          'universe']
     _child_nodes_      = ['_rcvr_expr',  '_true_expr',  '_false_expr']
 
     def __init__(self, rcvr_expr, true_expr, false_expr, universe,
@@ -15,7 +15,7 @@ class IfTrueIfFalseNode(ExpressionNode):
         self._rcvr_expr  = self.adopt_child(rcvr_expr)
         self._true_expr  = self.adopt_child(true_expr)
         self._false_expr = self.adopt_child(false_expr)
-        self._universe   = universe
+        self.universe   = universe
 
     def execute(self, frame):
         rcvr  = self._rcvr_expr.execute(frame)
@@ -49,14 +49,14 @@ class IfTrueIfFalseNode(ExpressionNode):
     def specialize_node(selector, rcvr, args, node):
         return node.replace(
             IfTrueIfFalseNode(node._rcvr_expr, node._arg_exprs[0],
-                              node._arg_exprs[1], node._universe,
+                              node._arg_exprs[1], node.universe,
                               node._source_section))
 
 
 class IfNode(ExpressionNode):
 
     _immutable_fields_ = ['_rcvr_expr?', '_branch_expr?', '_condition',
-                          '_universe']
+                          'universe']
     _child_nodes_      = ['_rcvr_expr',  '_branch_expr']
 
     def __init__(self, rcvr_expr, branch_expr, condition_obj, universe,
@@ -65,7 +65,7 @@ class IfNode(ExpressionNode):
         self._rcvr_expr   = self.adopt_child(rcvr_expr)
         self._branch_expr = self.adopt_child(branch_expr)
         self._condition   = condition_obj
-        self._universe    = universe
+        self.universe    = universe
 
     def execute(self, frame):
         rcvr   = self._rcvr_expr.execute(frame)
@@ -99,9 +99,9 @@ class IfNode(ExpressionNode):
         if selector.get_embedded_string() == "ifTrue:":
             return node.replace(
                 IfNode(node._rcvr_expr, node._arg_exprs[0],
-                       trueObject, node._universe, node._source_section))
+                       trueObject, node.universe, node._source_section))
         else:
             assert selector.get_embedded_string() == "ifFalse:"
             return node.replace(
                 IfNode(node._rcvr_expr, node._arg_exprs[0],
-                       falseObject, node._universe, node._source_section))
+                       falseObject, node.universe, node._source_section))

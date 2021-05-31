@@ -20,7 +20,7 @@ def _object_size(rcvr):
 def _perform(ivkbl, rcvr, args):
     selector = args[0]
 
-    invokable = rcvr.get_class(ivkbl.get_universe()).lookup_invokable(selector)
+    invokable = rcvr.get_class(ivkbl.universe).lookup_invokable(selector)
     return invokable.invoke(rcvr, [])
 
 
@@ -33,7 +33,7 @@ def _perform_with_arguments(ivkbl, rcvr, arguments):
     arg_arr  = arguments[1].as_argument_array()
     selector = arguments[0]
 
-    invokable = rcvr.get_class(ivkbl.get_universe()).lookup_invokable(selector)
+    invokable = rcvr.get_class(ivkbl.universe).lookup_invokable(selector)
     return invokable.invoke(rcvr, arg_arr)
 
 
@@ -46,12 +46,12 @@ class ObjectPrimitives(_Base):
 
     def install_primitives(self):
         _Base.install_primitives(self)
-        self._install_instance_primitive(UnaryPrimitive("objectSize", self._universe, _object_size))
-        self._install_instance_primitive(Primitive("perform:", self._universe, _perform))
+        self._install_instance_primitive(UnaryPrimitive("objectSize", self.universe, _object_size))
+        self._install_instance_primitive(Primitive("perform:", self.universe, _perform))
         self._install_instance_primitive(
-            TernaryPrimitive("perform:inSuperclass:", self._universe, _perform_in_superclass))
+            TernaryPrimitive("perform:inSuperclass:", self.universe, _perform_in_superclass))
         self._install_instance_primitive(
-            Primitive("perform:withArguments:", self._universe, _perform_with_arguments))
+            Primitive("perform:withArguments:", self.universe, _perform_with_arguments))
 
         self._install_instance_primitive(
-            BinaryPrimitive("instVarNamed:",  self._universe, _inst_var_named))
+            BinaryPrimitive("instVarNamed:",  self.universe, _inst_var_named))

@@ -80,7 +80,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def assemble(self, method_body):
         if self._primitive:
-            return empty_primitive(self._signature.get_embedded_string(), self._universe)
+            return empty_primitive(self._signature.get_embedded_string(), self.universe)
 
         # local_args     = []
         non_local_args = []
@@ -101,11 +101,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
         method_body = self._add_argument_initialization(method_body)
         method = Invokable(self._get_source_section_for_method(method_body),
                            method_body, arg_mapping, len(local_tmps),
-                           len(non_local_tmps), self._universe)
+                           len(non_local_tmps), self.universe)
         return AstMethod(self._signature, method,
                       # copy list to make it immutable for RPython
                       self._embedded_block_methods[:],
-                      self._universe)
+                      self.universe)
 
     def _get_source_section_for_method(self, expr):
         src_body = expr.get_source_section()
@@ -182,7 +182,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
                                 self.get_field_index(field_name))
 
     def get_global_read(self, var_name):
-        return create_global_node(var_name, self._universe, None)
+        return create_global_node(var_name, self.universe, None)
 
     def get_object_field_write(self, field_name, exp):
         if not self.has_field(field_name):

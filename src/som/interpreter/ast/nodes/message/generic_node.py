@@ -35,12 +35,12 @@ class GenericMessageNode(AbstractMessageNode):
             return self._dispatch.execute_dispatch(rcvr, args)
 
     def _direct_dispatch(self, rcvr, args):
-        rcvr_class = rcvr.get_class(self._universe)
+        rcvr_class = rcvr.get_class(self.universe)
         method = rcvr_class.lookup_invokable(self._selector)
         if method:
             return method.invoke(rcvr, args)
         else:
-            return send_does_not_understand(rcvr, self._selector, args, self._universe)
+            return send_does_not_understand(rcvr, self._selector, args, self.universe)
 
     def __str__(self):
         return "%s(%s, %s)" % (self.__class__.__name__,

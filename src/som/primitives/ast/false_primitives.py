@@ -9,5 +9,5 @@ def _or(ivkbl, rcvr, args):
 
 FalsePrimitives = _Base
 
-# self._install_instance_primitive(Primitive("or:", self._universe, _or))
-# self._install_instance_primitive(Primitive("||", self._universe, _or))
+# self._install_instance_primitive(Primitive("or:", self.universe, _or))
+# self._install_instance_primitive(Primitive("||", self.universe, _or))

@@ -8,7 +8,7 @@ from som.vmobjects.abstract_object import AbstractObject
 class AstMethod(AbstractObject):
 
     _immutable_fields_ = ["_signature", "_invokable",
-                          "_embedded_block_methods", "_universe", "_holder"]
+                          "_embedded_block_methods", "universe", "_holder"]
 
     def __init__(self, signature, invokable, embedded_block_methods, universe):
         AbstractObject.__init__(self)
@@ -17,12 +17,9 @@ class AstMethod(AbstractObject):
         self._invokable    = invokable
 
         self._embedded_block_methods = embedded_block_methods
-        self._universe = universe
+        self.universe = universe
 
         self._holder   = None
-
-    def get_universe(self):
-        return self._universe
 
     @staticmethod
     def is_primitive():

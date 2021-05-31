@@ -39,7 +39,7 @@ class Parser(ParserBase):
 
             # if this block is empty, we need to return nil
             if mgenc.is_block_method() and not mgenc.has_bytecode():
-                nil_sym = self._universe.symbol_for("nil")
+                nil_sym = self.universe.symbol_for("nil")
                 mgenc.add_literal_if_absent(nil_sym)
                 emit_push_global(mgenc, nil_sym)
 
@@ -90,7 +90,7 @@ class Parser(ParserBase):
 
     def _assignment(self, mgenc):
         v   = self._variable()
-        var = self._universe.symbol_for(v)
+        var = self.universe.symbol_for(v)
         mgenc.add_literal_if_absent(var)
 
         self._expect(Symbol.Assign)
@@ -120,7 +120,7 @@ class Parser(ParserBase):
         elif self._sym == Symbol.NewTerm:
             self._nested_term(mgenc)
         elif self._sym == Symbol.NewBlock:
-            bgenc = MethodGenerationContext(self._universe)
+            bgenc = MethodGenerationContext(self.universe)
             bgenc.set_is_block_method(True)
             bgenc.set_holder(mgenc.get_holder())
             bgenc.set_outer(mgenc)
@@ -171,11 +171,11 @@ class Parser(ParserBase):
             emit_send(mgenc, msg)
 
     def _try_inc_or_dec_bytecodes(self, msg, is_super_send, mgenc):
-        is_inc_or_dec = msg is self._universe.symPlus or msg is self._universe.symMinus
+        is_inc_or_dec = msg is self.universe.symPlus or msg is self.universe.symMinus
         if is_inc_or_dec and not is_super_send:
             if self._sym == Symbol.Integer and self._text == "1":
                 self._expect(Symbol.Integer)
-                if msg is self._universe.symPlus:
+                if msg is self.universe.symPlus:
                     emit_inc(mgenc)
                 else:
                     emit_dec(mgenc)
@@ -215,7 +215,7 @@ class Parser(ParserBase):
             kw += self._keyword()
             self._formula(mgenc)
 
-        msg = self._universe.symbol_for(kw)
+        msg = self.universe.symbol_for(kw)
 
         if is_super_send:
             emit_super_send(mgenc, msg)
@@ -260,7 +260,7 @@ class Parser(ParserBase):
         self._expect(Symbol.Pound)
         if self._sym == Symbol.STString:
             s    = self._string()
-            symb = self._universe.symbol_for(s)
+            symb = self.universe.symbol_for(s)
         else:
             symb = self._selector()
 
@@ -279,10 +279,10 @@ class Parser(ParserBase):
         self._expect(Symbol.Pound)
         self._expect(Symbol.NewTerm)
 
-        array_class_name = self._universe.symbol_for("Array")
-        array_size_placeholder = self._universe.symbol_for("ArraySizeLiteralPlaceholder")
-        new_message = self._universe.symbol_for("new:")
-        at_put_message = self._universe.symbol_for("at:put:")
+        array_class_name = self.universe.symbol_for("Array")
+        array_size_placeholder = self.universe.symbol_for("ArraySizeLiteralPlaceholder")
+        new_message = self.universe.symbol_for("new:")
+        at_put_message = self.universe.symbol_for("at:put:")
 
         mgenc.add_literal_if_absent(array_class_name)
         array_size_literal_idx = mgenc.add_literal(array_size_placeholder)
@@ -316,7 +316,7 @@ class Parser(ParserBase):
         # a return
         if not mgenc.is_finished():
             if not mgenc.has_bytecode():
-                nil_sym = self._universe.symNil
+                nil_sym = self.universe.symNil
                 mgenc.add_literal_if_absent(nil_sym)
                 emit_push_global(mgenc, nil_sym)
             emit_return_local(mgenc)
@@ -339,7 +339,7 @@ class Parser(ParserBase):
             else:
                 emit_push_local(mgenc, triplet[0], triplet[1])
         else:
-            identifier = self._universe.symbol_for(var)
+            identifier = self.universe.symbol_for(var)
             if mgenc.has_field(identifier):
                 field_name = identifier
                 mgenc.add_literal_if_absent(field_name)
@@ -364,4 +364,4 @@ class Parser(ParserBase):
             else:
                 emit_pop_local(mgenc, triplet[0], triplet[1])
         else:
-            emit_pop_field(mgenc, self._universe.symbol_for(var))
+            emit_pop_field(mgenc, self.universe.symbol_for(var))

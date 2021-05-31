@@ -4,11 +4,11 @@ from .literal_node import LiteralNode
 
 class BlockNode(LiteralNode):
 
-    _immutable_fields_ = ['_universe']
+    _immutable_fields_ = ['universe']
 
     def __init__(self, value, universe, source_section = None):
         LiteralNode.__init__(self, value, source_section)
-        self._universe = universe
+        self.universe = universe
 
     def execute(self, frame):
         return AstBlock(self._value, (None, None, None, None))

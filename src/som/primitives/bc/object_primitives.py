@@ -21,7 +21,7 @@ def _perform(ivkbl, frame, interpreter):
     selector = frame.pop()
     rcvr     = frame.top()
 
-    invokable = rcvr.get_class(interpreter.get_universe()).lookup_invokable(selector)
+    invokable = rcvr.get_class(interpreter.universe).lookup_invokable(selector)
     invokable.invoke(frame, interpreter)
 
 
@@ -42,7 +42,7 @@ def _perform_with_arguments(ivkbl, frame, interpreter):
     for i in range(0, args.get_number_of_indexable_fields()):
         frame.push(args.get_indexable_field(i))
 
-    invokable = rcvr.get_class(interpreter.get_universe()).lookup_invokable(selector)
+    invokable = rcvr.get_class(interpreter.universe).lookup_invokable(selector)
     invokable.invoke(frame, interpreter)
 
 
@@ -50,9 +50,9 @@ class ObjectPrimitives(_Base):
 
     def install_primitives(self):
         _Base.install_primitives(self)
-        self._install_instance_primitive(UnaryPrimitive("objectSize", self._universe, _object_size))
-        self._install_instance_primitive(Primitive("perform:", self._universe, _perform))
+        self._install_instance_primitive(UnaryPrimitive("objectSize", self.universe, _object_size))
+        self._install_instance_primitive(Primitive("perform:", self.universe, _perform))
         self._install_instance_primitive(
-            Primitive("perform:inSuperclass:", self._universe, _perform_in_superclass))
+            Primitive("perform:inSuperclass:", self.universe, _perform_in_superclass))
         self._install_instance_primitive(
-            Primitive("perform:withArguments:", self._universe, _perform_with_arguments))
+            Primitive("perform:withArguments:", self.universe, _perform_with_arguments))

@@ -71,7 +71,7 @@ class IntToIntByDoNode(AbstractToByDoNode):
         return node.replace(
             IntToIntByDoNode(node._rcvr_expr, node._arg_exprs[0],
                              node._arg_exprs[1], node._arg_exprs[2],
-                             node._universe, node._source_section))
+                             node.universe, node._source_section))
 
 double_driver = jit.JitDriver(
     greens=['block_method'],
@@ -107,4 +107,4 @@ class IntToDoubleByDoNode(AbstractToByDoNode):
         return node.replace(
             IntToDoubleByDoNode(node._rcvr_expr, node._arg_exprs[0],
                                 node._arg_exprs[1], node._arg_exprs[2],
-                                node._universe, node._source_section))
+                                node.universe, node._source_section))

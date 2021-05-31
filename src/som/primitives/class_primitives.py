@@ -25,8 +25,8 @@ def _fields(rcvr):
 
 class ClassPrimitives(Primitives):
     def install_primitives(self):
-        self._install_instance_primitive(UnaryPrimitive("new",        self._universe, _new))
-        self._install_instance_primitive(UnaryPrimitive("name",       self._universe, _name))
-        self._install_instance_primitive(UnaryPrimitive("superclass", self._universe, _super_class))
-        self._install_instance_primitive(UnaryPrimitive("methods",    self._universe, _methods))
-        self._install_instance_primitive(UnaryPrimitive("fields",     self._universe, _fields))
+        self._install_instance_primitive(UnaryPrimitive("new",        self.universe, _new))
+        self._install_instance_primitive(UnaryPrimitive("name",       self.universe, _name))
+        self._install_instance_primitive(UnaryPrimitive("superclass", self.universe, _super_class))
+        self._install_instance_primitive(UnaryPrimitive("methods",    self.universe, _methods))
+        self._install_instance_primitive(UnaryPrimitive("fields",     self.universe, _fields))

@@ -29,7 +29,7 @@ jitdriver = jit.JitDriver(
 
 class Invokable(Node):
 
-    _immutable_fields_ = ['_expr_or_sequence?', '_universe', '_arg_mapping[*]',
+    _immutable_fields_ = ['_expr_or_sequence?', 'universe', '_arg_mapping[*]',
                           '_num_local_temps', '_num_context_temps']
     _child_nodes_      = ['_expr_or_sequence']
 
@@ -38,7 +38,7 @@ class Invokable(Node):
                  universe):
         Node.__init__(self, source_section)
         self._expr_or_sequence  = self.adopt_child(expr_or_sequence)
-        self._universe          = universe
+        self.universe           = universe
         assert isinstance(arg_mapping, list)
         self._arg_mapping = arg_mapping
         self._num_local_temps   = number_of_local_temps

@@ -10,7 +10,7 @@ from .....vmobjects.method_ast import AstMethod
 class AbstractWhileMessageNode(ExpressionNode):
 
     _immutable_fields_ = ['_predicate_bool', '_rcvr_expr?', '_body_expr?',
-                          '_universe']
+                          'universe']
     _child_nodes_      = ['_rcvr_expr', '_body_expr']
 
     def __init__(self, rcvr_expr, body_expr, predicate_bool_obj, universe,
@@ -19,7 +19,7 @@ class AbstractWhileMessageNode(ExpressionNode):
         self._predicate_bool = predicate_bool_obj
         self._rcvr_expr      = self.adopt_child(rcvr_expr)
         self._body_expr      = self.adopt_child(body_expr)
-        self._universe       = universe
+        self.universe       = universe
 
     def execute(self, frame):
         rcvr_value = self._rcvr_expr.execute(frame)
@@ -104,11 +104,11 @@ class WhileMessageNode(AbstractWhileMessageNode):
         if sel == "whileTrue:":
             return node.replace(
                 WhileMessageNode(node._rcvr_expr, node._arg_exprs[0],
-                                 trueObject, node._universe,
+                                 trueObject, node.universe,
                                  node._source_section))
         else:
             assert sel == "whileFalse:"
             return node.replace(
                 WhileMessageNode(node._rcvr_expr, node._arg_exprs[0],
-                                 falseObject, node._universe,
+                                 falseObject, node.universe,
                                  node._source_section))
