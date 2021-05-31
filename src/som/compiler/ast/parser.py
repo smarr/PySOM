@@ -83,8 +83,7 @@ class Parser(ParserBase):
                                       exp, self._universe)
             mgenc.make_catch_non_local_return()
             return self._assign_source(node, coord)
-        else:
-            return exp
+        return exp
 
     def _assignation(self, mgenc):
         return self._assignments(mgenc)
@@ -225,26 +224,22 @@ class Parser(ParserBase):
 
             if self._next_sym == Symbol.NewTerm:
                 return self._literal_array()
-            else:
-                return self._literal_symbol()
+            return self._literal_symbol()
         elif self._sym == Symbol.STString:
             return self._literal_string()
-        else:
-            return self._literal_number()
+        return self._literal_number()
 
     def _literal_number(self):
         if self._sym == Symbol.Minus:
             return self._negative_decimal()
-        else:
-            return self._literal_decimal(False)
+        return self._literal_decimal(False)
 
     def _literal_symbol(self):
         self._expect(Symbol.Pound)
         if self._sym == Symbol.STString:
             s = self._string()
             return self._universe.symbol_for(s)
-        else:
-            return self._selector()
+        return self._selector()
 
     def _literal_string(self):
         s = self._string()
