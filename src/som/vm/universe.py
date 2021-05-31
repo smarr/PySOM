@@ -38,20 +38,14 @@ from rlib.osext import path_split
 
 class Assoc(object):
 
-    _immutable_fields_ = ["_global_name", "_value?"]
+    _immutable_fields_ = ["global_name", "value?"]
 
     def __init__(self, global_name, value):
-        self._global_name = global_name
-        self._value       = value
-
-    def get_value(self):
-        return self._value
-
-    def set_value(self, value):
-        self._value = value
+        self.global_name = global_name
+        self.value       = value
 
     def __str__(self):
-        return "(%s => %s)" % (self._global_name, self._value)
+        return "(%s => %s)" % (self.global_name, self.value)
 
 
 class Universe(object):
@@ -375,7 +369,7 @@ class Universe(object):
         jit.promote(self)
         assoc = self._get_global(name)
         if assoc:
-            return assoc.get_value()
+            return assoc.value
         else:
             return None
 
@@ -384,7 +378,7 @@ class Universe(object):
         return self._globals.get(name, None)
 
     def set_global(self, name, value):
-        self.get_globals_association(name).set_value(value)
+        self.get_globals_association(name).value = value
 
     @jit.elidable_promote("all")
     def has_global(self, name):

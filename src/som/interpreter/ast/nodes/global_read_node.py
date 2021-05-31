@@ -54,7 +54,7 @@ class _CachedGlobalReadNode(ExpressionNode):
         self._assoc = assoc
 
     def execute(self, _frame):
-        return self._assoc.get_value()
+        return self._assoc.value
 
 
 class _ConstantGlobalReadNode(ExpressionNode):
