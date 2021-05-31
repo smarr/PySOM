@@ -33,11 +33,11 @@ class UninitializedDispatchNode(_AbstractDispatchWithLookupNode):
         i_node = self
         chain_depth = 0
 
-        while isinstance(i_node.get_parent(), _AbstractDispatchNode):
-            i_node = i_node.get_parent()
+        while isinstance(i_node.parent, _AbstractDispatchNode):
+            i_node = i_node.parent
             chain_depth += 1
 
-        send_node = i_node.get_parent()
+        send_node = i_node.parent
 
         if chain_depth < _AbstractDispatchNode.INLINE_CACHE_SIZE:
             rcvr_class = rcvr.get_class(self._universe)
