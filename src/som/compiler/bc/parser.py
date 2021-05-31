@@ -165,7 +165,6 @@ class Parser(ParserBase):
 
     def _unary_message(self, mgenc, is_super_send):
         msg = self._unary_selector()
-        mgenc.add_literal_if_absent(msg)
 
         if is_super_send:
             emit_super_send(mgenc, msg)
@@ -186,7 +185,6 @@ class Parser(ParserBase):
 
     def _binary_message(self, mgenc, is_super_send):
         msg = self._binary_selector()
-        mgenc.add_literal_if_absent(msg)
 
         if self._try_inc_or_dec_bytecodes(msg, is_super_send, mgenc):
             return
@@ -216,8 +214,6 @@ class Parser(ParserBase):
             self._formula(mgenc)
 
         msg = self._universe.symbol_for(kw)
-
-        mgenc.add_literal_if_absent(msg)
 
         if is_super_send:
             emit_super_send(mgenc, msg)
@@ -285,9 +281,6 @@ class Parser(ParserBase):
         at_put_message = self._universe.symbol_for("at:put:")
 
         mgenc.add_literal_if_absent(array_class_name)
-        mgenc.add_literal_if_absent(new_message)
-        mgenc.add_literal_if_absent(at_put_message)
-
         array_size_literal_idx = mgenc.add_literal(array_size_placeholder)
 
         # create empty array

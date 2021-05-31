@@ -79,10 +79,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def add_literal_if_absent(self, lit):
         if lit in self._literals:
-            return False
+            return self._literals.index(lit)
 
         self._literals.append(lit)
-        return True
+        return len(self._literals) - 1
 
     def add_literal(self, lit):
         i = len(self._literals)
