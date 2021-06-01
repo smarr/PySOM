@@ -81,7 +81,7 @@ class ClassGenerationContext(object):
         result_class = self._universe.new_class(self._universe.metaclassClass)
 
         # Initialize the class of the resulting class
-        result_class.set_instance_fields(Array.from_values(
+        result_class.set_instance_fields(Array.from_objects(
             self._class_fields[:]))
         result_class.set_instance_invokables(
             self._class_methods, self._class_has_primitives)
@@ -96,7 +96,7 @@ class ClassGenerationContext(object):
         # Initialize the resulting class
         result.set_name(self._name)
         result.set_super_class(super_class)
-        result.set_instance_fields(Array.from_values(self._instance_fields[:]))
+        result.set_instance_fields(Array.from_objects(self._instance_fields[:]))
         result.set_instance_invokables(
             self._instance_methods, self._instance_has_primitives)
 
@@ -105,10 +105,10 @@ class ClassGenerationContext(object):
     def assemble_system_class(self, system_class):
         system_class.set_instance_invokables(
             self._instance_methods, self._instance_has_primitives)
-        system_class.set_instance_fields(Array.from_values(self._instance_fields[:]))
+        system_class.set_instance_fields(Array.from_objects(self._instance_fields[:]))
 
         # class-bound == class-instance-bound
         super_m_class = system_class.get_class(self._universe)
         super_m_class.set_instance_invokables(
             self._class_methods, self._class_has_primitives)
-        super_m_class.set_instance_fields(Array.from_values(self._class_fields[:]))
+        super_m_class.set_instance_fields(Array.from_objects(self._class_fields[:]))

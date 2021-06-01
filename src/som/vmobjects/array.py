@@ -117,7 +117,6 @@ class _ArrayStrategy(object):
             _ArrayStrategy._set_remaining_with_block_as_obj(array, block, size,
                                                             1, obj_store)
 
-
     @staticmethod
     def _set_remaining_with_block_as_nil(array, block, size, next_i):
         block_method = block.get_method()
@@ -693,8 +692,6 @@ class _PartiallyEmptyStrategy(_ArrayStrategy):
     def set_all_with_block(self, array, block):
         assert isinstance(array, Array)
         store = self._unerase(array._storage)
-
-        # TODO: perhaps we can sometimes avoid the extra allocation of the underlying storage
         self._set_all_with_block(array, block, store.size)
 
     def as_arguments_array(self, storage):
@@ -793,7 +790,11 @@ class Array(AbstractObject):
 
     @staticmethod
     def from_objects(values):
-        return Array.from_values(values, _obj_strategy)
+        self = instantiate(Array)
+        make_sure_not_resized(values)
+        self._strategy = _obj_strategy
+        self._storage = self._strategy.new_storage_with_values(values)
+        return self
 
     @staticmethod
     def _determine_strategy(values):
