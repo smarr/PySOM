@@ -309,18 +309,18 @@ class ParserBase(object):
 
     def _get_symbol_from_lexer(self):
         self._sym  = self._lexer.get_sym()
-        self._text = self._lexer.get_text()
+        self._text = self._lexer.text
 
     def _peek_for_next_symbol_from_lexer(self):
         self._next_sym = self._lexer.peek()
 
     def _peek_for_next_symbol_from_lexer_if_necessary(self):
-        if not self._lexer.get_peek_done():
+        if not self._lexer.peek_done:
             self._peek_for_next_symbol_from_lexer()
 
     def _create_block_signature(self, mgenc):
         block_sig = ("$blockMethod@" +
-                     str(self._lexer.get_current_line_number()) +
+                     str(self._lexer.line_number) +
                      "@" + str(self._lexer.get_current_column()))
         arg_size = mgenc.get_number_of_arguments()
         block_sig += ":" * (arg_size - 1)
