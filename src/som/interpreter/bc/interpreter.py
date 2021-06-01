@@ -39,19 +39,27 @@ class Interpreter(object):
         self.get_self(frame, ctx_level).set_field(field_index, frame.pop())
 
     def _do_super_send(self, bytecode_index, frame, method):
-        # Handle the super send bytecode
-        invokable = method.get_constant(bytecode_index)
+        signature = method.get_constant(bytecode_index)
+
+        receiver_class = method.get_holder().get_super_class()
+        invokable = receiver_class.lookup_invokable(signature)
+        method.set_inline_cache(bytecode_index, receiver_class, invokable)
+        method.set_bytecode(bytecode_index, Bytecodes.q_super_send)
 
         if invokable:
-            # Invoke the invokable in the current frame
             invokable.invoke(frame, self)
         else:
-            # Compute the number of arguments
             num_args = invokable.get_number_of_signature_arguments()
-
-            # Compute the receiver
             receiver = frame.get_stack_element(num_args - 1)
+            self._send_does_not_understand(receiver, frame, invokable.get_signature())
 
+    def _do_q_super_send(self, bytecode_index, frame, method):
+        invokable = method.get_inline_cache_invokable(bytecode_index)
+        if invokable:
+            invokable.invoke(frame, self)
+        else:
+            num_args = invokable.get_number_of_signature_arguments()
+            receiver = frame.get_stack_element(num_args - 1)
             self._send_does_not_understand(receiver, frame, invokable.get_signature())
 
     @jit.unroll_safe
@@ -189,6 +197,8 @@ class Interpreter(object):
                 else:
                     return self._not_yet_implemented()
                 frame.set_top(result)
+            elif bytecode == Bytecodes.q_super_send:
+                self._do_q_super_send(current_bc_idx, frame, method)
             else:
                 self._unknown_bytecode(bytecode)
 

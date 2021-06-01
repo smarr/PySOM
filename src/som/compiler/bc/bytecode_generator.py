@@ -64,11 +64,7 @@ def emit_pop_field(mgenc, field_name):
 
 
 def emit_super_send(mgenc, msg):
-    super_class = mgenc.get_holder().get_super_class()
-    method = super_class.lookup_invokable(msg)
-    if not method:
-        raise Exception("Not yet implemented")
-    idx = mgenc.add_literal_if_absent(method)
+    idx = mgenc.add_literal_if_absent(msg)
     _emit2(mgenc, BC.super_send, idx)
 
 
