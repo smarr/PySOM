@@ -21,21 +21,6 @@ class BigInteger(AbstractObject):
     def get_class(self, universe):
         return universe.integerClass
 
-    def quick_add(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.pop()
-        frame.pop()
-        frame.push(self.prim_add(right))
-
-    def quick_multiply(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.pop()
-        frame.pop()
-        frame.push(self.prim_multiply(right))
-
-    def quick_subtract(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.pop()
-        frame.pop()
-        frame.push(self.prim_subtract(right))
-
     def _to_double(self):
         from .double import Double
         return Double(self._embedded_biginteger.tofloat())
@@ -118,6 +103,12 @@ class BigInteger(AbstractObject):
         if right_big.gt(self._embedded_biginteger):
             return right
         return self
+
+    def prim_inc(self):
+        return BigInteger(bigint_from_int(1).add(self._embedded_biginteger))
+
+    def prim_dec(self):
+        return BigInteger(bigint_from_int(1).sub(self._embedded_biginteger))
 
     def prim_add(self, right):
         from .double import Double

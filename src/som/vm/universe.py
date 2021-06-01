@@ -95,6 +95,10 @@ class Universe(object):
         self.stringClass    = None
         self.doubleClass    = None
 
+        self.symNil = None
+        self.symPlus = None
+        self.symMinus = None
+
         self._last_exit_code = 0
         self._avoid_exit     = avoid_exit
         self._dump_bytecodes = False
@@ -266,8 +270,12 @@ class Universe(object):
         self.systemClass = self.load_class(self.symbol_for("System"))
         system_object = self.new_instance(self.systemClass)
 
+        self.symNil = self.symbol_for("nil")
+        self.symPlus = self.symbol_for("+")
+        self.symMinus = self.symbol_for("+")
+
         # Put special objects and classes into the dictionary of globals
-        self.set_global(self.symbol_for("nil"),    nilObject)
+        self.set_global(self.symNil,               nilObject)
         self.set_global(self.symbol_for("true"),   trueObject)
         self.set_global(self.symbol_for("false"),  falseObject)
         self.set_global(self.symbol_for("system"), system_object)
@@ -389,6 +397,9 @@ class Universe(object):
             assoc = Assoc(name, nilObject)
             self._globals[name] = assoc
         return assoc
+
+    def get_globals_association_or_none(self, name):
+        return self._globals.get(name, None)
 
     def _get_block_class(self, number_of_arguments):
         return self.blockClasses[number_of_arguments]
@@ -514,7 +525,6 @@ class _BCUniverse(Universe):
 
     def _initialize_object_system(self):
         system_object = Universe._initialize_object_system(self)
-        self._interpreter.initialize_known_quick_sends()
         return system_object
 
 

@@ -5,7 +5,7 @@ from ..parse_error import ParseError
 from ..parser import ParserBase
 
 from ...interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
-from ...interpreter.ast.nodes.global_read_node import UninitializedGlobalReadNode
+from ...interpreter.ast.nodes.global_read_node import create_global_node
 from ...interpreter.ast.nodes.literal_node import LiteralNode
 from ...interpreter.ast.nodes.message.uninitialized_node import UninitializedMessageNode
 from ...interpreter.ast.nodes.return_non_local_node import ReturnNonLocalNode
@@ -62,9 +62,11 @@ class Parser(ParserBase):
 
     def _create_sequence_node(self, coordinate, expressions):
         if not expressions:
-            nil_exp = UninitializedGlobalReadNode(
-                self._universe.symbol_for("nil"), self._universe)
-            return self._assign_source(nil_exp, coordinate)
+            nil_exp = create_global_node(
+                self._universe.symNil,
+                self._universe,
+                self._get_source_section(coordinate))
+            return nil_exp
         if len(expressions) == 1:
             return expressions[0]
 
@@ -81,8 +83,7 @@ class Parser(ParserBase):
                                       exp, self._universe)
             mgenc.make_catch_non_local_return()
             return self._assign_source(node, coord)
-        else:
-            return exp
+        return exp
 
     def _assignation(self, mgenc):
         return self._assignments(mgenc)
@@ -223,26 +224,22 @@ class Parser(ParserBase):
 
             if self._next_sym == Symbol.NewTerm:
                 return self._literal_array()
-            else:
-                return self._literal_symbol()
+            return self._literal_symbol()
         elif self._sym == Symbol.STString:
             return self._literal_string()
-        else:
-            return self._literal_number()
+        return self._literal_number()
 
     def _literal_number(self):
         if self._sym == Symbol.Minus:
             return self._negative_decimal()
-        else:
-            return self._literal_decimal(False)
+        return self._literal_decimal(False)
 
     def _literal_symbol(self):
         self._expect(Symbol.Pound)
         if self._sym == Symbol.STString:
             s = self._string()
             return self._universe.symbol_for(s)
-        else:
-            return self._selector()
+        return self._selector()
 
     def _literal_string(self):
         s = self._string()

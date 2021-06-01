@@ -8,7 +8,7 @@ from ..method_generation_context import MethodGenerationContextBase
 from ...interpreter.ast.nodes.field_node import create_write_node, \
                                                       create_read_node
 from ...interpreter.ast.nodes.global_read_node import \
-    UninitializedGlobalReadNode
+    create_global_node
 from ...interpreter.ast.nodes.return_non_local_node import CatchNonLocalReturnNode
 from ...interpreter.ast.invokable import Invokable
 
@@ -182,7 +182,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
                                 self.get_field_index(field_name))
 
     def get_global_read(self, var_name):
-        return UninitializedGlobalReadNode(var_name, self._universe)
+        return create_global_node(var_name, self._universe, None)
 
     def get_object_field_write(self, field_name, exp):
         if not self.has_field(field_name):

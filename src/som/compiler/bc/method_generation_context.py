@@ -79,10 +79,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def add_literal_if_absent(self, lit):
         if lit in self._literals:
-            return False
+            return self._literals.index(lit)
 
         self._literals.append(lit)
-        return True
+        return len(self._literals) - 1
 
     def add_literal(self, lit):
         i = len(self._literals)
@@ -112,6 +112,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return self._outer_genc.find_var(var, triplet)
         else:
             return False
+
+    def get_max_context_level(self):
+        if self._outer_genc is None:
+            return 0
+        return 1 + self._outer_genc.get_max_context_level()
 
     def add_bytecode(self, bc):
         self._bytecode.append(bc)

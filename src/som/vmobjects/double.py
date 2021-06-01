@@ -23,21 +23,6 @@ class Double(AbstractObject):
     def get_class(self, universe):
         return universe.doubleClass
 
-    def quick_add(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.pop()
-        frame.pop()
-        frame.push(self.prim_add(right))
-
-    def quick_multiply(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.pop()
-        frame.pop()
-        frame.push(self.prim_multiply(right))
-
-    def quick_subtract(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.pop()
-        frame.pop()
-        frame.push(self.prim_subtract(right))
-
     @staticmethod
     def _get_float(obj):
         from .integer import Integer
@@ -53,6 +38,12 @@ class Double(AbstractObject):
     def prim_multiply(self, right):
         r = self._get_float(right)
         return Double(self._embedded_double * r)
+
+    def prim_inc(self):
+        return Double(self._embedded_double + 1.0)
+
+    def prim_dec(self):
+        return Double(self._embedded_double - 1.0)
 
     def prim_add(self, right):
         r = self._get_float(right)

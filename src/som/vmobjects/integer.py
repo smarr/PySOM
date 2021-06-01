@@ -23,24 +23,6 @@ class Integer(AbstractObject):
     def get_class(self, universe):
         return universe.integerClass
 
-    def quick_add(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.top()
-        frame.pop()
-        frame.pop()
-        frame.push(self.prim_add(right))
-
-    def quick_multiply(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.top()
-        frame.pop()
-        frame.pop()
-        frame.push(self.prim_multiply(right))
-
-    def quick_subtract(self, from_method, frame, interpreter, bytecode_index):
-        right = frame.top()
-        frame.pop()
-        frame.pop()
-        frame.push(self.prim_subtract(right))
-
     def _to_double(self):
         from .double import Double
         return Double(float(self._embedded_integer))
@@ -122,6 +104,26 @@ class Integer(AbstractObject):
         if right.get_embedded_integer() > self._embedded_integer:
             return right
         return self
+
+    def prim_inc(self):
+        from .biginteger import BigInteger
+        l = self._embedded_integer
+        try:
+            result = ovfcheck(l + 1)
+            return Integer(result)
+        except OverflowError:
+            return BigInteger(
+                bigint_from_int(l).add(bigint_from_int(1)))
+
+    def prim_dec(self):
+        from .biginteger import BigInteger
+        l = self._embedded_integer
+        try:
+            result = ovfcheck(l - 1)
+            return Integer(result)
+        except OverflowError:
+            return BigInteger(
+                bigint_from_int(l).sub(bigint_from_int(1)))
 
     def prim_add(self, right):
         from .double import Double

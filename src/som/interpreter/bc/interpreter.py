@@ -8,61 +8,13 @@ from rlib import jit
 
 class Interpreter(object):
 
-    _immutable_fields_ = ["_universe", "_add_symbol"]
+    _immutable_fields_ = ["_universe"]
 
     def __init__(self, universe):
         self._universe   = universe
-        self._add_symbol      = None
-        self._multiply_symbol = None
-        self._subtract_symbol = None
-
-    def initialize_known_quick_sends(self):
-        self._add_symbol      = self._universe.symbol_for("+")
-        self._multiply_symbol = self._universe.symbol_for("*")
-        self._subtract_symbol = self._universe.symbol_for("-")
 
     def get_universe(self):
         return self._universe
-
-    @staticmethod
-    def _do_dup(frame):
-        # Handle the dup bytecode
-        frame.push(frame.top())
-
-    @staticmethod
-    def _do_push_local(bytecode_index, frame, method):
-        # Handle the push local bytecode
-        frame.push(
-            frame.get_local(
-                method.get_bytecode(bytecode_index + 1),
-                method.get_bytecode(bytecode_index + 2)))
-
-    @staticmethod
-    def _do_push_argument(bytecode_index, frame, method):
-        # Handle the push argument bytecode
-        frame.push(
-            frame.get_argument(method.get_bytecode(bytecode_index + 1),
-                               method.get_bytecode(bytecode_index + 2)))
-
-    def _do_push_field(self, bytecode_index, frame, method):
-        # Handle the push field bytecode
-        field_index = method.get_bytecode(bytecode_index + 1)
-
-        # Push the field with the computed index onto the stack
-        frame.push(self.get_self(frame).get_field(field_index))
-
-    def _do_push_block(self, bytecode_index, frame, method):
-        # Handle the push block bytecode
-        block_method = method.get_constant(bytecode_index)
-
-        # Push a new block with the current frame as context onto the
-        # stack
-        frame.push(BcBlock(block_method, frame))
-
-    @staticmethod
-    def _do_push_constant(bytecode_index, frame, method):
-        # Handle the push constant bytecode
-        frame.push(method.get_constant(bytecode_index))
 
     def _do_push_global(self, bytecode_index, frame, method):
         # Handle the push global bytecode
@@ -76,33 +28,15 @@ class Interpreter(object):
             frame.push(glob)
         else:
             # Send 'unknownGlobal:' to self
-            self._send_unknown_global(self.get_self(frame), frame, global_name)
-
-    @staticmethod
-    def _do_pop(frame):
-        # Handle the pop bytecode
-        frame.pop()
-
-    @staticmethod
-    def _do_pop_local(bytecode_index, frame, method):
-        # Handle the pop local bytecode
-        frame.set_local(method.get_bytecode(bytecode_index + 1),
-                        method.get_bytecode(bytecode_index + 2),
-                        frame.pop())
-
-    @staticmethod
-    def _do_pop_argument(bytecode_index, frame, method):
-        # Handle the pop argument bytecode
-        frame.set_argument(method.get_bytecode(bytecode_index + 1),
-                           method.get_bytecode(bytecode_index + 2),
-                           frame.pop())
+            self._send_unknown_global(self.get_self_dynamically(frame), frame, global_name)
 
     def _do_pop_field(self, bytecode_index, frame, method):
         # Handle the pop field bytecode
         field_index = method.get_bytecode(bytecode_index + 1)
+        ctx_level = method.get_bytecode(bytecode_index + 2)
 
         # Set the field with the computed index to the value popped from the stack
-        self.get_self(frame).set_field(field_index, frame.pop())
+        self.get_self(frame, ctx_level).set_field(field_index, frame.pop())
 
     def _do_super_send(self, bytecode_index, frame, method):
         # Handle the super send bytecode
@@ -124,17 +58,13 @@ class Interpreter(object):
 
             self._send_does_not_understand(receiver, frame, signature)
 
-    @staticmethod
-    def _do_return_local(frame):
-        return frame.top()
-
     @jit.unroll_safe
-    def _do_return_non_local(self, frame):
+    def _do_return_non_local(self, frame, ctx_level):
         # get result from stack
         result = frame.top()
 
         # Compute the context for the non-local return
-        context = frame.get_outer_context()
+        context = frame.get_context_at(ctx_level)
 
         # Make sure the block context is still on the stack
         if not context.has_previous_frame():
@@ -150,18 +80,6 @@ class Interpreter(object):
             return frame.top()
 
         raise ReturnException(result, context)
-
-    def _do_add(self, bytecode_index, frame, method):
-        rcvr  = frame.get_stack_element(1)
-        rcvr.quick_add(method, frame, self, bytecode_index)
-
-    def _do_multiply(self, bytecode_index, frame, method):
-        rcvr  = frame.get_stack_element(1)
-        rcvr.quick_multiply(method, frame, self, bytecode_index)
-
-    def _do_subtract(self, bytecode_index, frame, method):
-        rcvr  = frame.get_stack_element(1)
-        rcvr.quick_subtract(method, frame, self, bytecode_index)
 
     def _do_send(self, bytecode_index, frame, method):
         # Handle the send bytecode
@@ -201,25 +119,40 @@ class Interpreter(object):
             if   bytecode == Bytecodes.halt:                            # BC: 0
                 return frame.top()
             elif bytecode == Bytecodes.dup:                             # BC: 1
-                self._do_dup(frame)
+                frame.push(frame.top())
             elif bytecode == Bytecodes.push_local:                      # BC: 2
-                self._do_push_local(current_bc_idx, frame, method)
+                frame.push(
+                    frame.get_local(
+                        method.get_bytecode(current_bc_idx + 1),
+                        method.get_bytecode(current_bc_idx + 2)))
             elif bytecode == Bytecodes.push_argument:                   # BC: 3
-                self._do_push_argument(current_bc_idx, frame, method)
+                frame.push(
+                    frame.get_argument(
+                        method.get_bytecode(current_bc_idx + 1),
+                        method.get_bytecode(current_bc_idx + 2)))
             elif bytecode == Bytecodes.push_field:                      # BC: 4
-                self._do_push_field(current_bc_idx, frame, method)
+                field_index = method.get_bytecode(current_bc_idx + 1)
+                ctx_level = method.get_bytecode(current_bc_idx + 2)
+                frame.push(self.get_self(frame, ctx_level).get_field(field_index))
             elif bytecode == Bytecodes.push_block:                      # BC: 5
-                self._do_push_block(current_bc_idx, frame, method)
+                block_method = method.get_constant(current_bc_idx)
+                frame.push(BcBlock(block_method, frame))
             elif bytecode == Bytecodes.push_constant:                   # BC: 6
-                self._do_push_constant(current_bc_idx, frame, method)
+                frame.push(method.get_constant(current_bc_idx))
             elif bytecode == Bytecodes.push_global:                     # BC: 7
                 self._do_push_global(current_bc_idx, frame, method)
             elif bytecode == Bytecodes.pop:                             # BC: 8
-                self._do_pop(frame)
+                frame.pop()
             elif bytecode == Bytecodes.pop_local:                       # BC: 9
-                self._do_pop_local(current_bc_idx, frame, method)
+                frame.set_local(
+                    method.get_bytecode(current_bc_idx + 1),
+                    method.get_bytecode(current_bc_idx + 2),
+                    frame.pop())
             elif bytecode == Bytecodes.pop_argument:                    # BC:10
-                self._do_pop_argument(current_bc_idx, frame, method)
+                frame.set_argument(
+                    method.get_bytecode(current_bc_idx + 1),
+                    method.get_bytecode(current_bc_idx + 2),
+                    frame.pop())
             elif bytecode == Bytecodes.pop_field:                       # BC:11
                 self._do_pop_field(current_bc_idx, frame, method)
             elif bytecode == Bytecodes.send:                            # BC:12
@@ -227,20 +160,57 @@ class Interpreter(object):
             elif bytecode == Bytecodes.super_send:                      # BC:13
                 self._do_super_send(current_bc_idx, frame, method)
             elif bytecode == Bytecodes.return_local:                    # BC:14
-                return self._do_return_local(frame)
+                return frame.top()
             elif bytecode == Bytecodes.return_non_local:                # BC:15
-                return self._do_return_non_local(frame)
-            elif bytecode == Bytecodes.add:
-                self._do_add(current_bc_idx, frame, method)
-            elif bytecode == Bytecodes.multiply:
-                self._do_multiply(current_bc_idx, frame, method)
-            elif bytecode == Bytecodes.subtract:
-                self._do_subtract(current_bc_idx, frame, method)
+                return self._do_return_non_local(frame, method.get_bytecode(current_bc_idx + 1))
+            elif bytecode == Bytecodes.return_self:
+                return frame.get_argument(0, 0)
+            elif bytecode == Bytecodes.inc:
+                val = frame.top()
+                from som.vmobjects.integer import Integer
+                from som.vmobjects.double import Double
+                from som.vmobjects.biginteger import BigInteger
+                if isinstance(val, Integer):
+                    result = val.prim_inc()
+                elif isinstance(val, Double):
+                    result = val.prim_inc()
+                elif isinstance(val, BigInteger):
+                    result = val.prim_inc()
+                else:
+                    return self._not_yet_implemented()
+                frame.set_top(result)
+            elif bytecode == Bytecodes.dec:
+                val = frame.top()
+                from som.vmobjects.integer import Integer
+                from som.vmobjects.double import Double
+                from som.vmobjects.biginteger import BigInteger
+                if isinstance(val, Integer):
+                    result = val.prim_dec()
+                elif isinstance(val, Double):
+                    result = val.prim_dec()
+                elif isinstance(val, BigInteger):
+                    result = val.prim_dec()
+                else:
+                    return self._not_yet_implemented()
+                frame.set_top(result)
+            else:
+                self._unknown_bytecode(bytecode)
 
             current_bc_idx = next_bc_idx
 
+    def _not_yet_implemented(self):
+        raise Exception("Not yet implemented")
+
+    def _unknown_bytecode(self, bytecode):
+        raise Exception("Unknown bytecode: " + str(bytecode))
+
     @staticmethod
-    def get_self(frame):
+    def get_self(frame, ctx_level):
+        # Get the self object from the interpreter
+        return frame.get_argument(0, ctx_level)
+
+    @staticmethod
+    def get_self_dynamically(frame):
         # Get the self object from the interpreter
         return frame.get_outer_context().get_argument(0, 0)
 

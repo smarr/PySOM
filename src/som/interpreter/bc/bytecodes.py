@@ -20,37 +20,35 @@ class Bytecodes(object):
     super_send       = 13
     return_local     = 14
     return_non_local = 15
+    return_self      = 16
 
-    # quick sends, short cutting well known operations
-    add              = 16
-    multiply         = 17
-    subtract         = 18
+    inc              = 17
+    dec              = 18
 
-    _num_bytecodes   = 19
+    _num_bytecodes   = 17
 
     _bytecode_length = [ 1, # halt
                          1,  # dup
                          3,  # push_local
                          3,  # push_argument
-                         2,  # push_field
+                         3,  # push_field
                          2,  # push_block
                          2,  # push_constant
                          2,  # push_global
                          1,  # pop
                          3,  # pop_local
                          3,  # pop_argument
-                         2,  # pop_field
+                         3,  # pop_field
                          2,  # send
                          2,  # super_send
                          1,  # return_local
-                         1,  # return_non_local
-
-                         1,  # add
-                         1,  # multiply
-                         1,  # subtract
+                         2,  # return_non_local
+                         1,  # return_self
+                         1,  # inc
+                         1,  # dec
                          ]
 
-    _stack_effect_depends_on_message = -1000 # chose a unresonable number to be recognizable
+    _stack_effect_depends_on_message = -1000  # chose a unreasonable number to be recognizable
 
     _bytecode_stack_effect = [ 0,                               # halt
                                1,                               # dup
@@ -68,10 +66,11 @@ class Bytecodes(object):
                               _stack_effect_depends_on_message, # super_send
                                0,                               # return_local
                                0,                               # return_non_local
-                              -1,                               # add
-                              -1,                               # multiply
-                              -1,                               # subtract
+                               0,                               # return_self
+                               0,                               # inc
+                               0,                               # dec
                               ]
+
 
 @jit.elidable
 def bytecode_length(bytecode):
@@ -83,7 +82,8 @@ def bytecode_length(bytecode):
 def bytecode_stack_effect(bytecode, number_of_arguments_of_message_send = 0):
     assert 0 <= bytecode < len(Bytecodes._bytecode_stack_effect)
     if bytecode_stack_effect_depends_on_send(bytecode):
-        return -number_of_arguments_of_message_send + 1 # +1 in order to account for the return value
+        # +1 in order to account for the return value
+        return -number_of_arguments_of_message_send + 1
     else:
         return Bytecodes._bytecode_stack_effect[bytecode]
 
@@ -107,4 +107,6 @@ def _sorted_bytecode_names(cls):
     return [key.upper() for value, key in
             sorted([(value, key) for key, value in cls.__dict__.items()
                     if isinstance(value, int) and key[0] != "_"])]
+
+
 _bytecode_names = _sorted_bytecode_names(Bytecodes)

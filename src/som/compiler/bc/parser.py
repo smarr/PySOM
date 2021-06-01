@@ -1,4 +1,4 @@
-from .bytecode_generator import BytecodeGenerator
+from .bytecode_generator import emit_inc, emit_dec, emit_dup, emit_pop, emit_send, emit_pop_field, emit_pop_local, emit_return_local, emit_return_self, emit_super_send, emit_push_field, emit_push_global, emit_push_block, emit_push_local, emit_push_argument, emit_pop_argument, emit_push_constant, emit_push_constant_index, emit_return_non_local
 from .method_generation_context import MethodGenerationContext
 from ..parser import ParserBase
 from ..symbol import Symbol
@@ -10,7 +10,6 @@ class Parser(ParserBase):
 
     def __init__(self, reader, file_name, universe):
         ParserBase.__init__(self, reader, file_name, universe)
-        self._bc_gen = BytecodeGenerator()
 
     def _method_block(self, mgenc):
         self._expect(Symbol.NewTerm)
@@ -20,9 +19,9 @@ class Parser(ParserBase):
         # terminating the last expression, so the last expression's value must
         # be popped off the stack and a ^self be generated
         if not mgenc.is_finished():
-            self._bc_gen.emitPOP(mgenc)
-            self._bc_gen.emitPUSHARGUMENT(mgenc, 0, 0)
-            self._bc_gen.emitRETURNLOCAL(mgenc)
+            # with RETURN_SELF, we don't need the extra stack space
+            # self._bc_gen.emitPOP(mgenc)
+            emit_return_self(mgenc)
             mgenc.set_finished()
 
         self._expect(Symbol.EndTerm)
@@ -42,21 +41,20 @@ class Parser(ParserBase):
             if mgenc.is_block_method() and not mgenc.has_bytecode():
                 nil_sym = self._universe.symbol_for("nil")
                 mgenc.add_literal_if_absent(nil_sym)
-                self._bc_gen.emitPUSHGLOBAL(mgenc, nil_sym)
+                emit_push_global(mgenc, nil_sym)
 
-            self._bc_gen.emitRETURNLOCAL(mgenc)
+            emit_return_local(mgenc)
             mgenc.set_finished()
         elif self._sym == Symbol.EndTerm:
             # it does not matter whether a period has been seen, as the end of
             # the method has been found (EndTerm) - so it is safe to emit a
             # "return self"
-            self._bc_gen.emitPUSHARGUMENT(mgenc, 0, 0)
-            self._bc_gen.emitRETURNLOCAL(mgenc)
+            emit_return_self(mgenc)
             mgenc.set_finished()
         else:
             self._expression(mgenc)
             if self._accept(Symbol.Period):
-                self._bc_gen.emitPOP(mgenc)
+                emit_pop(mgenc)
                 self._block_body(mgenc, True)
 
     def _result(self, mgenc):
@@ -64,9 +62,9 @@ class Parser(ParserBase):
         self._accept(Symbol.Period)
 
         if mgenc.is_block_method():
-            self._bc_gen.emitRETURNNONLOCAL(mgenc)
+            emit_return_non_local(mgenc)
         else:
-            self._bc_gen.emitRETURNLOCAL(mgenc)
+            emit_return_local(mgenc)
 
         mgenc.set_finished()
 
@@ -77,7 +75,7 @@ class Parser(ParserBase):
         self._evaluation(mgenc)
 
         for _assignment in l:
-            self._bc_gen.emitDUP(mgenc)
+            emit_dup(mgenc)
 
         for assignment in l:
             self._gen_pop_variable(mgenc, assignment)
@@ -131,7 +129,7 @@ class Parser(ParserBase):
 
             block_method = bgenc.assemble(None)
             mgenc.add_literal(block_method)
-            self._bc_gen.emitPUSHBLOCK(mgenc, block_method)
+            emit_push_block(mgenc, block_method)
         else:
             self._literal(mgenc)
 
@@ -167,30 +165,36 @@ class Parser(ParserBase):
 
     def _unary_message(self, mgenc, is_super_send):
         msg = self._unary_selector()
-        mgenc.add_literal_if_absent(msg)
 
         if is_super_send:
-            self._bc_gen.emitSUPERSEND(mgenc, msg)
+            emit_super_send(mgenc, msg)
         else:
-            self._bc_gen.emitSEND(mgenc, msg)
+            emit_send(mgenc, msg)
 
-    @staticmethod
-    def _is_quick_send(msg):
-        m = msg.get_embedded_string()
-        return m == "+" or m == "-" or m == "*"
+    def _try_inc_or_dec_bytecodes(self, msg, is_super_send, mgenc):
+        is_inc_or_dec = msg is self._universe.symPlus or msg is self._universe.symMinus
+        if is_inc_or_dec and not is_super_send:
+            if self._sym == Symbol.Integer and self._text == "1":
+                self._expect(Symbol.Integer)
+                if msg is self._universe.symPlus:
+                    emit_inc(mgenc)
+                else:
+                    emit_dec(mgenc)
+                return True
+        return False
 
     def _binary_message(self, mgenc, is_super_send):
         msg = self._binary_selector()
-        mgenc.add_literal_if_absent(msg)
+
+        if self._try_inc_or_dec_bytecodes(msg, is_super_send, mgenc):
+            return
 
         self._binary_operand(mgenc)
 
         if is_super_send:
-            self._bc_gen.emitSUPERSEND(mgenc, msg)
-        elif self._is_quick_send(msg):
-            self._bc_gen.emitQUICKSEND(mgenc, msg)
+            emit_super_send(mgenc, msg)
         else:
-            self._bc_gen.emitSEND(mgenc, msg)
+            emit_send(mgenc, msg)
 
     def _binary_operand(self, mgenc):
         is_super_send = self._primary(mgenc)
@@ -211,12 +215,10 @@ class Parser(ParserBase):
 
         msg = self._universe.symbol_for(kw)
 
-        mgenc.add_literal_if_absent(msg)
-
         if is_super_send:
-            self._bc_gen.emitSUPERSEND(mgenc, msg)
+            emit_super_send(mgenc, msg)
         else:
-            self._bc_gen.emitSEND(mgenc, msg)
+            emit_send(mgenc, msg)
 
     def _formula(self, mgenc):
         is_super_send = self._binary_operand(mgenc)
@@ -248,7 +250,7 @@ class Parser(ParserBase):
             lit = self._literal_decimal(False)
 
         mgenc.add_literal_if_absent(lit)
-        self._bc_gen.emitPUSHCONSTANT(mgenc, lit)
+        emit_push_constant(mgenc, lit)
 
     def _literal_symbol(self, mgenc):
         self._expect(Symbol.Pound)
@@ -259,7 +261,7 @@ class Parser(ParserBase):
             symb = self._selector()
 
         mgenc.add_literal_if_absent(symb)
-        self._bc_gen.emitPUSHCONSTANT(mgenc, symb)
+        emit_push_constant(mgenc, symb)
 
     def _literal_string(self, mgenc):
         s = self._string()
@@ -267,7 +269,7 @@ class Parser(ParserBase):
         string = String(s)
         mgenc.add_literal_if_absent(string)
 
-        self._bc_gen.emitPUSHCONSTANT(mgenc, string)
+        emit_push_constant(mgenc, string)
 
     def _literal_array(self, mgenc):
         self._expect(Symbol.Pound)
@@ -279,25 +281,22 @@ class Parser(ParserBase):
         at_put_message = self._universe.symbol_for("at:put:")
 
         mgenc.add_literal_if_absent(array_class_name)
-        mgenc.add_literal_if_absent(new_message)
-        mgenc.add_literal_if_absent(at_put_message)
-
         array_size_literal_idx = mgenc.add_literal(array_size_placeholder)
 
         # create empty array
-        self._bc_gen.emitPUSHGLOBAL(mgenc, array_class_name)
-        self._bc_gen.emitPUSHCONSTANT_index(mgenc, array_size_literal_idx)
-        self._bc_gen.emitSEND(mgenc, new_message)
+        emit_push_global(mgenc, array_class_name)
+        emit_push_constant_index(mgenc, array_size_literal_idx)
+        emit_send(mgenc, new_message)
 
         i = 1
 
         while self._sym != Symbol.EndTerm:
             push_idx = Integer(i)
             mgenc.add_literal_if_absent(push_idx)
-            self._bc_gen.emitPUSHCONSTANT(mgenc, push_idx)
+            emit_push_constant(mgenc, push_idx)
 
             self._literal(mgenc)
-            self._bc_gen.emitSEND(mgenc, at_put_message)
+            emit_send(mgenc, at_put_message)
             i += 1
 
         mgenc.update_literal(
@@ -313,10 +312,10 @@ class Parser(ParserBase):
         # a return
         if not mgenc.is_finished():
             if not mgenc.has_bytecode():
-                nil_sym = self._universe.symbol_for("nil")
+                nil_sym = self._universe.symNil
                 mgenc.add_literal_if_absent(nil_sym)
-                self._bc_gen.emitPUSHGLOBAL(mgenc, nil_sym)
-            self._bc_gen.emitRETURNLOCAL(mgenc)
+                emit_push_global(mgenc, nil_sym)
+            emit_return_local(mgenc)
             mgenc.set_finished()
 
         self._expect(Symbol.EndBlock)
@@ -332,19 +331,19 @@ class Parser(ParserBase):
 
         if mgenc.find_var(var, triplet):
             if triplet[2]:
-                self._bc_gen.emitPUSHARGUMENT(mgenc, triplet[0], triplet[1])
+                emit_push_argument(mgenc, triplet[0], triplet[1])
             else:
-                self._bc_gen.emitPUSHLOCAL(mgenc, triplet[0], triplet[1])
+                emit_push_local(mgenc, triplet[0], triplet[1])
         else:
             identifier = self._universe.symbol_for(var)
             if mgenc.has_field(identifier):
                 field_name = identifier
                 mgenc.add_literal_if_absent(field_name)
-                self._bc_gen.emitPUSHFIELD(mgenc, field_name)
+                emit_push_field(mgenc, field_name)
             else:
                 globe = identifier
                 mgenc.add_literal_if_absent(globe)
-                self._bc_gen.emitPUSHGLOBAL(mgenc, globe)
+                emit_push_global(mgenc, globe)
 
     def _gen_pop_variable(self, mgenc, var):
         # The purpose of this function is to find out whether the variable to be
@@ -357,8 +356,8 @@ class Parser(ParserBase):
 
         if mgenc.find_var(var, triplet):
             if triplet[2]:
-                self._bc_gen.emitPOPARGUMENT(mgenc, triplet[0], triplet[1])
+                emit_pop_argument(mgenc, triplet[0], triplet[1])
             else:
-                self._bc_gen.emitPOPLOCAL(mgenc, triplet[0], triplet[1])
+                emit_pop_local(mgenc, triplet[0], triplet[1])
         else:
-            self._bc_gen.emitPOPFIELD(mgenc, self._universe.symbol_for(var))
+            emit_pop_field(mgenc, self._universe.symbol_for(var))
