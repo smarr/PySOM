@@ -1,14 +1,13 @@
 from rlib import jit
 from som.interp_type import is_ast_interpreter
 from som.vm.globals import nilObject
+from som.vmobjects.array import Array
 
 if is_ast_interpreter():
     from som.vmobjects.object_with_layout import ObjectWithLayout as Object
-    from som.vmobjects.array_strategy import Array
     from som.interpreter.objectstorage.object_layout import ObjectLayout
 else:
     from som.vmobjects.object import Object
-    from som.vmobjects.array import Array
 
 
 class _Class(Object):

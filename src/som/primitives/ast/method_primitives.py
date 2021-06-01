@@ -1,7 +1,7 @@
 from som.primitives.invokable_primitives import InvokablePrimitivesBase as _Base
 from som.vm.globals import nilObject
 from som.vmobjects.abstract_object import AbstractObject
-from som.vmobjects.array_strategy  import Array
+from som.vmobjects.array  import Array
 from som.vmobjects.method_ast      import AstMethod
 from som.vmobjects.primitive       import Primitive
 

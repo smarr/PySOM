@@ -3,7 +3,7 @@ from som.vmobjects.integer import Integer
 
 from som.vmobjects.object_with_layout import ObjectWithLayout
 from som.vmobjects.primitive import Primitive, TernaryPrimitive, BinaryPrimitive, UnaryPrimitive
-from som.vmobjects.array_strategy import Array
+from som.vmobjects.array import Array
 
 
 def _object_size(rcvr):
