@@ -776,6 +776,7 @@ class Array(AbstractObject):
     def from_values(values, strategy = None):
         self = instantiate(Array)
         # self = Array()
+        make_sure_not_resized(values)
         if strategy is None:
             self._strategy = self._determine_strategy(values)
         else:

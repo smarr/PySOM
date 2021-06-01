@@ -12,6 +12,7 @@ from ...interpreter.ast.nodes.return_non_local_node import ReturnNonLocalNode
 from ...interpreter.ast.nodes.sequence_node import SequenceNode
 
 from ..symbol import Symbol
+from ...vmobjects.array import Array
 from ...vmobjects.string import String
 
 
@@ -254,7 +255,7 @@ class Parser(ParserBase):
         while self._sym != Symbol.EndTerm:
             literals.append(self._get_object_for_current_literal())
         self._expect(Symbol.EndTerm)
-        return self._universe.new_array_from_list(literals[:])
+        return Array.from_values(literals[:])
 
     def _nested_block(self, mgenc):
         self._nested_block_signature(mgenc)
