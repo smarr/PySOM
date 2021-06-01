@@ -677,7 +677,9 @@ class _PartiallyEmptyStrategy(_ArrayStrategy):
         else:
             store.type = _obj_strategy
 
-        if store.empty_elements == 0:
+        # as soon as we see it requires an object storage
+        # we give up and switch to an object strategy
+        if store.type is _obj_strategy or store.empty_elements == 0:
             array._strategy = store.type
             array._storage = array._strategy.new_storage_with_values(store.storage)
 
