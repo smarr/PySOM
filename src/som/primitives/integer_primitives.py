@@ -1,3 +1,5 @@
+import sys
+
 from rlib.arithmetic import ovfcheck, LONG_BIT, bigint_from_int, string_to_int, bigint_from_str, ParseStringOverflowError
 from rlib.llop import as_32_bit_unsigned_value, unsigned_right_shift
 
@@ -141,10 +143,16 @@ def _max(left, right):
     return left.prim_max(right)
 
 
-def _to(rcvr, arg):
-    assert isinstance(rcvr, Integer)
-    assert isinstance(arg, Integer)
-    return Array.from_integers(range(rcvr.get_embedded_integer(), arg.get_embedded_integer() + 1))
+if sys.version_info.major <= 2:
+    def _to(rcvr, arg):
+        assert isinstance(rcvr, Integer)
+        assert isinstance(arg, Integer)
+        return Array.from_integers(range(rcvr.get_embedded_integer(), arg.get_embedded_integer() + 1))
+else:
+    def _to(rcvr, arg):
+        assert isinstance(rcvr, Integer)
+        assert isinstance(arg, Integer)
+        return Array.from_integers(list(range(rcvr.get_embedded_integer(), arg.get_embedded_integer() + 1)))
 
 
 def _from_string(rcvr, param):

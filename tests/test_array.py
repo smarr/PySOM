@@ -1,6 +1,6 @@
 import unittest
 from som.vm.globals import trueObject
-from som.vmobjects.array_strategy import Array, _EmptyStrategy, _ObjectStrategy, \
+from som.vmobjects.array import Array, _EmptyStrategy, _ObjectStrategy, \
     _LongStrategy, _PartiallyEmptyStrategy, _BoolStrategy
 from som.vmobjects.integer import Integer
 
