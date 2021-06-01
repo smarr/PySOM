@@ -300,15 +300,6 @@ class Universe(object):
         return result
 
     @staticmethod
-    def new_array_with_length(length):
-        return Array.from_size(length)
-
-    @staticmethod
-    def new_array_from_list(values):
-        make_sure_not_resized(values)
-        return Array.from_values(values)
-
-    @staticmethod
     def new_array_with_strings(strings):
         values = [String(s) for s in strings]
         return Array.from_objects(values)
@@ -360,8 +351,8 @@ class Universe(object):
             system_class.get_class(self).set_super_class(self.classClass)
 
         # Initialize the array of instance fields
-        system_class.set_instance_fields(self.new_array_with_length(0))
-        system_class.get_class(self).set_instance_fields(self.new_array_with_length(0))
+        system_class.set_instance_fields(Array.from_size(0))
+        system_class.get_class(self).set_instance_fields(Array.from_size(0))
 
         # Initialize the name of the system class
         system_class.set_name(self.symbol_for(name))

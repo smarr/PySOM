@@ -1,4 +1,5 @@
 from som.vm.universe import Universe
+from som.vmobjects.array import Array
 from som.vmobjects.primitive   import UnaryPrimitive, BinaryPrimitive, Primitive
 from som.primitives.primitives import Primitives
 
@@ -17,7 +18,7 @@ def _copy(rcvr):
 
 
 def _new(rcvr, length):
-    return Universe.new_array_with_length(length.get_embedded_integer())
+    return Array.from_size(length.get_embedded_integer())
 
 
 class ArrayPrimitivesBase(Primitives):

@@ -1,5 +1,6 @@
 from som.interpreter.bc.bytecodes import bytecode_length, Bytecodes
 from som.interpreter.control_flow import ReturnException
+from som.vmobjects.array import Array
 from som.vmobjects.block_bc import BcBlock
 
 from rlib import jit
@@ -278,7 +279,7 @@ class Interpreter(object):
     def _send_does_not_understand(self, receiver, frame, selector):
         # ignore self
         number_of_arguments = selector.get_number_of_signature_arguments() - 1
-        arguments_array = self._universe.new_array_with_length(number_of_arguments)
+        arguments_array = Array.from_size(number_of_arguments)
 
         # Remove all arguments and put them in the freshly allocated array
         i = number_of_arguments - 1

@@ -1,6 +1,7 @@
 from rlib import jit
 
 from rtruffle.node import Node
+from som.vmobjects.array import Array
 
 
 class _AbstractDispatchNode(Node):
@@ -117,8 +118,7 @@ class _CachedDnuObjectCheckNode(_AbstractCachedDispatchNode):
     def execute_dispatch(self, rcvr, args):
         if rcvr.get_class(self._universe) == self._expected_class:
             return self._cached_method.invoke(
-                rcvr, [self._selector,
-                       self._universe.new_array_from_list(args)])
+                rcvr, [self._selector, Array.from_values(args)])
         else:
             return self._next.execute_dispatch(rcvr, args)
 
@@ -147,7 +147,7 @@ def _prepare_dnu_arguments(arguments, selector, universe):
 
     # TODO: make sure this is still optimizing DNU properly
     # don't want to see any overhead just for using strategies
-    arguments_array = universe.new_array_from_list(arguments)
+    arguments_array = Array.from_values(arguments)
     args = [selector, arguments_array]
     return args
 
