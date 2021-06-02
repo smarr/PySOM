@@ -2,6 +2,9 @@ from .abstract_node import AbstractMessageNode
 
 
 class SuperMessageNode(AbstractMessageNode):
+
+    _immutable_fields_ = ['_method?', '_super_class', '_selector']
+
     def __init__(self, selector, receiver, args, super_class, source_section = None):
         AbstractMessageNode.__init__(self, selector, None, receiver, args, source_section)
         self._method = None
