@@ -97,25 +97,25 @@ class Parser(ParserBase):
         return v
 
     def _evaluation(self, mgenc):
-        is_super_send = self._primary(mgenc)
+        self._primary(mgenc)
 
         if (self._sym_is_identifier()            or
             self._sym == Symbol.Keyword          or
             self._sym == Symbol.OperatorSequence or
             self._sym_in(self._binary_op_syms)):
-            self._messages(mgenc, is_super_send)
+            self._messages(mgenc)
+
+        self._super_send = False
         return None
 
     def _primary(self, mgenc):
-        is_super_send = False
-
         if self._sym_is_identifier():
-            v = self._variable()
-            if v == "super":
-                is_super_send = True
+            var_name = self._variable()
+            if var_name == "super":
+                self._super_send = True
                 # sends to super push self as the receiver
-                v = "self"
-            self._gen_push_variable(mgenc, v)
+                var_name = "self"
+            self._gen_push_variable(mgenc, var_name)
 
         elif self._sym == Symbol.NewTerm:
             self._nested_term(mgenc)
@@ -133,37 +133,36 @@ class Parser(ParserBase):
         else:
             self._literal(mgenc)
 
-        return is_super_send
-
-    def _messages(self, mgenc, is_super_send):
+    def _messages(self, mgenc):
         if self._sym_is_identifier():
             while self._sym_is_identifier():
                 # only the first message in a sequence can be a super send
-                self._unary_message(mgenc, is_super_send)
-                is_super_send = False
+                self._unary_message(mgenc)
 
             while (self._sym == Symbol.OperatorSequence or
                    self._sym_in(self._binary_op_syms)):
-                self._binary_message(mgenc, False)
+                self._binary_message(mgenc)
 
             if self._sym == Symbol.Keyword:
-                self._keyword_message(mgenc, False)
+                self._keyword_message(mgenc)
 
         elif (self._sym == Symbol.OperatorSequence or
               self._sym_in(self._binary_op_syms)):
             while (self._sym == Symbol.OperatorSequence or
                    self._sym_in(self._binary_op_syms)):
                 # only the first message in a sequence can be a super send
-                self._binary_message(mgenc, is_super_send)
-                is_super_send = False
+                self._binary_message(mgenc)
 
             if self._sym == Symbol.Keyword:
-                self._keyword_message(mgenc, False)
+                self._keyword_message(mgenc)
 
         else:
-            self._keyword_message(mgenc, is_super_send)
+            self._keyword_message(mgenc)
 
-    def _unary_message(self, mgenc, is_super_send):
+    def _unary_message(self, mgenc):
+        is_super_send = self._super_send
+        self._super_send = False
+
         msg = self._unary_selector()
 
         if is_super_send:
@@ -183,7 +182,10 @@ class Parser(ParserBase):
                 return True
         return False
 
-    def _binary_message(self, mgenc, is_super_send):
+    def _binary_message(self, mgenc):
+        is_super_send = self._super_send
+        self._super_send = False
+
         msg = self._binary_selector()
 
         if self._try_inc_or_dec_bytecodes(msg, is_super_send, mgenc):
@@ -197,15 +199,15 @@ class Parser(ParserBase):
             emit_send(mgenc, msg)
 
     def _binary_operand(self, mgenc):
-        is_super_send = self._primary(mgenc)
+        self._primary(mgenc)
 
         while self._sym_is_identifier():
-            self._unary_message(mgenc, is_super_send)
-            is_super_send = False
+            self._unary_message(mgenc)
 
-        return is_super_send
+    def _keyword_message(self, mgenc):
+        is_super_send = self._super_send
+        self._super_send = False
 
-    def _keyword_message(self, mgenc, is_super_send):
         kw = self._keyword()
         self._formula(mgenc)
 
@@ -221,14 +223,16 @@ class Parser(ParserBase):
             emit_send(mgenc, msg)
 
     def _formula(self, mgenc):
-        is_super_send = self._binary_operand(mgenc)
+        self._binary_operand(mgenc)
 
         # only the first message in a sequence can be a super send
         if self._sym == Symbol.OperatorSequence or self._sym_in(self._binary_op_syms):
-            self._binary_message(mgenc, is_super_send)
+            self._binary_message(mgenc)
 
         while self._sym == Symbol.OperatorSequence or self._sym_in(self._binary_op_syms):
-            self._binary_message(mgenc, False)
+            self._binary_message(mgenc)
+
+        self._super_send = False
 
     def _literal(self, mgenc):
         if self._sym == Symbol.Pound:

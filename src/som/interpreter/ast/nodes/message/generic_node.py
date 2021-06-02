@@ -1,7 +1,7 @@
 from rlib.debug import make_sure_not_resized
 from rlib.jit import we_are_jitted
 
-from ..dispatch import SuperDispatchNode, UninitializedDispatchNode, send_does_not_understand
+from ..dispatch import UninitializedDispatchNode, send_does_not_understand
 from .abstract_node import AbstractMessageNode
 
 
@@ -14,11 +14,7 @@ class GenericMessageNode(AbstractMessageNode):
                  source_section = None):
         AbstractMessageNode.__init__(self, selector, universe, rcvr_expr,
                                      arg_exprs, source_section)
-        if rcvr_expr.is_super_node():
-            dispatch = SuperDispatchNode(selector, rcvr_expr.get_super_class(),
-                                         universe)
-        else:
-            dispatch = UninitializedDispatchNode(selector, universe)
+        dispatch = UninitializedDispatchNode(selector, universe)
         self._dispatch = self.adopt_child(dispatch)
 
     def replace_dispatch_list_head(self, node):
@@ -39,20 +35,12 @@ class GenericMessageNode(AbstractMessageNode):
             return self._dispatch.execute_dispatch(rcvr, args)
 
     def _direct_dispatch(self, rcvr, args):
-        method = self._lookup_method(rcvr)
+        rcvr_class = rcvr.get_class(self._universe)
+        method = rcvr_class.lookup_invokable(self._selector)
         if method:
             return method.invoke(rcvr, args)
         else:
             return send_does_not_understand(rcvr, self._selector, args, self._universe)
-
-    def _lookup_method(self, rcvr):
-        rcvr_class = self._class_of_receiver(rcvr)
-        return rcvr_class.lookup_invokable(self._selector)
-
-    def _class_of_receiver(self, rcvr):
-        if self._rcvr_expr.is_super_node():
-            return self._rcvr_expr.get_super_class()
-        return rcvr.get_class(self._universe)
 
     def __str__(self):
         return "%s(%s, %s)" % (self.__class__.__name__,

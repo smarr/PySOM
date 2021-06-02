@@ -10,7 +10,7 @@ class ClassGenerationContext(object):
         self._universe = universe
 
         self._name       = None
-        self._super_name = None
+        self._super_class = None
         self._class_side = False  # to be overridden
         self._instance_fields  = []
         self._class_fields     = []
@@ -27,14 +27,22 @@ class ClassGenerationContext(object):
     def set_name(self, symbol):
         self._name = symbol
 
-    def set_super_name(self, symbol):
-        self._super_name = symbol
+    def get_super_class(self):
+        if self._class_side:
+            return self._super_class.get_class(self._universe)
+        return self._super_class
 
-    def set_instance_fields_of_super(self, field_names):
+    def set_super_class(self, super_class):
+        self._super_class = super_class
+        self._set_instance_fields_of_super(super_class.get_instance_fields())
+        self._set_class_fields_of_super(
+            super_class.get_class(self._universe).get_instance_fields())
+
+    def _set_instance_fields_of_super(self, field_names):
         for i in range(0, field_names.get_number_of_indexable_fields()):
             self._instance_fields.append(field_names.get_indexable_field(i))
 
-    def set_class_fields_of_super(self, field_names):
+    def _set_class_fields_of_super(self, field_names):
         for i in range(0, field_names.get_number_of_indexable_fields()):
             self._class_fields.append(field_names.get_indexable_field(i))
 
@@ -74,9 +82,6 @@ class ClassGenerationContext(object):
         # build class class name
         cc_name = self._name.get_embedded_string() + " class"
 
-        # Load the super class
-        super_class = self._universe.load_class(self._super_name)
-
         # Allocate the class of the resulting class
         result_class = self._universe.new_class(self._universe.metaclassClass)
 
@@ -87,7 +92,7 @@ class ClassGenerationContext(object):
             self._class_methods, self._class_has_primitives)
         result_class.set_name(self._universe.symbol_for(cc_name))
 
-        super_m_class = super_class.get_class(self._universe)
+        super_m_class = self._super_class.get_class(self._universe)
         result_class.set_super_class(super_m_class)
 
         # Allocate the resulting class
@@ -95,7 +100,7 @@ class ClassGenerationContext(object):
 
         # Initialize the resulting class
         result.set_name(self._name)
-        result.set_super_class(super_class)
+        result.set_super_class(self._super_class)
         result.set_instance_fields(Array.from_objects(self._instance_fields[:]))
         result.set_instance_invokables(
             self._instance_methods, self._instance_has_primitives)

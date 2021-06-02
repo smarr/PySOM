@@ -108,6 +108,9 @@ class _BcPrimitive(_AbstractPrimitive):
         prim_fn = self._prim_fn
         prim_fn(self, frame, interpreter)
 
+    def get_number_of_signature_arguments(self):
+        return self._signature.get_number_of_signature_arguments()
+
 
 class _BcUnaryPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
@@ -121,6 +124,9 @@ class _BcUnaryPrimitive(_AbstractPrimitive):
         rcvr = frame.top()
         result = prim_fn(rcvr)
         frame.set_top(result)
+
+    def get_number_of_signature_arguments(self):
+        return 1
 
 
 class _BcBinaryPrimitive(_AbstractPrimitive):
@@ -137,6 +143,9 @@ class _BcBinaryPrimitive(_AbstractPrimitive):
         result = prim_fn(rcvr, arg)
         frame.set_top(result)
 
+    def get_number_of_signature_arguments(self):
+        return 2
+
 
 class _BcTernaryPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
@@ -152,6 +161,9 @@ class _BcTernaryPrimitive(_AbstractPrimitive):
         rcvr = frame.top()
         result = prim_fn(rcvr, arg1, arg2)
         frame.set_top(result)
+
+    def get_number_of_signature_arguments(self):
+        return 3
 
 
 def _empty_invoke(ivkbl, _a, _b):

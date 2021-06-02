@@ -25,7 +25,9 @@ class Bytecodes(object):
     inc              = 17
     dec              = 18
 
-    _num_bytecodes   = 17
+    q_super_send     = 19
+
+    _num_bytecodes   = 20
 
     _bytecode_length = [ 1, # halt
                          1,  # dup
@@ -46,6 +48,7 @@ class Bytecodes(object):
                          1,  # return_self
                          1,  # inc
                          1,  # dec
+                         2,  # q_super_send
                          ]
 
     _stack_effect_depends_on_message = -1000  # chose a unreasonable number to be recognizable
@@ -69,6 +72,7 @@ class Bytecodes(object):
                                0,                               # return_self
                                0,                               # inc
                                0,                               # dec
+                              _stack_effect_depends_on_message, # q_super_send
                               ]
 
 

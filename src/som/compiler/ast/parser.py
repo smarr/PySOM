@@ -7,6 +7,7 @@ from ..parser import ParserBase
 from ...interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
 from ...interpreter.ast.nodes.global_read_node import create_global_node
 from ...interpreter.ast.nodes.literal_node import LiteralNode
+from ...interpreter.ast.nodes.message.super_node import SuperMessageNode
 from ...interpreter.ast.nodes.message.uninitialized_node import UninitializedMessageNode
 from ...interpreter.ast.nodes.return_non_local_node import ReturnNonLocalNode
 from ...interpreter.ast.nodes.sequence_node import SequenceNode
@@ -120,12 +121,18 @@ class Parser(ParserBase):
             self._sym == Symbol.OperatorSequence or
             self._sym_in(self._binary_op_syms)):
             exp = self._messages(mgenc, exp)
+
+        self._super_send = False
         return exp
 
     def _primary(self, mgenc):
         if self._sym_is_identifier():
             coordinate = self._lexer.get_source_coordinate()
             var_name = self._variable()
+            if var_name == "super":
+                self._super_send = True
+                # sends to super push self as the receiver
+                var_name = "self"
             var_read = self._variable_read(mgenc, var_name)
             return self._assign_source(var_read, coordinate)
 
@@ -155,7 +162,7 @@ class Parser(ParserBase):
         msg = receiver
 
         while self._sym_is_identifier():
-            msg = self._unary_message(msg)
+            msg = self._unary_message(mgenc, msg)
 
         while (self._sym == Symbol.OperatorSequence or
                self._sym_in(self._binary_op_syms)):
@@ -166,29 +173,44 @@ class Parser(ParserBase):
 
         return msg
 
-    def _unary_message(self, receiver):
+    def _unary_message(self, mgenc, receiver):
+        is_super_send = self._super_send
+        self._super_send = False
+
         coord = self._lexer.get_source_coordinate()
         selector = self._unary_selector()
-        msg = UninitializedMessageNode(selector, self._universe, receiver, [])
+
+        if is_super_send:
+            msg = SuperMessageNode(selector, receiver, [], mgenc.get_holder().get_super_class())
+        else:
+            msg = UninitializedMessageNode(selector, self._universe, receiver, [])
         return self._assign_source(msg, coord)
 
     def _binary_message(self, mgenc, receiver):
+        is_super_send = self._super_send
+        self._super_send = False
+
         coord    = self._lexer.get_source_coordinate()
         selector = self._binary_selector()
-        operand  = self._binary_operand(mgenc)
+        args     = [self._binary_operand(mgenc)]
 
-        msg = UninitializedMessageNode(selector, self._universe, receiver,
-                                       [operand])
+        if is_super_send:
+            msg = SuperMessageNode(selector, receiver, args, mgenc.get_holder().get_super_class())
+        else:
+            msg = UninitializedMessageNode(selector, self._universe, receiver, args)
         return self._assign_source(msg, coord)
 
     def _binary_operand(self, mgenc):
         operand = self._primary(mgenc)
 
         while self._sym_is_identifier():
-            operand = self._unary_message(operand)
+            operand = self._unary_message(mgenc, operand)
+
         return operand
 
     def _keyword_message(self, mgenc, receiver):
+        is_super_send = self._super_send
+
         coord = self._lexer.get_source_coordinate()
         arguments = []
         keyword   = []
@@ -198,8 +220,12 @@ class Parser(ParserBase):
             arguments.append(self._formula(mgenc))
 
         selector = self._universe.symbol_for("".join(keyword))
-        msg = UninitializedMessageNode(selector, self._universe, receiver,
-                                       arguments[:])
+        args = arguments[:]
+
+        if is_super_send:
+            msg = SuperMessageNode(selector, receiver, args, mgenc.get_holder().get_super_class())
+        else:
+            msg = UninitializedMessageNode(selector, self._universe, receiver, args)
         return self._assign_source(msg, coord)
 
     def _formula(self, mgenc):
@@ -208,6 +234,8 @@ class Parser(ParserBase):
         while (self._sym == Symbol.OperatorSequence or
                self._sym_in(self._binary_op_syms)):
             operand = self._binary_message(mgenc, operand)
+
+        self._super_send = False
         return operand
 
     def _literal(self):
@@ -261,15 +289,6 @@ class Parser(ParserBase):
         return expressions
 
     def _variable_read(self, mgenc, variable_name):
-        # 'super' needs to be handled separately
-        if variable_name == "super":
-            variable = mgenc.get_variable("self")
-            return variable.get_super_read_node(
-                mgenc.get_outer_self_context_level(),
-                mgenc.get_holder().get_name(),
-                mgenc.get_holder().is_class_side(),
-                self._universe)
-
         # first lookup in local variables, or method arguments
         variable = mgenc.get_variable(variable_name)
         if variable:
