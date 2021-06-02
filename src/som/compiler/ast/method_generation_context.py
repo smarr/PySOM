@@ -18,8 +18,8 @@ from ...vmobjects.method_ast import AstMethod
 
 class MethodGenerationContext(MethodGenerationContextBase):
 
-    def __init__(self, universe):
-        MethodGenerationContextBase.__init__(self, universe)
+    def __init__(self, universe, outer = None):
+        MethodGenerationContextBase.__init__(self, universe, outer)
 
         self._arguments   = OrderedDict()
         self._locals      = OrderedDict()
@@ -111,7 +111,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         src_body = expr.get_source_section()
         assert isinstance(src_body, SourceSection)
         src_method = SourceSection(identifier = "%s>>#%s" % (
-            self._holder_genc.get_name().get_embedded_string(),
+            self.holder.name.get_embedded_string(),
             self._signature.get_embedded_string()),
                                    source_section = src_body)
         return src_method
@@ -191,5 +191,5 @@ class MethodGenerationContext(MethodGenerationContextBase):
                                  self.get_field_index(field_name))
 
     def __str__(self):
-        return "MethodGenC(%s>>%s)" % (self._holder_genc.get_name().get_string,
+        return "MethodGenC(%s>>%s)" % (self.holder.get_name().get_string,
                                        self._signature)

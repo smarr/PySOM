@@ -7,8 +7,8 @@ from som.vmobjects.method_bc import BcMethod
 
 class MethodGenerationContext(MethodGenerationContextBase):
 
-    def __init__(self, universe):
-        MethodGenerationContextBase.__init__(self, universe)
+    def __init__(self, universe, outer = None):
+        MethodGenerationContextBase.__init__(self, universe, outer)
 
         self._arguments   = []
         self._locals      = []
@@ -126,9 +126,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def find_literal_index(self, lit):
         return self._literals.index(lit)
-
-    def get_outer(self):
-        return self._outer_genc
 
 
 def create_bootstrap_method(universe):

@@ -39,7 +39,7 @@ class ParserBase(object):
         self._super_send = False
 
     def classdef(self, cgenc):
-        cgenc.set_name(self.universe.symbol_for(self._text))
+        cgenc.name = self.universe.symbol_for(self._text)
         self._expect(Symbol.Identifier)
         self._expect(Symbol.Equal)
 
@@ -52,7 +52,7 @@ class ParserBase(object):
                self._sym == Symbol.OperatorSequence or
                self._sym_in(self._binary_op_syms)):
             mgenc = MethodGenerationContext(self.universe)
-            mgenc.set_holder(cgenc)
+            mgenc.holder = cgenc
             mgenc.add_argument("self")
 
             cgenc.add_instance_method(mgenc.assemble(self._method(mgenc)))
@@ -66,7 +66,7 @@ class ParserBase(object):
                    self._sym == Symbol.OperatorSequence or
                    self._sym_in(self._binary_op_syms)):
                 mgenc = MethodGenerationContext(self.universe)
-                mgenc.set_holder(cgenc)
+                mgenc.holder = cgenc
                 mgenc.add_argument("self")
 
                 cgenc.add_class_method(mgenc.assemble(self._method(mgenc)))

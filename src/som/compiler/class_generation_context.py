@@ -9,7 +9,7 @@ class ClassGenerationContext(object):
     def __init__(self, universe):
         self.universe = universe
 
-        self._name       = None
+        self.name         = None
         self._super_class = None
         self._class_side = False  # to be overridden
         self._instance_fields  = []
@@ -20,12 +20,6 @@ class ClassGenerationContext(object):
 
         self._instance_has_primitives = False
         self._class_has_primitives = False
-
-    def get_name(self):
-        return self._name
-
-    def set_name(self, symbol):
-        self._name = symbol
 
     def get_super_class(self):
         if self._class_side:
@@ -80,7 +74,7 @@ class ClassGenerationContext(object):
 
     def assemble(self):
         # build class class name
-        cc_name = self._name.get_embedded_string() + " class"
+        cc_name = self.name.get_embedded_string() + " class"
 
         # Allocate the class of the resulting class
         result_class = self.universe.new_class(self.universe.metaclassClass)
@@ -99,7 +93,7 @@ class ClassGenerationContext(object):
         result = self.universe.new_class(result_class)
 
         # Initialize the resulting class
-        result.set_name(self._name)
+        result.set_name(self.name)
         result.set_super_class(self._super_class)
         result.set_instance_fields(Array.from_objects(self._instance_fields[:]))
         result.set_instance_invokables(

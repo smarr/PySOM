@@ -38,7 +38,7 @@ class Parser(ParserBase):
                 mgenc.remove_last_bytecode()
 
             # if this block is empty, we need to return nil
-            if mgenc.is_block_method() and not mgenc.has_bytecode():
+            if mgenc.is_block_method and not mgenc.has_bytecode():
                 nil_sym = self.universe.symbol_for("nil")
                 mgenc.add_literal_if_absent(nil_sym)
                 emit_push_global(mgenc, nil_sym)
@@ -61,7 +61,7 @@ class Parser(ParserBase):
         self._expression(mgenc)
         self._accept(Symbol.Period)
 
-        if mgenc.is_block_method():
+        if mgenc.is_block_method:
             emit_return_non_local(mgenc)
         else:
             emit_return_local(mgenc)
@@ -120,10 +120,8 @@ class Parser(ParserBase):
         elif self._sym == Symbol.NewTerm:
             self._nested_term(mgenc)
         elif self._sym == Symbol.NewBlock:
-            bgenc = MethodGenerationContext(self.universe)
-            bgenc.set_is_block_method(True)
-            bgenc.set_holder(mgenc.get_holder())
-            bgenc.set_outer(mgenc)
+            bgenc = MethodGenerationContext(self.universe, mgenc)
+            bgenc.holder = mgenc.holder
 
             self._nested_block(bgenc)
 

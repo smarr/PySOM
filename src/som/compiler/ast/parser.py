@@ -79,7 +79,7 @@ class Parser(ParserBase):
 
         self._accept(Symbol.Period)
 
-        if mgenc.is_block_method():
+        if mgenc.is_block_method:
             node = ReturnNonLocalNode(mgenc.get_outer_self_context_level(),
                                       exp, self.universe)
             mgenc.make_catch_non_local_return()
@@ -141,10 +141,8 @@ class Parser(ParserBase):
 
         if self._sym == Symbol.NewBlock:
             coordinate = self._lexer.get_source_coordinate()
-            bgenc = MethodGenerationContext(self.universe)
-            bgenc.set_is_block_method(True)
-            bgenc.set_holder(mgenc.get_holder())
-            bgenc.set_outer(mgenc)
+            bgenc = MethodGenerationContext(self.universe, mgenc)
+            bgenc.holder = mgenc.holder
 
             block_body   = self._nested_block(bgenc)
             block_method = bgenc.assemble(block_body)
@@ -181,7 +179,7 @@ class Parser(ParserBase):
         selector = self._unary_selector()
 
         if is_super_send:
-            msg = SuperMessageNode(selector, receiver, [], mgenc.get_holder().get_super_class())
+            msg = SuperMessageNode(selector, receiver, [], mgenc.holder.get_super_class())
         else:
             msg = UninitializedMessageNode(selector, self.universe, receiver, [])
         return self._assign_source(msg, coord)
@@ -195,7 +193,7 @@ class Parser(ParserBase):
         args     = [self._binary_operand(mgenc)]
 
         if is_super_send:
-            msg = SuperMessageNode(selector, receiver, args, mgenc.get_holder().get_super_class())
+            msg = SuperMessageNode(selector, receiver, args, mgenc.holder.get_super_class())
         else:
             msg = UninitializedMessageNode(selector, self.universe, receiver, args)
         return self._assign_source(msg, coord)
@@ -223,7 +221,7 @@ class Parser(ParserBase):
         args = arguments[:]
 
         if is_super_send:
-            msg = SuperMessageNode(selector, receiver, args, mgenc.get_holder().get_super_class())
+            msg = SuperMessageNode(selector, receiver, args, mgenc.holder.get_super_class())
         else:
             msg = UninitializedMessageNode(selector, self.universe, receiver, args)
         return self._assign_source(msg, coord)
