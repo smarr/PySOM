@@ -16,17 +16,15 @@ class _Class(Object):
                           "_name",
                           "_instance_fields"
                           "_invokables_table",
-                          "has_primitives",
-                          "universe"]
+                          "has_primitives"]
 
-    def __init__(self, universe, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
+    def __init__(self, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
         Object.__init__(self, obj_class, number_of_fields)
         self._super_class = nilObject
         self._name        = None
         self._instance_fields = None
         self._invokables_table = None
         self.has_primitives = False
-        self.universe = universe
 
     def get_super_class(self):
         return self._super_class
@@ -143,12 +141,12 @@ class _Class(Object):
             return clazz.has_primitives
         return False
 
-    def load_primitives(self, display_warning):
+    def load_primitives(self, display_warning, universe):
         from som.primitives.known import (primitives_for_class,
                                           PrimitivesNotFound)
         try:
             prims = primitives_for_class(self)
-            prims(self.universe).install_primitives_in(self)
+            prims(universe).install_primitives_in(self)
         except PrimitivesNotFound:
             if display_warning:
                 from som.vm.universe import error_println
@@ -162,8 +160,8 @@ class _Class(Object):
 class _ClassWithLayout(_Class):
     _immutable_fields_ = ["_layout_for_instances?"]
 
-    def __init__(self, universe, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
-        _Class.__init__(self, universe, number_of_fields, obj_class)
+    def __init__(self, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
+        _Class.__init__(self, number_of_fields, obj_class)
         if number_of_fields >= 0:
             self._layout_for_instances = ObjectLayout(number_of_fields, self)
         else:

@@ -26,7 +26,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         num_locals = len(self._locals)
 
         meth = BcMethod(list(self._literals), num_locals, self._compute_stack_depth(),
-                        len(self._bytecode), self._signature)
+                        len(self._bytecode), self._signature, self.universe)
 
         # copy bytecodes into method
         i = 0
@@ -130,7 +130,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
 def create_bootstrap_method(universe):
     """ Create a fake bootstrap method to simplify later frame traversal """
-    bootstrap_method = BcMethod([], 0, 2, 1, universe.symbol_for("bootstrap"))
+    bootstrap_method = BcMethod([], 0, 2, 1, universe.symbol_for("bootstrap"), universe)
 
     bootstrap_method.set_bytecode(0, Bytecodes.halt)
     bootstrap_method.set_holder(universe.systemClass)

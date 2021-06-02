@@ -57,9 +57,8 @@ class AstShell(_Shell):
 
 class BcShell(_Shell):
 
-    def __init__(self, universe, interpreter, bootstrap_method):
+    def __init__(self, universe, bootstrap_method):
         _Shell.__init__(self, universe)
-        self._interpreter = interpreter
         self._bootstrap_method = bootstrap_method
         # Create a fake bootstrap frame
         self._current_frame = create_frame(None, self._bootstrap_method, None)
@@ -72,6 +71,6 @@ class BcShell(_Shell):
         self._current_frame.push(it)
 
         # Invoke the run method
-        shell_method.invoke(self._current_frame, self._interpreter)
+        shell_method.invoke(self._current_frame)
 
         return self._current_frame.pop()

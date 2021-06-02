@@ -1,11 +1,11 @@
 from som.primitives.false_primitives import FalsePrimitivesBase as _Base
 
 
-def _or(ivkbl, frame, interpreter):
+def _or(ivkbl, frame):
     block = frame.pop()
     frame.pop()
     block_method = block.get_method()
-    block_method.invoke(frame, interpreter)
+    block_method.invoke(frame)
 
 
 FalsePrimitives = _Base

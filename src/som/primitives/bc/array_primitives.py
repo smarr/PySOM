@@ -2,7 +2,7 @@ from som.primitives.array_primitives import ArrayPrimitivesBase as _Base
 from som.vmobjects.primitive import Primitive
 
 
-def _at_put(ivkbl, frame, interpreter):
+def _at_put(ivkbl, frame):
     value = frame.pop()
     index = frame.pop()
     rcvr  = frame.top()

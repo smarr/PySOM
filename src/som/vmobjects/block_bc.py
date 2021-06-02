@@ -50,18 +50,20 @@ def block_evaluation_primitive(num_args, universe):
     return BcBlock.Evaluation(num_args, universe, _invoke)
 
 
-def block_evaluate(block, interpreter, frame):
+def block_evaluate(block, frame):
+    from som.interpreter.bc.interpreter import interpret
+
     context = block.get_context()
     method  = block.get_method()
     new_frame = create_frame(frame, method, context)
     new_frame.copy_arguments_from(frame, method.get_number_of_arguments())
 
-    result = interpreter.interpret(method, new_frame)
+    result = interpret(method, new_frame)
     frame.pop_old_arguments_and_push_result(method, result)
     new_frame.clear_previous_frame()
 
 
-def _invoke(ivkbl, frame, interpreter):
+def _invoke(ivkbl, frame):
     assert isinstance(ivkbl, BcBlock.Evaluation)
     rcvr = frame.get_stack_element(ivkbl._number_of_arguments - 1)
-    block_evaluate(rcvr, interpreter, frame)
+    block_evaluate(rcvr, frame)
