@@ -19,7 +19,7 @@ class UninitializedReadNode(ExpressionNode):
 
     def _specialize(self):
         return self.replace(self._var.get_initialized_read_node(
-            self._context_level, self._source_section))
+            self._context_level, self.source_section))
 
 
 class UninitializedWriteNode(ExpressionNode):
@@ -37,7 +37,7 @@ class UninitializedWriteNode(ExpressionNode):
 
     def _specialize(self):
         return self.replace(self._var.get_initialized_write_node(
-            self._context_level, self._value_expr, self._source_section))
+            self._context_level, self._value_expr, self.source_section))
 
 
 class _NonLocalVariableNode(ContextualNode):

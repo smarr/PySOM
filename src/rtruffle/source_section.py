@@ -10,22 +10,22 @@ class SourceCoordinate(object):
 
 class SourceSection(object):
 
-    _immutable_fields_ = ['_source', '_identifier', '_coord', '_char_length']
+    _immutable_fields_ = ['source', 'identifier', 'coord', 'char_length']
 
     def __init__(self, source = None, identifier = None, coord = None,
                  char_length = 0, file_name = None, source_section = None):
         if source_section:
-            self._source      = source_section._source
-            self._coord       = source_section._coord
-            self._char_length = source_section._char_length
-            self._file        = source_section._file
+            self.source      = source_section.source
+            self.coord       = source_section.coord
+            self.char_length = source_section.char_length
+            self.file        = source_section.file
         else:
-            self._source      = source
-            self._coord       = coord
-            self._char_length = char_length
-            self._file        = file_name
-        self._identifier  = identifier
+            self.source      = source
+            self.coord       = coord
+            self.char_length = char_length
+            self.file        = file_name
+        self.identifier  = identifier
 
     def __str__(self):
-        return "%s:%d:%d" % (self._file, self._coord.start_line,
-                             self._coord.start_column)
+        return "%s:%d:%d" % (self.file, self.coord.start_line,
+                             self.coord.start_column)

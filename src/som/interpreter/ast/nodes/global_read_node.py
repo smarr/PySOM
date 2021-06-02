@@ -41,7 +41,7 @@ class _UninitializedGlobalReadNode(ExpressionNode):
 
     def _specialize(self):
         assoc = self.universe.get_globals_association(self._global_name)
-        cached = _CachedGlobalReadNode(assoc, self.get_source_section())
+        cached = _CachedGlobalReadNode(assoc, self.source_section)
         return self.replace(cached)
 
 

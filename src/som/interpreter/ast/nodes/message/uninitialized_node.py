@@ -33,4 +33,4 @@ class UninitializedMessageNode(AbstractMessageNode):
                                                           args, self)
         return self.replace(
             GenericMessageNode(self._selector, self.universe, self._rcvr_expr,
-                               self._arg_exprs, self._source_section))
+                               self._arg_exprs, self.source_section))

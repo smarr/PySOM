@@ -45,4 +45,4 @@ class GenericMessageNode(AbstractMessageNode):
     def __str__(self):
         return "%s(%s, %s)" % (self.__class__.__name__,
                                self._selector,
-                               self._source_section)
+                               self.source_section)

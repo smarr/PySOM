@@ -105,10 +105,10 @@ class WhileMessageNode(AbstractWhileMessageNode):
             return node.replace(
                 WhileMessageNode(node._rcvr_expr, node._arg_exprs[0],
                                  trueObject, node.universe,
-                                 node._source_section))
+                                 node.source_section))
         else:
             assert sel == "whileFalse:"
             return node.replace(
                 WhileMessageNode(node._rcvr_expr, node._arg_exprs[0],
                                  falseObject, node.universe,
-                                 node._source_section))
+                                 node.source_section))

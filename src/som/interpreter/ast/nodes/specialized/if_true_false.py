@@ -50,7 +50,7 @@ class IfTrueIfFalseNode(ExpressionNode):
         return node.replace(
             IfTrueIfFalseNode(node._rcvr_expr, node._arg_exprs[0],
                               node._arg_exprs[1], node.universe,
-                              node._source_section))
+                              node.source_section))
 
 
 class IfNode(ExpressionNode):
@@ -99,9 +99,9 @@ class IfNode(ExpressionNode):
         if selector.get_embedded_string() == "ifTrue:":
             return node.replace(
                 IfNode(node._rcvr_expr, node._arg_exprs[0],
-                       trueObject, node.universe, node._source_section))
+                       trueObject, node.universe, node.source_section))
         else:
             assert selector.get_embedded_string() == "ifFalse:"
             return node.replace(
                 IfNode(node._rcvr_expr, node._arg_exprs[0],
-                       falseObject, node.universe, node._source_section))
+                       falseObject, node.universe, node.source_section))

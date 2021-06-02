@@ -96,7 +96,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         if self.needs_to_catch_non_local_return():
             method_body = CatchNonLocalReturnNode(method_body,
-                                                  method_body.get_source_section())
+                                                  method_body.source_section)
 
         method_body = self._add_argument_initialization(method_body)
         method = Invokable(self._get_source_section_for_method(method_body),
@@ -108,7 +108,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
                       self.universe)
 
     def _get_source_section_for_method(self, expr):
-        src_body = expr.get_source_section()
+        src_body = expr.source_section
         assert isinstance(src_body, SourceSection)
         src_method = SourceSection(identifier = "%s>>#%s" % (
             self.holder.name.get_embedded_string(),
