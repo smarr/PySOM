@@ -7,18 +7,18 @@ from rlib import jit
 
 
 def _do_push_global(bytecode_index, frame, method):
-    # Handle the push global bytecode
+    from som.vm.current import current_universe
     global_name = method.get_constant(bytecode_index)
 
     # Get the global from the universe
-    glob = method.universe.get_global(global_name)
+    glob = current_universe.get_global(global_name)
 
     if glob:
         # Push the global onto the stack
         frame.push(glob)
     else:
         # Send 'unknownGlobal:' to self
-        _send_unknown_global(get_self_dynamically(frame), frame, global_name, method.universe)
+        _send_unknown_global(get_self_dynamically(frame), frame, global_name)
 
 
 def _do_pop_field(bytecode_index, frame, method):
@@ -43,7 +43,7 @@ def _do_super_send(bytecode_index, frame, method):
     else:
         num_args = invokable.get_number_of_signature_arguments()
         receiver = frame.get_stack_element(num_args - 1)
-        _send_does_not_understand(receiver, frame, invokable.get_signature(), method.universe)
+        _send_does_not_understand(receiver, frame, invokable.get_signature())
 
 
 def _do_q_super_send(bytecode_index, frame, method):
@@ -53,11 +53,11 @@ def _do_q_super_send(bytecode_index, frame, method):
     else:
         num_args = invokable.get_number_of_signature_arguments()
         receiver = frame.get_stack_element(num_args - 1)
-        _send_does_not_understand(receiver, frame, invokable.get_signature(), method.universe)
+        _send_does_not_understand(receiver, frame, invokable.get_signature())
 
 
 @jit.unroll_safe
-def _do_return_non_local(frame, ctx_level, universe):
+def _do_return_non_local(frame, ctx_level):
     # get result from stack
     result = frame.top()
 
@@ -74,14 +74,14 @@ def _do_return_non_local(frame, ctx_level, universe):
         sender = frame.get_previous_frame().get_outer_context().get_argument(0, 0)
 
         # ... and execute the escapedBlock message instead
-        _send_escaped_block(sender, frame, block, universe)
+        _send_escaped_block(sender, frame, block)
         return frame.top()
 
     raise ReturnException(result, context)
 
 
 def _do_send(bytecode_index, frame, method):
-    # Handle the send bytecode
+    from som.vm.current import current_universe
     signature = method.get_constant(bytecode_index)
 
     # Get the number of arguments from the signature
@@ -91,8 +91,8 @@ def _do_send(bytecode_index, frame, method):
     receiver = frame.get_stack_element(num_args - 1)
 
     # Send the message
-    _send(method, frame, signature, receiver.get_class(method.universe),
-          bytecode_index, method.universe)
+    _send(method, frame, signature, receiver.get_class(current_universe),
+          bytecode_index)
 
 
 @jit.unroll_safe
@@ -163,7 +163,7 @@ def interpret(method, frame):
             return frame.top()
         elif bytecode == Bytecodes.return_non_local:                # BC:15
             return _do_return_non_local(
-                frame, method.get_bytecode(current_bc_idx + 1), method.universe)
+                frame, method.get_bytecode(current_bc_idx + 1))
         elif bytecode == Bytecodes.return_self:
             return frame.get_argument(0, 0)
         elif bytecode == Bytecodes.inc:
@@ -220,7 +220,7 @@ def get_self_dynamically(frame):
     return frame.get_outer_context().get_argument(0, 0)
 
 
-def _send(m, frame, selector, receiver_class, bytecode_index, universe):
+def _send(m, frame, selector, receiver_class, bytecode_index):
     # selector.inc_send_count()
 
     # First try the inline cache
@@ -250,10 +250,10 @@ def _send(m, frame, selector, receiver_class, bytecode_index, universe):
 
         # Compute the receiver
         receiver = frame.get_stack_element(num_args - 1)
-        _send_does_not_understand(receiver, frame, selector, universe)
+        _send_does_not_understand(receiver, frame, selector)
 
 
-def _send_does_not_understand(receiver, frame, selector, universe):
+def _send_does_not_understand(receiver, frame, selector):
     # ignore self
     number_of_arguments = selector.get_number_of_signature_arguments() - 1
     arguments_array = Array.from_size(number_of_arguments)
@@ -266,22 +266,23 @@ def _send_does_not_understand(receiver, frame, selector, universe):
 
     frame.pop()  # pop self from stack
     args = [selector, arguments_array]
-    _lookup_and_send(receiver, frame, "doesNotUnderstand:arguments:", args, universe)
+    _lookup_and_send(receiver, frame, "doesNotUnderstand:arguments:", args)
 
 
-def _send_unknown_global(receiver, frame, global_name, universe):
+def _send_unknown_global(receiver, frame, global_name):
     arguments = [global_name]
-    _lookup_and_send(receiver, frame, "unknownGlobal:", arguments, universe)
+    _lookup_and_send(receiver, frame, "unknownGlobal:", arguments)
 
 
-def _send_escaped_block(receiver, frame, block, universe):
+def _send_escaped_block(receiver, frame, block):
     arguments = [block]
-    _lookup_and_send(receiver, frame, "escapedBlock:", arguments, universe)
+    _lookup_and_send(receiver, frame, "escapedBlock:", arguments)
 
 
-def _lookup_and_send(receiver, frame, selector_string, arguments, universe):
-    selector = universe.symbol_for(selector_string)
-    invokable = receiver.get_class(universe).lookup_invokable(selector)
+def _lookup_and_send(receiver, frame, selector_string, arguments):
+    from som.vm.current import current_universe
+    selector = current_universe.symbol_for(selector_string)
+    invokable = receiver.get_class(current_universe).lookup_invokable(selector)
 
     frame.push(receiver)
     for arg in arguments:

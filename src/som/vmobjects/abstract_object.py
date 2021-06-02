@@ -11,5 +11,5 @@ class AbstractObject(object):
         return False
 
     def __str__(self):
-        from som.vm.universe import get_current
-        return "a " + self.get_class(get_current()).get_name().get_embedded_string()
+        from som.vm.current import current_universe
+        return "a " + self.get_class(current_universe).get_name().get_embedded_string()

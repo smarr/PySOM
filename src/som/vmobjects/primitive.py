@@ -3,7 +3,7 @@ from som.vmobjects.abstract_object import AbstractObject
 
 
 class _AbstractPrimitive(AbstractObject):
-    _immutable_fields_ = ["_is_empty", "_signature", "_holder", "universe"]
+    _immutable_fields_ = ["_is_empty", "_signature", "_holder"]
 
     def __init__(self, signature_string, universe, is_empty=False):
         AbstractObject.__init__(self)
@@ -11,7 +11,6 @@ class _AbstractPrimitive(AbstractObject):
         self._signature = universe.symbol_for(signature_string)
         self._is_empty  = is_empty
         self._holder    = None
-        self.universe   = universe
 
     @staticmethod
     def is_primitive():
@@ -43,7 +42,7 @@ class _AbstractPrimitive(AbstractObject):
             holder = self.get_holder().get_name().get_embedded_string()
         else:
             holder = "nil"
-        return ("Primitive(" + holder + ">>" + str(self.get_signature()) + ")")
+        return "Primitive(" + holder + ">>" + str(self.get_signature()) + ")"
 
 
 class _AstPrimitive(_AbstractPrimitive):

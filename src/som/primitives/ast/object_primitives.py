@@ -1,4 +1,5 @@
 from som.primitives.object_primitives import ObjectPrimitivesBase as _Base
+from som.vm.current import current_universe
 from som.vmobjects.integer import Integer
 
 from som.vmobjects.object_with_layout import ObjectWithLayout
@@ -20,7 +21,7 @@ def _object_size(rcvr):
 def _perform(ivkbl, rcvr, args):
     selector = args[0]
 
-    invokable = rcvr.get_class(ivkbl.universe).lookup_invokable(selector)
+    invokable = rcvr.get_class(current_universe).lookup_invokable(selector)
     return invokable.invoke(rcvr, [])
 
 
@@ -33,7 +34,7 @@ def _perform_with_arguments(ivkbl, rcvr, arguments):
     arg_arr  = arguments[1].as_argument_array()
     selector = arguments[0]
 
-    invokable = rcvr.get_class(ivkbl.universe).lookup_invokable(selector)
+    invokable = rcvr.get_class(current_universe).lookup_invokable(selector)
     return invokable.invoke(rcvr, arg_arr)
 
 

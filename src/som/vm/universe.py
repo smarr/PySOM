@@ -97,6 +97,9 @@ class Universe(object):
         self.start_time      = time.time()  # a float of the time in seconds
         self._object_system_initialized = False
 
+    def reset(self, avoid_exit):
+        self.__init__(avoid_exit)
+
     def exit(self, error_code):
         if self._avoid_exit:
             self._last_exit_code = error_code
@@ -514,14 +517,6 @@ def create_universe(avoid_exit = False):
         return _BCUniverse(avoid_exit)
 
 
-_current = create_universe()
-
-
-def set_current(universe):
-    global _current
-    _current = universe
-
-
 def error_print(msg):
     os.write(2, encode_to_bytes(msg or ""))
 
@@ -540,13 +535,10 @@ def std_println(msg = ""):
 
 def main(args):
     jit.set_param(None, 'trace_limit', 15000)
-    u = _current
+    from som.vm.current import current_universe
+    u = current_universe
     u.interpret(args[1:])
     u.exit(0)
-
-
-def get_current():
-    return _current
 
 
 if __name__ == '__main__':

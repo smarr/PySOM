@@ -21,11 +21,10 @@ class BcMethod(AbstractObject):
                           "_number_of_arguments",
                           "_initial_stack_pointer",
                           "_number_of_frame_elements",
-                          "_holder",
-                          "universe"]
+                          "_holder"]
 
     def __init__(self, literals, num_locals, max_stack_elements,
-                 num_bytecodes, signature, universe):
+                 num_bytecodes, signature):
         AbstractObject.__init__(self)
 
         # Set the number of bytecodes in this method
@@ -44,7 +43,6 @@ class BcMethod(AbstractObject):
                                           + max_stack_elements + 2)
 
         self._holder = None
-        self.universe = universe
 
     @staticmethod
     def is_primitive():
