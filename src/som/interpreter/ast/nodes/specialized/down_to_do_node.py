@@ -42,8 +42,8 @@ class IntDownToIntDoNode(AbstractToDoNode):
     def specialize_node(selector, rcvr, args, node):
         return node.replace(
             IntDownToIntDoNode(node._rcvr_expr, node._arg_exprs[0],
-                               node._arg_exprs[1], node._universe,
-                               node._source_section))
+                               node._arg_exprs[1], node.universe,
+                               node.source_section))
 
 
 double_driver = jit.JitDriver(
@@ -76,5 +76,5 @@ class IntDownToDoubleDoNode(AbstractToDoNode):
     def specialize_node(selector, rcvr, args, node):
         return node.replace(
             IntDownToDoubleDoNode(node._rcvr_expr, node._arg_exprs[0],
-                                  node._arg_exprs[1], node._universe,
-                                  node._source_section))
+                                  node._arg_exprs[1], node.universe,
+                                  node.source_section))

@@ -174,41 +174,41 @@ def _from_string(rcvr, param):
 class IntegerPrimitivesBase(Primitives):
 
     def install_primitives(self):
-        self._install_instance_primitive(UnaryPrimitive("asString", self._universe, _as_string))
-        self._install_instance_primitive(UnaryPrimitive("asDouble", self._universe, _as_double))
+        self._install_instance_primitive(UnaryPrimitive("asString", self.universe, _as_string))
+        self._install_instance_primitive(UnaryPrimitive("asDouble", self.universe, _as_double))
         self._install_instance_primitive(
-            UnaryPrimitive("as32BitSignedValue", self._universe, _as_32_bit_signed_value))
+            UnaryPrimitive("as32BitSignedValue", self.universe, _as_32_bit_signed_value))
         self._install_instance_primitive(
-            UnaryPrimitive("as32BitUnsignedValue", self._universe, _as_32_bit_unsigned_value))
+            UnaryPrimitive("as32BitUnsignedValue", self.universe, _as_32_bit_unsigned_value))
 
-        self._install_instance_primitive(UnaryPrimitive("sqrt", self._universe, _sqrt))
+        self._install_instance_primitive(UnaryPrimitive("sqrt", self.universe, _sqrt))
 
-        self._install_instance_primitive(BinaryPrimitive("+",  self._universe, _plus))
-        self._install_instance_primitive(BinaryPrimitive("-",  self._universe, _minus))
+        self._install_instance_primitive(BinaryPrimitive("+",  self.universe, _plus))
+        self._install_instance_primitive(BinaryPrimitive("-",  self.universe, _minus))
 
-        self._install_instance_primitive(BinaryPrimitive("*",  self._universe, _multiply))
-        self._install_instance_primitive(BinaryPrimitive("//", self._universe, _double_div))
-        self._install_instance_primitive(BinaryPrimitive("/",  self._universe, _int_div))
-        self._install_instance_primitive(BinaryPrimitive("%",  self._universe, _mod))
-        self._install_instance_primitive(BinaryPrimitive("rem:", self._universe, _remainder))
-        self._install_instance_primitive(BinaryPrimitive("&",  self._universe, _and))
+        self._install_instance_primitive(BinaryPrimitive("*",  self.universe, _multiply))
+        self._install_instance_primitive(BinaryPrimitive("//", self.universe, _double_div))
+        self._install_instance_primitive(BinaryPrimitive("/",  self.universe, _int_div))
+        self._install_instance_primitive(BinaryPrimitive("%",  self.universe, _mod))
+        self._install_instance_primitive(BinaryPrimitive("rem:", self.universe, _remainder))
+        self._install_instance_primitive(BinaryPrimitive("&",  self.universe, _and))
 
-        self._install_instance_primitive(BinaryPrimitive("==",  self._universe, _equals_equals))
+        self._install_instance_primitive(BinaryPrimitive("==",  self.universe, _equals_equals))
 
-        self._install_instance_primitive(BinaryPrimitive("=",  self._universe, _equals))
-        self._install_instance_primitive(BinaryPrimitive("<",  self._universe, _less_than))
-        self._install_instance_primitive(BinaryPrimitive("<=", self._universe, _less_than_or_equal))
-        self._install_instance_primitive(BinaryPrimitive(">",  self._universe, _greater_than))
-        self._install_instance_primitive(BinaryPrimitive("<>", self._universe, _unequals))
-        self._install_instance_primitive(BinaryPrimitive("~=", self._universe, _unequals))
+        self._install_instance_primitive(BinaryPrimitive("=",  self.universe, _equals))
+        self._install_instance_primitive(BinaryPrimitive("<",  self.universe, _less_than))
+        self._install_instance_primitive(BinaryPrimitive("<=", self.universe, _less_than_or_equal))
+        self._install_instance_primitive(BinaryPrimitive(">",  self.universe, _greater_than))
+        self._install_instance_primitive(BinaryPrimitive("<>", self.universe, _unequals))
+        self._install_instance_primitive(BinaryPrimitive("~=", self.universe, _unequals))
 
-        self._install_instance_primitive(BinaryPrimitive("<<", self._universe, _left_shift))
-        self._install_instance_primitive(BinaryPrimitive("bitXor:", self._universe, _bit_xor))
+        self._install_instance_primitive(BinaryPrimitive("<<", self.universe, _left_shift))
+        self._install_instance_primitive(BinaryPrimitive("bitXor:", self.universe, _bit_xor))
         self._install_instance_primitive(
-            BinaryPrimitive(">>>", self._universe, _unsigned_right_shift))
-        self._install_instance_primitive(UnaryPrimitive("abs", self._universe, _abs))
-        self._install_instance_primitive(BinaryPrimitive("max:", self._universe, _max))
+            BinaryPrimitive(">>>", self.universe, _unsigned_right_shift))
+        self._install_instance_primitive(UnaryPrimitive("abs", self.universe, _abs))
+        self._install_instance_primitive(BinaryPrimitive("max:", self.universe, _max))
 
-        self._install_instance_primitive(BinaryPrimitive("to:", self._universe, _to))
+        self._install_instance_primitive(BinaryPrimitive("to:", self.universe, _to))
 
-        self._install_class_primitive(BinaryPrimitive("fromString:", self._universe, _from_string))
+        self._install_class_primitive(BinaryPrimitive("fromString:", self.universe, _from_string))

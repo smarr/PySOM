@@ -64,8 +64,8 @@ class Parser(ParserBase):
     def _create_sequence_node(self, coordinate, expressions):
         if not expressions:
             nil_exp = create_global_node(
-                self._universe.symNil,
-                self._universe,
+                self.universe.symNil,
+                self.universe,
                 self._get_source_section(coordinate))
             return nil_exp
         if len(expressions) == 1:
@@ -79,9 +79,9 @@ class Parser(ParserBase):
 
         self._accept(Symbol.Period)
 
-        if mgenc.is_block_method():
+        if mgenc.is_block_method:
             node = ReturnNonLocalNode(mgenc.get_outer_self_context_level(),
-                                      exp, self._universe)
+                                      exp, self.universe)
             mgenc.make_catch_non_local_return()
             return self._assign_source(node, coord)
         return exp
@@ -141,19 +141,17 @@ class Parser(ParserBase):
 
         if self._sym == Symbol.NewBlock:
             coordinate = self._lexer.get_source_coordinate()
-            bgenc = MethodGenerationContext(self._universe)
-            bgenc.set_is_block_method(True)
-            bgenc.set_holder(mgenc.get_holder())
-            bgenc.set_outer(mgenc)
+            bgenc = MethodGenerationContext(self.universe, mgenc)
+            bgenc.holder = mgenc.holder
 
             block_body   = self._nested_block(bgenc)
             block_method = bgenc.assemble(block_body)
             mgenc.add_embedded_block_method(block_method)
 
             if bgenc.requires_context():
-                result = BlockNodeWithContext(block_method, self._universe)
+                result = BlockNodeWithContext(block_method, self.universe)
             else:
-                result = BlockNode(block_method, self._universe)
+                result = BlockNode(block_method, self.universe)
             return self._assign_source(result, coordinate)
 
         return self._literal()
@@ -181,9 +179,9 @@ class Parser(ParserBase):
         selector = self._unary_selector()
 
         if is_super_send:
-            msg = SuperMessageNode(selector, receiver, [], mgenc.get_holder().get_super_class())
+            msg = SuperMessageNode(selector, receiver, [], mgenc.holder.get_super_class())
         else:
-            msg = UninitializedMessageNode(selector, self._universe, receiver, [])
+            msg = UninitializedMessageNode(selector, self.universe, receiver, [])
         return self._assign_source(msg, coord)
 
     def _binary_message(self, mgenc, receiver):
@@ -195,9 +193,9 @@ class Parser(ParserBase):
         args     = [self._binary_operand(mgenc)]
 
         if is_super_send:
-            msg = SuperMessageNode(selector, receiver, args, mgenc.get_holder().get_super_class())
+            msg = SuperMessageNode(selector, receiver, args, mgenc.holder.get_super_class())
         else:
-            msg = UninitializedMessageNode(selector, self._universe, receiver, args)
+            msg = UninitializedMessageNode(selector, self.universe, receiver, args)
         return self._assign_source(msg, coord)
 
     def _binary_operand(self, mgenc):
@@ -219,13 +217,13 @@ class Parser(ParserBase):
             keyword.append(self._keyword())
             arguments.append(self._formula(mgenc))
 
-        selector = self._universe.symbol_for("".join(keyword))
+        selector = self.universe.symbol_for("".join(keyword))
         args = arguments[:]
 
         if is_super_send:
-            msg = SuperMessageNode(selector, receiver, args, mgenc.get_holder().get_super_class())
+            msg = SuperMessageNode(selector, receiver, args, mgenc.holder.get_super_class())
         else:
-            msg = UninitializedMessageNode(selector, self._universe, receiver, args)
+            msg = UninitializedMessageNode(selector, self.universe, receiver, args)
         return self._assign_source(msg, coord)
 
     def _formula(self, mgenc):
@@ -266,7 +264,7 @@ class Parser(ParserBase):
         self._expect(Symbol.Pound)
         if self._sym == Symbol.STString:
             s = self._string()
-            return self._universe.symbol_for(s)
+            return self.universe.symbol_for(s)
         return self._selector()
 
     def _literal_string(self):
@@ -296,7 +294,7 @@ class Parser(ParserBase):
                 mgenc.get_context_level(variable_name))
 
         # otherwise, it might be an object field
-        var_symbol = self._universe.symbol_for(variable_name)
+        var_symbol = self.universe.symbol_for(variable_name)
         field_read = mgenc.get_object_field_read(var_symbol)
         if field_read:
             return field_read
@@ -317,7 +315,7 @@ class Parser(ParserBase):
             return variable.get_write_node(
                 mgenc.get_context_level(variable_name), exp)
 
-        field_name = self._universe.symbol_for(variable_name)
+        field_name = self.universe.symbol_for(variable_name)
         field_write = mgenc.get_object_field_write(field_name, exp)
         if field_write:
             return field_write

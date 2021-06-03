@@ -13,4 +13,4 @@ class ArrayPrimitives(_Base):
 
     def install_primitives(self):
         _Base.install_primitives(self)
-        self._install_instance_primitive(Primitive("at:put:", self._universe, _at_put))
+        self._install_instance_primitive(Primitive("at:put:", self.universe, _at_put))

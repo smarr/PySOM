@@ -11,7 +11,7 @@ from .....vmobjects.method_ast import AstMethod
 class AbstractToDoNode(ExpressionNode):
 
     _immutable_fields_ = ['_rcvr_expr?', '_limit_expr?', '_body_expr?',
-                          '_universe']
+                          'universe']
     _child_nodes_      = ['_rcvr_expr', '_limit_expr', '_body_expr']
 
     def __init__(self, rcvr_expr, limit_expr, body_expr, universe,
@@ -20,7 +20,7 @@ class AbstractToDoNode(ExpressionNode):
         self._rcvr_expr  = self.adopt_child(rcvr_expr)
         self._limit_expr = self.adopt_child(limit_expr)
         self._body_expr  = self.adopt_child(body_expr)
-        self._universe   = universe
+        self.universe   = universe
 
     def execute(self, frame):
         rcvr  = self._rcvr_expr.execute(frame)
@@ -69,8 +69,8 @@ class IntToIntDoNode(AbstractToDoNode):
     def specialize_node(selector, rcvr, args, node):
         return node.replace(
             IntToIntDoNode(node._rcvr_expr, node._arg_exprs[0],
-                           node._arg_exprs[1], node._universe,
-                           node._source_section))
+                           node._arg_exprs[1], node.universe,
+                           node.source_section))
 
 
 double_driver = jit.JitDriver(
@@ -103,5 +103,5 @@ class IntToDoubleDoNode(AbstractToDoNode):
     def specialize_node(selector, rcvr, args, node):
         return node.replace(
             IntToDoubleDoNode(node._rcvr_expr, node._arg_exprs[0],
-                              node._arg_exprs[1], node._universe,
-                              node._source_section))
+                              node._arg_exprs[1], node.universe,
+                              node.source_section))

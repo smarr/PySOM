@@ -7,13 +7,13 @@ from ...control_flow import ReturnException
 
 class ReturnNonLocalNode(ContextualNode):
 
-    _immutable_fields_ = ['_expr?', '_universe']
+    _immutable_fields_ = ['_expr?', 'universe']
     _child_nodes_      = ['_expr']
 
     def __init__(self, context_level, expr, universe, source_section = None):
         ContextualNode.__init__(self, context_level, source_section)
         self._expr     = self.adopt_child(expr)
-        self._universe = universe
+        self.universe = universe
 
     def execute(self, frame):
         result = self._expr.execute(frame)
@@ -24,7 +24,7 @@ class ReturnNonLocalNode(ContextualNode):
         else:
             block      = frame.get_self()
             outer_self = block.get_outer_self()
-            return self.send_escaped_block(outer_self, block, self._universe)
+            return self.send_escaped_block(outer_self, block, self.universe)
 
     @staticmethod
     def send_escaped_block(receiver, block, universe):

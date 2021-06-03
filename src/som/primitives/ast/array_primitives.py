@@ -75,8 +75,8 @@ class ArrayPrimitives(_Base):
 
     def install_primitives(self):
         _Base.install_primitives(self)
-        self._install_instance_primitive(Primitive("at:put:", self._universe, _at_put))
+        self._install_instance_primitive(Primitive("at:put:", self.universe, _at_put))
 
-        self._install_instance_primitive(Primitive("doIndexes:", self._universe, _do_indexes))
-        self._install_instance_primitive(Primitive("do:",        self._universe, _do))
-        self._install_instance_primitive(Primitive("putAll:",    self._universe, _put_all))
+        self._install_instance_primitive(Primitive("doIndexes:", self.universe, _do_indexes))
+        self._install_instance_primitive(Primitive("do:",        self.universe, _do))
+        self._install_instance_primitive(Primitive("putAll:",    self.universe, _put_all))

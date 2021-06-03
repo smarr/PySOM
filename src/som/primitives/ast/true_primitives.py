@@ -9,5 +9,5 @@ def _and(ivkbl, rcvr, args):
 
 TruePrimitives = _Base
 
-# self._install_instance_primitive(Primitive("and:", self._universe, _and))
-# self._install_instance_primitive(Primitive("&&", self._universe, _and))
+# self._install_instance_primitive(Primitive("and:", self.universe, _and))
+# self._install_instance_primitive(Primitive("&&", self.universe, _and))

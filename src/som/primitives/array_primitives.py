@@ -24,8 +24,8 @@ def _new(rcvr, length):
 class ArrayPrimitivesBase(Primitives):
 
     def install_primitives(self):
-        self._install_instance_primitive(BinaryPrimitive("at:", self._universe, _at))
-        self._install_instance_primitive(UnaryPrimitive("length", self._universe, _length))
-        self._install_instance_primitive(UnaryPrimitive("copy", self._universe, _copy))
+        self._install_instance_primitive(BinaryPrimitive("at:", self.universe, _at))
+        self._install_instance_primitive(UnaryPrimitive("length", self.universe, _length))
+        self._install_instance_primitive(UnaryPrimitive("copy", self.universe, _copy))
 
-        self._install_class_primitive(BinaryPrimitive("new:", self._universe, _new))
+        self._install_class_primitive(BinaryPrimitive("new:", self.universe, _new))

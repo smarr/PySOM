@@ -17,7 +17,7 @@ class _Class(Object):
                           "_instance_fields"
                           "_invokables_table",
                           "has_primitives",
-                          "_universe"]
+                          "universe"]
 
     def __init__(self, universe, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
         Object.__init__(self, obj_class, number_of_fields)
@@ -26,7 +26,7 @@ class _Class(Object):
         self._instance_fields = None
         self._invokables_table = None
         self.has_primitives = False
-        self._universe = universe
+        self.universe = universe
 
     def get_super_class(self):
         return self._super_class
@@ -148,7 +148,7 @@ class _Class(Object):
                                           PrimitivesNotFound)
         try:
             prims = primitives_for_class(self)
-            prims(self._universe).install_primitives_in(self)
+            prims(self.universe).install_primitives_in(self)
         except PrimitivesNotFound:
             if display_warning:
                 from som.vm.universe import error_println

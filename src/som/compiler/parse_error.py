@@ -31,8 +31,8 @@ class ParseError(Exception):
 
         return (msg % {
             'file'       : self._file_name,
-            'line'       : self._source_coordinate.get_start_line(),
-            'column'     : self._source_coordinate.get_start_column(),
+            'line'       : self._source_coordinate.start_line,
+            'column'     : self._source_coordinate.start_column,
             'expected'   : expected,
             'found'      : found})
 

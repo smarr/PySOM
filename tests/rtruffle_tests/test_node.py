@@ -8,10 +8,10 @@ class NodeTest(unittest.TestCase):
         child = ChildNode()
         parent = RootNode()
 
-        self.assertIsNone(child.get_parent())
+        self.assertIsNone(child.parent)
         parent.adopt_child(child)
 
-        self.assertIs(parent, child.get_parent())
+        self.assertIs(parent, child.parent)
 
     def test_adopt_children(self):
         children = [ChildNode() for _ in range(0, 10)]
@@ -19,11 +19,11 @@ class NodeTest(unittest.TestCase):
 
         self.assertIsNot(children[0], children[1])
         for child in children:
-            self.assertIsNone(child.get_parent())
+            self.assertIsNone(child.parent)
 
         parent.adopt_children(children)
         for child in children:
-            self.assertIs(parent, child.get_parent())
+            self.assertIs(parent, child.parent)
 
     def test_replace_1(self):
         child1 = ChildNode()

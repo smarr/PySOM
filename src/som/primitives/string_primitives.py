@@ -92,13 +92,13 @@ def _is_digits(self):
 class StringPrimitivesBase(Primitives):
 
     def install_primitives(self):
-        self._install_instance_primitive(BinaryPrimitive("concatenate:", self._universe, _concat))
-        self._install_instance_primitive(UnaryPrimitive("asSymbol",      self._universe, _as_symbol))
-        self._install_instance_primitive(UnaryPrimitive("length",        self._universe, _length))
-        self._install_instance_primitive(BinaryPrimitive("=",            self._universe, _equals))
-        self._install_instance_primitive(TernaryPrimitive("primSubstringFrom:to:", self._universe, _substring))
-        self._install_instance_primitive(UnaryPrimitive("hashcode",      self._universe, _hashcode))
+        self._install_instance_primitive(BinaryPrimitive("concatenate:", self.universe, _concat))
+        self._install_instance_primitive(UnaryPrimitive("asSymbol",      self.universe, _as_symbol))
+        self._install_instance_primitive(UnaryPrimitive("length",        self.universe, _length))
+        self._install_instance_primitive(BinaryPrimitive("=",            self.universe, _equals))
+        self._install_instance_primitive(TernaryPrimitive("primSubstringFrom:to:", self.universe, _substring))
+        self._install_instance_primitive(UnaryPrimitive("hashcode",      self.universe, _hashcode))
 
-        self._install_instance_primitive(UnaryPrimitive("isWhiteSpace", self._universe, _is_whitespace))
-        self._install_instance_primitive(UnaryPrimitive("isLetters", self._universe, _is_letters))
-        self._install_instance_primitive(UnaryPrimitive("isDigits", self._universe, _is_digits))
+        self._install_instance_primitive(UnaryPrimitive("isWhiteSpace", self.universe, _is_whitespace))
+        self._install_instance_primitive(UnaryPrimitive("isLetters", self.universe, _is_letters))
+        self._install_instance_primitive(UnaryPrimitive("isDigits", self.universe, _is_digits))

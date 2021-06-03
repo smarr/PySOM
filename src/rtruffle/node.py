@@ -13,25 +13,19 @@ class Node(BaseNode):
     def __init__(self, source_section = None):
         assert (source_section is None or
                 isinstance(source_section, SourceSection))
-        self._source_section = source_section
-        self._parent         = None
-
-    def get_parent(self):
-        return self._parent
+        self.source_section = source_section
+        self.parent         = None
 
     def assign_source_section(self, source_section):
         assert isinstance(source_section, SourceSection)
-        if self._source_section:
+        if self.source_section:
             raise ValueError("Source section already set.")
-        self._source_section = source_section
-
-    def get_source_section(self):
-        return self._source_section
+        self.source_section = source_section
 
     def adopt_child(self, node):
         assert isinstance(node, Node) or node is None
         if node:
-            node._parent = self
+            node.parent = self
         return node
 
     def adopt_children(self, nodes):
@@ -45,16 +39,16 @@ class Node(BaseNode):
                              # when replacing child nodes
 
         for child in children:
-            child._parent = self
+            child.parent = self
         return children
 
     def replace(self, node):
         if node:
-            self._parent._replace_child_with(self, node)
-            node._parent = self._parent
+            self.parent._replace_child_with(self, node)
+            node.parent = self.parent
             return node
         else:
             return None
 
     def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, self._source_section)
+        return "%s(%s)" % (self.__class__.__name__, self.source_section)

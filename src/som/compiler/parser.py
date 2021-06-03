@@ -29,7 +29,7 @@ class ParserBase(object):
     _keyword_selector_syms = [Symbol.Keyword, Symbol.KeywordSequence]
 
     def __init__(self, reader, file_name, universe):
-        self._universe = universe
+        self.universe = universe
         self._file_name = file_name
         self._lexer    = Lexer(reader)
         self._sym      = Symbol.NONE
@@ -39,7 +39,7 @@ class ParserBase(object):
         self._super_send = False
 
     def classdef(self, cgenc):
-        cgenc.set_name(self._universe.symbol_for(self._text))
+        cgenc.name = self.universe.symbol_for(self._text)
         self._expect(Symbol.Identifier)
         self._expect(Symbol.Equal)
 
@@ -51,8 +51,8 @@ class ParserBase(object):
         while (self._sym_is_identifier() or self._sym == Symbol.Keyword or
                self._sym == Symbol.OperatorSequence or
                self._sym_in(self._binary_op_syms)):
-            mgenc = MethodGenerationContext(self._universe)
-            mgenc.set_holder(cgenc)
+            mgenc = MethodGenerationContext(self.universe)
+            mgenc.holder = cgenc
             mgenc.add_argument("self")
 
             cgenc.add_instance_method(mgenc.assemble(self._method(mgenc)))
@@ -65,8 +65,8 @@ class ParserBase(object):
                    self._sym == Symbol.Keyword    or
                    self._sym == Symbol.OperatorSequence or
                    self._sym_in(self._binary_op_syms)):
-                mgenc = MethodGenerationContext(self._universe)
-                mgenc.set_holder(cgenc)
+                mgenc = MethodGenerationContext(self.universe)
+                mgenc.holder = cgenc
                 mgenc.add_argument("self")
 
                 cgenc.add_class_method(mgenc.assemble(self._method(mgenc)))
@@ -75,14 +75,14 @@ class ParserBase(object):
 
     def _superclass(self, cgenc):
         if self._sym == Symbol.Identifier:
-            super_name = self._universe.symbol_for(self._text)
+            super_name = self.universe.symbol_for(self._text)
             self._accept(Symbol.Identifier)
         else:
-            super_name = self._universe.symbol_for("Object")
+            super_name = self.universe.symbol_for("Object")
 
         # Load the super class, if it is not nil (break the dependency cycle)
         if super_name.get_embedded_string() != "nil":
-            super_class = self._universe.load_class(super_name)
+            super_class = self.universe.load_class(super_name)
             if not super_class:
                 raise ParseError("Super class %s could not be loaded"
                                  % super_name.get_embedded_string(), Symbol.NONE, self)
@@ -123,14 +123,14 @@ class ParserBase(object):
         if self._accept(Symbol.Or):
             while self._sym_is_identifier():
                 var = self._variable()
-                cgenc.add_instance_field(self._universe.symbol_for(var))
+                cgenc.add_instance_field(self.universe.symbol_for(var))
             self._expect(Symbol.Or)
 
     def _class_fields(self, cgenc):
         if self._accept(Symbol.Or):
             while self._sym_is_identifier():
                 var = self._variable()
-                cgenc.add_class_field(self._universe.symbol_for(var))
+                cgenc.add_class_field(self.universe.symbol_for(var))
             self._expect(Symbol.Or)
 
     def _pattern(self, mgenc):
@@ -156,10 +156,10 @@ class ParserBase(object):
             kw += self._keyword()
             mgenc.add_argument_if_absent(self._argument())
 
-        mgenc.set_signature(self._universe.symbol_for(kw))
+        mgenc.set_signature(self.universe.symbol_for(kw))
 
     def _unary_selector(self):
-        return self._universe.symbol_for(self._identifier())
+        return self.universe.symbol_for(self._identifier())
 
     def _binary_selector(self):
         s = self._text
@@ -172,7 +172,7 @@ class ParserBase(object):
         elif  self._accept(Symbol.OperatorSequence):       pass
         else: self._expect(Symbol.NONE)
 
-        return self._universe.symbol_for(s)
+        return self.universe.symbol_for(s)
 
     def _identifier(self):
         s = self._text
@@ -267,7 +267,7 @@ class ParserBase(object):
     def _keyword_selector(self):
         s = self._text
         self._expect_one_of(self._keyword_selector_syms)
-        symb = self._universe.symbol_for(s)
+        symb = self.universe.symbol_for(s)
         return symb
 
     def _string(self):
@@ -309,22 +309,22 @@ class ParserBase(object):
 
     def _get_symbol_from_lexer(self):
         self._sym  = self._lexer.get_sym()
-        self._text = self._lexer.get_text()
+        self._text = self._lexer.text
 
     def _peek_for_next_symbol_from_lexer(self):
         self._next_sym = self._lexer.peek()
 
     def _peek_for_next_symbol_from_lexer_if_necessary(self):
-        if not self._lexer.get_peek_done():
+        if not self._lexer.peek_done:
             self._peek_for_next_symbol_from_lexer()
 
     def _create_block_signature(self, mgenc):
         block_sig = ("$blockMethod@" +
-                     str(self._lexer.get_current_line_number()) +
+                     str(self._lexer.line_number) +
                      "@" + str(self._lexer.get_current_column()))
         arg_size = mgenc.get_number_of_arguments()
         block_sig += ":" * (arg_size - 1)
-        return self._universe.symbol_for(block_sig)
+        return self.universe.symbol_for(block_sig)
 
     def _nested_block_signature(self, mgenc):
         self._expect(Symbol.NewBlock)

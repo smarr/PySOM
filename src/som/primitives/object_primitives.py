@@ -40,12 +40,12 @@ def _class(rcvr):
 class ObjectPrimitivesBase(Primitives):
 
     def install_primitives(self):
-        self._install_instance_primitive(BinaryPrimitive("==", self._universe, _equals))
-        self._install_instance_primitive(UnaryPrimitive("hashcode", self._universe, _hashcode))
+        self._install_instance_primitive(BinaryPrimitive("==", self.universe, _equals))
+        self._install_instance_primitive(UnaryPrimitive("hashcode", self.universe, _hashcode))
         self._install_instance_primitive(
-            BinaryPrimitive("instVarAt:", self._universe, _inst_var_at))
+            BinaryPrimitive("instVarAt:", self.universe, _inst_var_at))
         self._install_instance_primitive(
-            TernaryPrimitive("instVarAt:put:", self._universe, _inst_var_at_put))
+            TernaryPrimitive("instVarAt:put:", self.universe, _inst_var_at_put))
 
-        self._install_instance_primitive(UnaryPrimitive("halt", self._universe, _halt))
-        self._install_instance_primitive(UnaryPrimitive("class", self._universe, _class))
+        self._install_instance_primitive(UnaryPrimitive("halt", self.universe, _halt))
+        self._install_instance_primitive(UnaryPrimitive("class", self.universe, _class))

@@ -44,7 +44,7 @@ class ObjectWithLayout(ObjectWithoutFields):
         assert (self._object_layout.get_number_of_fields() == number_of_fields)
                 # TODO:
                 # or obj_class is None
-                # or not obj_class._universe.is_object_system_initialized())
+                # or not obj_class.universe.is_object_system_initialized())
 
         n = self._object_layout.get_number_of_used_extended_prim_locations()
         if n > 0:

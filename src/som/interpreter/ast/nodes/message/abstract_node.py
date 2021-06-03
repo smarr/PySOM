@@ -8,7 +8,7 @@ from .....vmobjects.abstract_object import AbstractObject
 
 class AbstractMessageNode(ExpressionNode):
 
-    _immutable_fields_ = ['_selector', '_universe',
+    _immutable_fields_ = ['_selector', 'universe',
                           '_rcvr_expr?', '_arg_exprs?[*]']
     _child_nodes_      = ['_rcvr_expr',  '_arg_exprs[*]']
 
@@ -16,7 +16,7 @@ class AbstractMessageNode(ExpressionNode):
                  source_section = None):
         ExpressionNode.__init__(self, source_section)
         self._selector = selector
-        self._universe = universe
+        self.universe = universe
         assert arg_exprs is not None
         make_sure_not_resized(arg_exprs)
         self._rcvr_expr = self.adopt_child(rcvr_expr)

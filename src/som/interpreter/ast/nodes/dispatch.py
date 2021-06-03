@@ -8,11 +8,11 @@ class _AbstractDispatchNode(Node):
 
     INLINE_CACHE_SIZE = 6
 
-    _immutable_fields_ = ['_universe']
+    _immutable_fields_ = ['universe']
 
     def __init__(self, universe):
         Node.__init__(self, None)
-        self._universe = universe
+        self.universe = universe
 
 
 class _AbstractDispatchWithLookupNode(_AbstractDispatchNode):
@@ -33,26 +33,26 @@ class UninitializedDispatchNode(_AbstractDispatchWithLookupNode):
         i_node = self
         chain_depth = 0
 
-        while isinstance(i_node.get_parent(), _AbstractDispatchNode):
-            i_node = i_node.get_parent()
+        while isinstance(i_node.parent, _AbstractDispatchNode):
+            i_node = i_node.parent
             chain_depth += 1
 
-        send_node = i_node.get_parent()
+        send_node = i_node.parent
 
         if chain_depth < _AbstractDispatchNode.INLINE_CACHE_SIZE:
-            rcvr_class = rcvr.get_class(self._universe)
+            rcvr_class = rcvr.get_class(self.universe)
             method = rcvr_class.lookup_invokable(self._selector)
 
             new_chain_end = UninitializedDispatchNode(self._selector,
-                                                      self._universe)
+                                                      self.universe)
 
             if method is not None:
                 node = _CachedDispatchObjectCheckNode(rcvr_class, method,
                                                       new_chain_end,
-                                                      self._universe)
+                                                      self.universe)
             else:
                 node = _CachedDnuObjectCheckNode(self._selector, rcvr_class,
-                                                 new_chain_end, self._universe)
+                                                 new_chain_end, self.universe)
 
             return self.replace(node)
         else:
@@ -61,7 +61,7 @@ class UninitializedDispatchNode(_AbstractDispatchWithLookupNode):
             # generalize it.
 
             generic_replacement = GenericDispatchNode(self._selector,
-                                                      self._universe)
+                                                      self.universe)
             send_node.replace_dispatch_list_head(generic_replacement)
             return generic_replacement
 
@@ -72,7 +72,7 @@ class UninitializedDispatchNode(_AbstractDispatchWithLookupNode):
 class GenericDispatchNode(_AbstractDispatchWithLookupNode):
 
     def _lookup_method(self, rcvr):
-        return rcvr.get_class(self._universe).lookup_invokable(self._selector)
+        return rcvr.get_class(self.universe).lookup_invokable(self._selector)
 
     def execute_dispatch(self, rcvr, args):
         method = self._lookup_method(rcvr)
@@ -80,7 +80,7 @@ class GenericDispatchNode(_AbstractDispatchWithLookupNode):
             return method.invoke(rcvr, args)
         else:
             # Won't use DNU caching here, because it's a megamorphic node
-            return send_does_not_understand(rcvr, self._selector, args, self._universe)
+            return send_does_not_understand(rcvr, self._selector, args, self.universe)
 
 
 class _AbstractCachedDispatchNode(_AbstractDispatchNode):
@@ -98,7 +98,7 @@ class _AbstractCachedDispatchNode(_AbstractDispatchNode):
 class _CachedDispatchObjectCheckNode(_AbstractCachedDispatchNode):
 
     def execute_dispatch(self, rcvr, args):
-        if rcvr.get_class(self._universe) == self._expected_class:
+        if rcvr.get_class(self.universe) == self._expected_class:
             return self._cached_method.invoke(rcvr, args)
         else:
             return self._next.execute_dispatch(rcvr, args)
@@ -116,7 +116,7 @@ class _CachedDnuObjectCheckNode(_AbstractCachedDispatchNode):
         self._selector = selector
 
     def execute_dispatch(self, rcvr, args):
-        if rcvr.get_class(self._universe) == self._expected_class:
+        if rcvr.get_class(self.universe) == self._expected_class:
             return self._cached_method.invoke(
                 rcvr, [self._selector, Array.from_values(args)])
         else:

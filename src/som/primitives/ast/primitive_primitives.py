@@ -21,4 +21,4 @@ class PrimitivePrimitives(_Base):
     def install_primitives(self):
         _Base.install_primitives(self)
         self._install_instance_primitive(Primitive("invokeOn:with:",
-                                                   self._universe, _invoke_on_with))
+                                                   self.universe, _invoke_on_with))

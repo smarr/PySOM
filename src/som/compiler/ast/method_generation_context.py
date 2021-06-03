@@ -18,8 +18,8 @@ from ...vmobjects.method_ast import AstMethod
 
 class MethodGenerationContext(MethodGenerationContextBase):
 
-    def __init__(self, universe):
-        MethodGenerationContextBase.__init__(self, universe)
+    def __init__(self, universe, outer = None):
+        MethodGenerationContextBase.__init__(self, universe, outer)
 
         self._arguments   = OrderedDict()
         self._locals      = OrderedDict()
@@ -80,7 +80,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def assemble(self, method_body):
         if self._primitive:
-            return empty_primitive(self._signature.get_embedded_string(), self._universe)
+            return empty_primitive(self._signature.get_embedded_string(), self.universe)
 
         # local_args     = []
         non_local_args = []
@@ -96,22 +96,22 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         if self.needs_to_catch_non_local_return():
             method_body = CatchNonLocalReturnNode(method_body,
-                                                  method_body.get_source_section())
+                                                  method_body.source_section)
 
         method_body = self._add_argument_initialization(method_body)
         method = Invokable(self._get_source_section_for_method(method_body),
                            method_body, arg_mapping, len(local_tmps),
-                           len(non_local_tmps), self._universe)
+                           len(non_local_tmps), self.universe)
         return AstMethod(self._signature, method,
                       # copy list to make it immutable for RPython
                       self._embedded_block_methods[:],
-                      self._universe)
+                      self.universe)
 
     def _get_source_section_for_method(self, expr):
-        src_body = expr.get_source_section()
+        src_body = expr.source_section
         assert isinstance(src_body, SourceSection)
         src_method = SourceSection(identifier = "%s>>#%s" % (
-            self._holder_genc.get_name().get_embedded_string(),
+            self.holder.name.get_embedded_string(),
             self._signature.get_embedded_string()),
                                    source_section = src_body)
         return src_method
@@ -182,7 +182,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
                                 self.get_field_index(field_name))
 
     def get_global_read(self, var_name):
-        return create_global_node(var_name, self._universe, None)
+        return create_global_node(var_name, self.universe, None)
 
     def get_object_field_write(self, field_name, exp):
         if not self.has_field(field_name):
@@ -191,5 +191,5 @@ class MethodGenerationContext(MethodGenerationContextBase):
                                  self.get_field_index(field_name))
 
     def __str__(self):
-        return "MethodGenC(%s>>%s)" % (self._holder_genc.get_name().get_string,
+        return "MethodGenC(%s>>%s)" % (self.holder.get_name().get_string,
                                        self._signature)

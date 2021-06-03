@@ -8,7 +8,7 @@ from som.vm.globals import nilObject
 class _Shell(object):
 
     def __init__(self, universe):
-        self._universe = universe
+        self.universe = universe
 
     def start(self):
         from som.vm.universe import std_println, error_println
@@ -33,13 +33,13 @@ class _Shell(object):
                 counter += 1
 
                 # Compile and load the newly generated class
-                shell_class = self._universe.load_shell_class(stmt)
+                shell_class = self.universe.load_shell_class(stmt)
 
                 # If success
                 if shell_class:
-                    shell_object = self._universe.new_instance(shell_class)
+                    shell_object = self.universe.new_instance(shell_class)
                     shell_method = shell_class.lookup_invokable(
-                        self._universe.symbol_for("run:"))
+                        self.universe.symbol_for("run:"))
 
                     it = self._exec(shell_object, shell_method, it)
             except Exception as e:

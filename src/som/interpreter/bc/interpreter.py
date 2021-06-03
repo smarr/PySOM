@@ -8,20 +8,17 @@ from rlib import jit
 
 class Interpreter(object):
 
-    _immutable_fields_ = ["_universe"]
+    _immutable_fields_ = ["universe"]
 
     def __init__(self, universe):
-        self._universe   = universe
-
-    def get_universe(self):
-        return self._universe
+        self.universe   = universe
 
     def _do_push_global(self, bytecode_index, frame, method):
         # Handle the push global bytecode
         global_name = method.get_constant(bytecode_index)
 
         # Get the global from the universe
-        glob = self._universe.get_global(global_name)
+        glob = self.universe.get_global(global_name)
 
         if glob:
             # Push the global onto the stack
@@ -96,7 +93,7 @@ class Interpreter(object):
         receiver = frame.get_stack_element(num_args - 1)
 
         # Send the message
-        self._send(method, frame, signature, receiver.get_class(self._universe),
+        self._send(method, frame, signature, receiver.get_class(self.universe),
                    bytecode_index)
 
     @jit.unroll_safe
@@ -276,8 +273,8 @@ class Interpreter(object):
         self._lookup_and_send(receiver, frame, "escapedBlock:", arguments)
 
     def _lookup_and_send(self, receiver, frame, selector_string, arguments):
-        selector = self._universe.symbol_for(selector_string)
-        invokable = receiver.get_class(self._universe).lookup_invokable(selector)
+        selector = self.universe.symbol_for(selector_string)
+        invokable = receiver.get_class(self.universe).lookup_invokable(selector)
 
         frame.push(receiver)
         for arg in arguments:

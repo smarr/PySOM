@@ -32,5 +32,5 @@ class UninitializedMessageNode(AbstractMessageNode):
                     return specialization.specialize_node(self._selector, rcvr,
                                                           args, self)
         return self.replace(
-            GenericMessageNode(self._selector, self._universe, self._rcvr_expr,
-                               self._arg_exprs, self._source_section))
+            GenericMessageNode(self._selector, self.universe, self._rcvr_expr,
+                               self._arg_exprs, self.source_section))
