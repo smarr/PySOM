@@ -116,52 +116,52 @@ def interpret(method, frame):
         next_bc_idx = current_bc_idx + bc_length
 
         # Handle the current bytecode
-        if   bytecode == Bytecodes.halt:                            # BC: 0
+        if   bytecode == Bytecodes.halt:
             return frame.top()
-        elif bytecode == Bytecodes.dup:                             # BC: 1
+        elif bytecode == Bytecodes.dup:
             frame.push(frame.top())
-        elif bytecode == Bytecodes.push_local:                      # BC: 2
+        elif bytecode == Bytecodes.push_local:
             frame.push(
                 frame.get_local(
                     method.get_bytecode(current_bc_idx + 1),
                     method.get_bytecode(current_bc_idx + 2)))
-        elif bytecode == Bytecodes.push_argument:                   # BC: 3
+        elif bytecode == Bytecodes.push_argument:
             frame.push(
                 frame.get_argument(
                     method.get_bytecode(current_bc_idx + 1),
                     method.get_bytecode(current_bc_idx + 2)))
-        elif bytecode == Bytecodes.push_field:                      # BC: 4
+        elif bytecode == Bytecodes.push_field:
             field_index = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)
             frame.push(get_self(frame, ctx_level).get_field(field_index))
-        elif bytecode == Bytecodes.push_block:                      # BC: 5
+        elif bytecode == Bytecodes.push_block:
             block_method = method.get_constant(current_bc_idx)
             frame.push(BcBlock(block_method, frame))
-        elif bytecode == Bytecodes.push_constant:                   # BC: 6
+        elif bytecode == Bytecodes.push_constant:
             frame.push(method.get_constant(current_bc_idx))
-        elif bytecode == Bytecodes.push_global:                     # BC: 7
+        elif bytecode == Bytecodes.push_global:
             _do_push_global(current_bc_idx, frame, method)
-        elif bytecode == Bytecodes.pop:                             # BC: 8
+        elif bytecode == Bytecodes.pop:
             frame.pop()
-        elif bytecode == Bytecodes.pop_local:                       # BC: 9
+        elif bytecode == Bytecodes.pop_local:
             frame.set_local(
                 method.get_bytecode(current_bc_idx + 1),
                 method.get_bytecode(current_bc_idx + 2),
                 frame.pop())
-        elif bytecode == Bytecodes.pop_argument:                    # BC:10
+        elif bytecode == Bytecodes.pop_argument:
             frame.set_argument(
                 method.get_bytecode(current_bc_idx + 1),
                 method.get_bytecode(current_bc_idx + 2),
                 frame.pop())
-        elif bytecode == Bytecodes.pop_field:                       # BC:11
+        elif bytecode == Bytecodes.pop_field:
             _do_pop_field(current_bc_idx, frame, method)
-        elif bytecode == Bytecodes.send:                            # BC:12
+        elif bytecode == Bytecodes.send:
             _do_send(current_bc_idx, frame, method)
-        elif bytecode == Bytecodes.super_send:                      # BC:13
+        elif bytecode == Bytecodes.super_send:
             _do_super_send(current_bc_idx, frame, method)
-        elif bytecode == Bytecodes.return_local:                    # BC:14
+        elif bytecode == Bytecodes.return_local:
             return frame.top()
-        elif bytecode == Bytecodes.return_non_local:                # BC:15
+        elif bytecode == Bytecodes.return_non_local:
             return _do_return_non_local(
                 frame, method.get_bytecode(current_bc_idx + 1))
         elif bytecode == Bytecodes.return_self:
