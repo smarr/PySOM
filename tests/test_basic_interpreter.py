@@ -104,20 +104,32 @@ def test_basic_interpreter_behavior(
 
 
 def _assert_equals_som_value(expected_result, actual_result, result_type):
+    type_matches = False
     if result_type is Integer:
-        assert expected_result == actual_result.get_embedded_integer()
-        return
+        if isinstance(actual_result, Integer):
+            assert expected_result == actual_result.get_embedded_integer()
+            return
+        type_matches = True
 
     if result_type is Double:
-        assert expected_result == actual_result.get_embedded_double()
-        return
+        if isinstance(actual_result, Double):
+            assert expected_result == actual_result.get_embedded_double()
+            return
+        type_matches = True
 
     if result_type is Class:
-        assert expected_result == actual_result.get_name().get_embedded_string()
-        return
+        if isinstance(actual_result, Class):
+            assert expected_result == actual_result.get_name().get_embedded_string()
+            return
+        type_matches = True
 
     if result_type is Symbol:
-        assert expected_result == actual_result.get_embedded_string()
-        return
+        if isinstance(actual_result, Symbol):
+            assert expected_result == actual_result.get_embedded_string()
+            return
+        type_matches = True
 
-    assert False, "SOM Value handler missing: " + str(result_type)
+    if type_matches:
+        raise AssertionError(str(expected_result) + " != " + str(actual_result))
+
+    raise AssertionError("SOM Value handler missing: " + str(result_type))
