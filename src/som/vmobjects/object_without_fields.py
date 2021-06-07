@@ -24,3 +24,14 @@ class ObjectWithoutFields(AbstractObject):
 
     def get_number_of_fields(self):  # pylint: disable=no-self-use
         return 0
+
+    def __str__(self):
+        from som.vm.globals import nilObject, trueObject, falseObject
+
+        if self is nilObject:
+            return "nil"
+        if self is trueObject:
+            return "true"
+        if self is falseObject:
+            return "false"
+        return AbstractObject.__str__(self)
