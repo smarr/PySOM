@@ -1,9 +1,9 @@
 from rlib.objectmodel import compute_hash
 from som.compiler.symbol import Symbol
 from som.primitives.primitives import Primitives
+from som.vm.current import current_universe
 
 from som.vm.globals import trueObject, falseObject
-from som.vm.universe import get_current
 from som.vmobjects.integer import Integer
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 from som.vmobjects.string import String
@@ -14,7 +14,7 @@ def _concat(rcvr, argument):
 
 
 def _as_symbol(rcvr):
-    return get_current().symbol_for(rcvr.get_embedded_string())
+    return current_universe.symbol_for(rcvr.get_embedded_string())
 
 
 def _length(rcvr):

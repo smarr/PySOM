@@ -4,34 +4,35 @@ from rlib import rgc, jit
 from rlib.streamio import open_file_as_stream, readall_from_stream
 
 from som.primitives.primitives import Primitives
+from som.vm.current import current_universe
 from som.vm.globals import nilObject, trueObject, falseObject
-from som.vm.universe import get_current, std_print, std_println, error_print, error_println
+from som.vm.universe import std_print, std_println, error_print, error_println
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 
 
 def _load(rcvr, arg):
-    result = get_current().load_class(arg)
+    result = current_universe.load_class(arg)
     return result if result else nilObject
 
 
 def _exit(rcvr, error):
-    return get_current().exit(error.get_embedded_integer())
+    return current_universe.exit(error.get_embedded_integer())
 
 
 def _global(rcvr, argument):
-    result = get_current().get_global(argument)
+    result = current_universe.get_global(argument)
     return result if result else nilObject
 
 
 def _has_global(rcvr, arg):
-    if get_current().has_global(arg):
+    if current_universe.has_global(arg):
         return trueObject
     else:
         return falseObject
 
 
 def _global_put(rcvr, argument, value):
-    get_current().set_global(argument, value)
+    current_universe.set_global(argument, value)
     return value
 
 
@@ -57,13 +58,13 @@ def _error_println(rcvr, string):
 
 def _time(rcvr):
     from som.vmobjects.integer import Integer
-    since_start = time.time() - get_current().start_time
+    since_start = time.time() - current_universe.start_time
     return Integer(int(since_start * 1000))
 
 
 def _ticks(rcvr):
     from som.vmobjects.integer import Integer
-    since_start = time.time() - get_current().start_time
+    since_start = time.time() - current_universe.start_time
     return Integer(int(since_start * 1000000))
 
 

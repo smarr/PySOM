@@ -6,7 +6,7 @@ from som.vm.globals import nilObject, trueObject, falseObject
 from rlib import jit
 
 
-def get_printable_location(interpreter, method_body, method_condition, while_type):
+def get_printable_location(method_body, method_condition, while_type):
     from som.vmobjects.method_bc import BcMethod
     assert isinstance(method_body, BcMethod)
     assert isinstance(method_condition, BcMethod)
@@ -18,51 +18,47 @@ def get_printable_location(interpreter, method_body, method_condition, while_typ
 
 
 jitdriver = jit.JitDriver(
-    greens=['interpreter', 'method_body', 'method_condition', 'while_type'],
+    greens=['method_body', 'method_condition', 'while_type'],
     reds='auto',
     # virtualizables=['frame'],
     is_recursive=True,
     get_printable_location=get_printable_location)
 
 
-def _execute_block(frame, block, block_method, interpreter):
+def _execute_block(frame, block, block_method):
     b = BcBlock(block_method, block.get_context())
     frame.push(b)
 
-    block_evaluate(b, interpreter, frame)
+    block_evaluate(b, frame)
     return frame.pop()
 
 
-def _while_loop(frame, interpreter, while_type):
+def _while_loop(frame, while_type):
     loop_body      = frame.pop()
     loop_condition = frame.pop()
-
-    # universe = interpreter.universe
 
     method_body = loop_body.get_method()
     method_condition = loop_condition.get_method()
 
     while True:
-        jitdriver.jit_merge_point(interpreter=interpreter,
-                                  method_body=method_body,
+        jitdriver.jit_merge_point(method_body=method_body,
                                   method_condition=method_condition,
-                                  #universe=universe,
                                   while_type=while_type)
-        condition_result = _execute_block(frame, loop_condition, method_condition, interpreter)
+        condition_result = _execute_block(frame, loop_condition, method_condition)
         if condition_result is while_type:
-            _execute_block(frame, loop_body, method_body, interpreter)
+            _execute_block(frame, loop_body, method_body)
         else:
             break
 
     frame.push(nilObject)
 
 
-def _while_false(ivkbl, frame, interpreter):
-    _while_loop(frame, interpreter, falseObject)
+def _while_false(ivkbl, frame):
+    _while_loop(frame, falseObject)
 
 
-def _while_true(ivkbl, frame, interpreter):
-    _while_loop(frame, interpreter, trueObject)
+def _while_true(ivkbl, frame):
+    _while_loop(frame, trueObject)
 
 
 class BlockPrimitives(Primitives):

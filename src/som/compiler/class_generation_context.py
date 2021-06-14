@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from som.vmobjects.array import Array
-from som.vmobjects.primitive import Primitive
+from som.vmobjects.clazz import Class
 
 
 class ClassGenerationContext(object):
@@ -77,7 +77,9 @@ class ClassGenerationContext(object):
         cc_name = self.name.get_embedded_string() + " class"
 
         # Allocate the class of the resulting class
-        result_class = self.universe.new_class(self.universe.metaclassClass)
+        result_class = Class(
+            self.universe.metaclassClass.get_number_of_instance_fields(),
+            self.universe.metaclassClass)
 
         # Initialize the class of the resulting class
         result_class.set_instance_fields(Array.from_objects(
@@ -90,7 +92,7 @@ class ClassGenerationContext(object):
         result_class.set_super_class(super_m_class)
 
         # Allocate the resulting class
-        result = self.universe.new_class(result_class)
+        result = Class(result_class.get_number_of_instance_fields(), result_class)
 
         # Initialize the resulting class
         result.set_name(self.name)

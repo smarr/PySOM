@@ -2,9 +2,7 @@ import os
 import pytest
 
 from som.compiler.parse_error import ParseError
-
-from som.vm.universe import create_universe, set_current
-
+from som.vm.current import current_universe
 from som.vmobjects.clazz   import Class
 from som.vmobjects.double  import Double
 from som.vmobjects.integer import Integer
@@ -102,15 +100,13 @@ from som.vmobjects.symbol  import Symbol
         ("NumberOfTests", "numberOfTests", 65, Integer),
     ])
 def test_basic_interpreter_behavior(test_class, test_selector, expected_result, result_type):
-    u = create_universe()
-    set_current(u)
-
+    current_universe.reset(True)
     core_lib_path = os.path.dirname(os.path.abspath(__file__)) + "/../core-lib/"
-    u.setup_classpath(core_lib_path + "Smalltalk:"
+    current_universe.setup_classpath(core_lib_path + "Smalltalk:"
                       + core_lib_path + "TestSuite/BasicInterpreterTests")
 
     try:
-        actual_result = u.execute_method(test_class, test_selector)
+        actual_result = current_universe.execute_method(test_class, test_selector)
         _assert_equals_som_value(expected_result, actual_result, result_type)
     except ParseError as e:
         # if we expect a ParseError, then all is fine, otherwise re-raise it

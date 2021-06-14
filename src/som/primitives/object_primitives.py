@@ -1,8 +1,8 @@
 from rlib.objectmodel import compute_identity_hash
 from som.primitives.primitives import Primitives
+from som.vm.current import current_universe
 
 from som.vm.globals import trueObject, falseObject
-from som.vm.universe import get_current
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 
 
@@ -34,7 +34,7 @@ def _halt(rcvr):
 
 
 def _class(rcvr):
-    return rcvr.get_class(get_current())
+    return rcvr.get_class(current_universe)
 
 
 class ObjectPrimitivesBase(Primitives):

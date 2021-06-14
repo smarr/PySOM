@@ -1,10 +1,7 @@
-from rlib.debug import make_sure_not_resized
 from rlib import jit
 from rlib.string_stream import encode_to_bytes
 
-
 from som.compiler.bc.method_generation_context import create_bootstrap_method
-from som.interpreter.bc.interpreter import Interpreter
 from som.interpreter.bc.frame import create_bootstrap_frame
 
 from som.interp_type import is_ast_interpreter
@@ -99,6 +96,9 @@ class Universe(object):
         self.classpath       = None
         self.start_time      = time.time()  # a float of the time in seconds
         self._object_system_initialized = False
+
+    def reset(self, avoid_exit):
+        self.__init__(avoid_exit)
 
     def exit(self, error_code):
         if self._avoid_exit:
@@ -252,12 +252,12 @@ class Universe(object):
         # Setup the true and false objects
         trueClassName    = self.symbol_for("True")
         trueClass        = self.load_class(trueClassName)
-        trueClass.load_primitives(False)
+        trueClass.load_primitives(False, self)
         trueObject.set_class(trueClass)
 
         falseClassName   = self.symbol_for("False")
         falseClass       = self.load_class(falseClassName)
-        falseClass.load_primitives(False)
+        falseClass.load_primitives(False, self)
         falseObject.set_class(falseClass)
 
         # Load the system class and create an instance of it
@@ -306,10 +306,6 @@ class Universe(object):
         values = [String(s) for s in strings]
         return Array.from_objects(values)
 
-    def new_class(self, class_class):
-        # Allocate a new class and set its class to be the given class class
-        return Class(self, class_class.get_number_of_instance_fields(), class_class)
-
     @staticmethod
     def new_instance(instance_class):
         num_fields = instance_class.get_number_of_instance_fields()
@@ -320,8 +316,8 @@ class Universe(object):
 
     def new_metaclass_class(self):
         # Allocate the metaclass classes
-        class_class = Class(self, 0, None)
-        result = Class(self, 0, class_class)
+        class_class = Class(0, None)
+        result = Class(0, class_class)
 
         # Setup the metaclass hierarchy
         result.get_class(self).set_class(result)
@@ -336,8 +332,8 @@ class Universe(object):
 
     def new_system_class(self):
         # Allocate the new system class
-        system_class_class = Class(self, 0, None)
-        system_class = Class(self, 0, system_class_class)
+        system_class_class = Class(0, None)
+        system_class = Class(0, system_class_class)
 
         # Setup the metaclass hierarchy
         system_class.get_class(self).set_class(self.metaclassClass)
@@ -428,12 +424,11 @@ class Universe(object):
         self.set_global(name, result)
         return result
 
-    @staticmethod
-    def _load_primitives(clazz, is_system_class):
+    def _load_primitives(self, clazz, is_system_class):
         if not clazz: return
 
         if clazz.needs_primitives() or is_system_class:
-            clazz.load_primitives(not is_system_class)
+            clazz.load_primitives(not is_system_class, self)
 
     def _load_system_class(self, system_class):
         # Load the system class
@@ -492,29 +487,22 @@ class _ASTUniverse(Universe):
 
 class _BCUniverse(Universe):
 
-    def __init__(self, avoid_exit = False):
-        self._interpreter = Interpreter(self)
-        Universe.__init__(self, avoid_exit)
-
-    def get_interpreter(self):
-        return self._interpreter
-
     def _start_shell(self):
         bootstrap_method = create_bootstrap_method(self)
-        shell = BcShell(self, self._interpreter, bootstrap_method)
+        shell = BcShell(self, bootstrap_method)
         return shell.start()
 
     def _start_execution(self, system_object, initialize, arguments_array):
         bootstrap_method = create_bootstrap_method(self)
         bootstrap_frame = create_bootstrap_frame(bootstrap_method, system_object, arguments_array)
         # Lookup the initialize invokable on the system class
-        return initialize.invoke(bootstrap_frame, self._interpreter)
+        return initialize.invoke(bootstrap_frame)
 
     def _start_method_execution(self, clazz, invokable):
         bootstrap_method = create_bootstrap_method(self)
         bootstrap_frame = create_bootstrap_frame(bootstrap_method, clazz)
 
-        invokable.invoke(bootstrap_frame, self._interpreter)
+        invokable.invoke(bootstrap_frame)
         return bootstrap_frame.pop()
 
     def _initialize_object_system(self):
@@ -527,14 +515,6 @@ def create_universe(avoid_exit = False):
         return _ASTUniverse(avoid_exit)
     else:
         return _BCUniverse(avoid_exit)
-
-
-_current = create_universe()
-
-
-def set_current(universe):
-    global _current
-    _current = universe
 
 
 def error_print(msg):
@@ -555,13 +535,10 @@ def std_println(msg = ""):
 
 def main(args):
     jit.set_param(None, 'trace_limit', 15000)
-    u = _current
+    from som.vm.current import current_universe
+    u = current_universe
     u.interpret(args[1:])
     u.exit(0)
-
-
-def get_current():
-    return _current
 
 
 if __name__ == '__main__':

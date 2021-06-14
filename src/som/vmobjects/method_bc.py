@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from rlib import jit
 
 from som.interpreter.bc.frame import create_frame
+from som.interpreter.bc.interpreter import interpret
 from som.interpreter.control_flow import ReturnException
 from som.vmobjects.abstract_object import AbstractObject
 
@@ -116,13 +117,13 @@ class BcMethod(AbstractObject):
         assert 0 <= value and value <= 255
         self._bytecodes[index] = chr(value)
 
-    def invoke(self, frame, interpreter):
+    def invoke(self, frame):
         # Allocate and push a new frame on the interpreter stack
         new_frame = create_frame(frame, self, None)
         new_frame.copy_arguments_from(frame, self._number_of_arguments)
 
         try:
-            result = interpreter.interpret(self, new_frame)
+            result = interpret(self, new_frame)
             frame.pop_old_arguments_and_push_result(self, result)
             new_frame.clear_previous_frame()
             return
