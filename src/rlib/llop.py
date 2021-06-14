@@ -19,11 +19,11 @@ try:
 
 except ImportError:
     "NOT_RPYTHON"
+
     def int_mod(_type, left, right):
         if left > 0:
             return abs(left) % abs(right)
-        else:
-            return 0 - (abs(left) % abs(right))
+        return 0 - (abs(left) % abs(right))
 
     def as_32_bit_unsigned_value(int_value):
         return int_value & 0xFFFFFFFF

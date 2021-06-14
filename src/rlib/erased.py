@@ -1,9 +1,9 @@
 try:
-    from rpython.rlib.rerased import new_erasing_pair
+    from rpython.rlib.rerased import new_erasing_pair  # pylint: disable=unused-import
 except ImportError:
     "NOT_RPYTHON"
-    def new_erasing_pair(_name):
 
+    def new_erasing_pair(_name):
         def erase(x):
             return x
 

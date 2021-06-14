@@ -1,4 +1,4 @@
-from rlib.arithmetic import int_type
+from rlib.arithmetic import IntType
 from rlib.erased import new_erasing_pair
 from rlib.jit import JitDriver
 from rlib.objectmodel import instantiate
@@ -291,7 +291,7 @@ class _LongStrategy(_ArrayStrategy):
     def get_idx(self, storage, idx):
         store = self._unerase(storage)
         assert isinstance(store, list)
-        assert isinstance(store[idx], int_type)
+        assert isinstance(store[idx], IntType)
         return Integer(store[idx])
 
     def set_idx(self, array, idx, value):

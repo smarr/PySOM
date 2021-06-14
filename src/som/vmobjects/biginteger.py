@@ -1,4 +1,4 @@
-from rlib.arithmetic import bigint_from_int, divrem, bigint_type
+from rlib.arithmetic import bigint_from_int, divrem, BigIntType
 from .abstract_object import AbstractObject
 from som.vm.globals import trueObject, falseObject
 
@@ -9,7 +9,7 @@ class BigInteger(AbstractObject):
 
     def __init__(self, value):
         AbstractObject.__init__(self)
-        assert isinstance(value, bigint_type)
+        assert isinstance(value, BigIntType)
         self._embedded_biginteger = value
 
     def get_embedded_biginteger(self):

@@ -1,4 +1,4 @@
-from rlib.arithmetic import ovfcheck, bigint_from_int, divrem, int_type
+from rlib.arithmetic import ovfcheck, bigint_from_int, divrem, IntType
 from rlib.llop import as_32_bit_signed_value, int_mod, Signed
 
 from som.vmobjects.abstract_object import AbstractObject
@@ -11,7 +11,7 @@ class Integer(AbstractObject):
 
     def __init__(self, value):
         AbstractObject.__init__(self)
-        assert isinstance(value, int_type), "Value: " + str(value)
+        assert isinstance(value, IntType), "Value: " + str(value)
         self._embedded_integer = value
 
     def get_embedded_integer(self):
