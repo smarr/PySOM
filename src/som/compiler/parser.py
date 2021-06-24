@@ -15,25 +15,52 @@ else:
 
 class ParserBase(object):
 
-    _single_op_syms        = [Symbol.Not,  Symbol.And,  Symbol.Or,    Symbol.Star,
-                              Symbol.Div,  Symbol.Mod,  Symbol.Plus,  Symbol.Equal,
-                              Symbol.More, Symbol.Less, Symbol.Comma, Symbol.At,
-                              Symbol.Per,  Symbol.NONE]
+    _single_op_syms = [
+        Symbol.Not,
+        Symbol.And,
+        Symbol.Or,
+        Symbol.Star,
+        Symbol.Div,
+        Symbol.Mod,
+        Symbol.Plus,
+        Symbol.Equal,
+        Symbol.More,
+        Symbol.Less,
+        Symbol.Comma,
+        Symbol.At,
+        Symbol.Per,
+        Symbol.NONE,
+    ]
 
-    _binary_op_syms        = [Symbol.Or,   Symbol.Comma, Symbol.Minus, Symbol.Equal,
-                              Symbol.Not,  Symbol.And,   Symbol.Or,    Symbol.Star,
-                              Symbol.Div,  Symbol.Mod,   Symbol.Plus,  Symbol.Equal,
-                              Symbol.More, Symbol.Less,  Symbol.Comma, Symbol.At,
-                              Symbol.Per,  Symbol.NONE]
+    _binary_op_syms = [
+        Symbol.Or,
+        Symbol.Comma,
+        Symbol.Minus,
+        Symbol.Equal,
+        Symbol.Not,
+        Symbol.And,
+        Symbol.Or,
+        Symbol.Star,
+        Symbol.Div,
+        Symbol.Mod,
+        Symbol.Plus,
+        Symbol.Equal,
+        Symbol.More,
+        Symbol.Less,
+        Symbol.Comma,
+        Symbol.At,
+        Symbol.Per,
+        Symbol.NONE,
+    ]
 
     _keyword_selector_syms = [Symbol.Keyword, Symbol.KeywordSequence]
 
     def __init__(self, reader, file_name, universe):
         self.universe = universe
         self._file_name = file_name
-        self._lexer    = Lexer(reader)
-        self._sym      = Symbol.NONE
-        self._text     = None
+        self._lexer = Lexer(reader)
+        self._sym = Symbol.NONE
+        self._text = None
         self._next_sym = Symbol.NONE
         self._get_symbol_from_lexer()
         self._super_send = False
@@ -48,9 +75,12 @@ class ParserBase(object):
         self._expect(Symbol.NewTerm)
         self._instance_fields(cgenc)
 
-        while (self._sym_is_identifier() or self._sym == Symbol.Keyword or
-               self._sym == Symbol.OperatorSequence or
-               self._sym_in(self._binary_op_syms)):
+        while (
+            self._sym_is_identifier()
+            or self._sym == Symbol.Keyword
+            or self._sym == Symbol.OperatorSequence
+            or self._sym_in(self._binary_op_syms)
+        ):
             mgenc = MethodGenerationContext(self.universe)
             mgenc.holder = cgenc
             mgenc.add_argument("self")
@@ -61,10 +91,12 @@ class ParserBase(object):
             cgenc.switch_to_class_side()
             self._class_fields(cgenc)
 
-            while (self._sym_is_identifier()      or
-                   self._sym == Symbol.Keyword    or
-                   self._sym == Symbol.OperatorSequence or
-                   self._sym_in(self._binary_op_syms)):
+            while (
+                self._sym_is_identifier()
+                or self._sym == Symbol.Keyword
+                or self._sym == Symbol.OperatorSequence
+                or self._sym_in(self._binary_op_syms)
+            ):
                 mgenc = MethodGenerationContext(self.universe)
                 mgenc.holder = cgenc
                 mgenc.add_argument("self")
@@ -84,8 +116,12 @@ class ParserBase(object):
         if super_name.get_embedded_string() != "nil":
             super_class = self.universe.load_class(super_name)
             if not super_class:
-                raise ParseError("Super class %s could not be loaded"
-                                 % super_name.get_embedded_string(), Symbol.NONE, self)
+                raise ParseError(
+                    "Super class %s could not be loaded"
+                    % super_name.get_embedded_string(),
+                    Symbol.NONE,
+                    self,
+                )
             cgenc.set_super_class(super_class)
 
     def _sym_in(self, symbol_list):
@@ -109,15 +145,18 @@ class ParserBase(object):
     def _expect(self, s):
         if self._accept(s):
             return True
-        raise ParseError("Unexpected symbol. Expected %(expected)s, but found "
-                         "%(found)s", s, self)
+        raise ParseError(
+            "Unexpected symbol. Expected %(expected)s, but found " "%(found)s", s, self
+        )
 
     def _expect_one_of(self, symbol_list):
         if self._accept_one_of(symbol_list):
             return True
-        raise ParseErrorSymList("Unexpected symbol. Expected one of "
-                                "%(expected)s, but found %(found)s",
-                                symbol_list, self)
+        raise ParseErrorSymList(
+            "Unexpected symbol. Expected one of " "%(expected)s, but found %(found)s",
+            symbol_list,
+            self,
+        )
 
     def _instance_fields(self, cgenc):
         if self._accept(Symbol.Or):
@@ -149,14 +188,14 @@ class ParserBase(object):
         mgenc.add_argument_if_absent(self._argument())
 
     def _keyword_pattern(self, mgenc):
-        kw = self._keyword()
+        keyword = self._keyword()
         mgenc.add_argument_if_absent(self._argument())
 
         while self._sym == Symbol.Keyword:
-            kw += self._keyword()
+            keyword += self._keyword()
             mgenc.add_argument_if_absent(self._argument())
 
-        mgenc.set_signature(self.universe.symbol_for(kw))
+        mgenc.set_signature(self.universe.symbol_for(keyword))
 
     def _unary_selector(self):
         return self.universe.symbol_for(self._identifier())
@@ -164,13 +203,20 @@ class ParserBase(object):
     def _binary_selector(self):
         s = self._text
 
-        if    self._accept(Symbol.Or):                     pass
-        elif  self._accept(Symbol.Comma):                  pass
-        elif  self._accept(Symbol.Minus):                  pass
-        elif  self._accept(Symbol.Equal):                  pass
-        elif  self._accept_one_of(self._single_op_syms):   pass
-        elif  self._accept(Symbol.OperatorSequence):       pass
-        else: self._expect(Symbol.NONE)
+        if self._accept(Symbol.Or):
+            pass
+        elif self._accept(Symbol.Comma):
+            pass
+        elif self._accept(Symbol.Minus):
+            pass
+        elif self._accept(Symbol.Equal):
+            pass
+        elif self._accept_one_of(self._single_op_syms):
+            pass
+        elif self._accept(Symbol.OperatorSequence):
+            pass
+        else:
+            self._expect(Symbol.NONE)
 
         return self.universe.symbol_for(s)
 
@@ -201,8 +247,13 @@ class ParserBase(object):
 
         if self._next_sym == Symbol.Assign:
             return self._assignation(mgenc)
-        else:
-            return self._evaluation(mgenc)
+        return self._evaluation(mgenc)
+
+    def _assignation(self, _):  # pylint: disable=no-self-use
+        raise Exception("Implemented in subclass")
+
+    def _evaluation(self, _):  # pylint: disable=no-self-use
+        raise Exception("Implemented in subclass")
 
     def _nested_term(self, mgenc):
         self._expect(Symbol.NewTerm)
@@ -213,13 +264,13 @@ class ParserBase(object):
     def _literal_decimal(self, negate_value):
         if self._sym == Symbol.Integer:
             return self._literal_integer(negate_value)
-        else:
-            if self._sym == Symbol.Double:
-                return self._literal_double(negate_value)
-            else:
-                raise ParseError("Could not parse double. "
-                                 "Expected a number but got '%s'" % self._text,
-                                 Symbol.Double, self)
+        if self._sym == Symbol.Double:
+            return self._literal_double(negate_value)
+        raise ParseError(
+            "Could not parse double. " "Expected a number but got '%s'" % self._text,
+            Symbol.Double,
+            self,
+        )
 
     def _negative_decimal(self):
         self._expect(Symbol.Minus)
@@ -227,6 +278,7 @@ class ParserBase(object):
 
     def _literal_integer(self, negate_value):
         from som.vmobjects.integer import Integer
+
         try:
             i = string_to_int(self._text)
             if negate_value:
@@ -234,28 +286,35 @@ class ParserBase(object):
             result = Integer(i)
         except ParseStringOverflowError:
             from som.vmobjects.biginteger import BigInteger
+
             bigint = bigint_from_str(self._text)
             if negate_value:
                 bigint.sign = -1
             result = BigInteger(bigint)
         except ValueError:
-            raise ParseError("Could not parse integer. "
-                             "Expected a number but got '%s'" % self._text,
-                             Symbol.NONE, self)
+            raise ParseError(
+                "Could not parse integer. "
+                "Expected a number but got '%s'" % self._text,
+                Symbol.NONE,
+                self,
+            )
         self._expect(Symbol.Integer)
         return result
 
     def _literal_double(self, negate_value):
         try:
-            f = float(self._text)
+            value = float(self._text)
             if negate_value:
-                f = 0.0 - f
+                value = 0.0 - value
         except ValueError:
-            raise ParseError("Could not parse double. "
-                             "Expected a number but got '%s'" % self._text,
-                             Symbol.NONE, self)
+            raise ParseError(
+                "Could not parse double. "
+                "Expected a number but got '%s'" % self._text,
+                Symbol.NONE,
+                self,
+            )
         self._expect(Symbol.Double)
-        return Double(f)
+        return Double(value)
 
     def _selector(self):
         if self._sym == Symbol.OperatorSequence or self._sym_in(self._single_op_syms):
@@ -293,8 +352,10 @@ class ParserBase(object):
         if self._sym == Symbol.Primitive:
             mgenc.set_primitive()
             return self._primitive_block()
-        else:
-            return self._method_block(mgenc)
+        return self._method_block(mgenc)
+
+    def _method_block(self, _):  # pylint: disable=no-self-use
+        raise Exception("Implemented in subclass")
 
     def _block_contents(self, mgenc):
         if self._accept(Symbol.Or):
@@ -303,12 +364,14 @@ class ParserBase(object):
 
         return self._block_body(mgenc, False)
 
+    def _block_body(self, _a, _b):  # pylint: disable=no-self-use
+        raise Exception("Implemented in subclass")
+
     def _primitive_block(self):
         self._expect(Symbol.Primitive)
-        return None
 
     def _get_symbol_from_lexer(self):
-        self._sym  = self._lexer.get_sym()
+        self._sym = self._lexer.get_sym()
         self._text = self._lexer.text
 
     def _peek_for_next_symbol_from_lexer(self):
@@ -319,9 +382,12 @@ class ParserBase(object):
             self._peek_for_next_symbol_from_lexer()
 
     def _create_block_signature(self, mgenc):
-        block_sig = ("$blockMethod@" +
-                     str(self._lexer.line_number) +
-                     "@" + str(self._lexer.get_current_column()))
+        block_sig = (
+            "$blockMethod@"
+            + str(self._lexer.line_number)
+            + "@"
+            + str(self._lexer.get_current_column())
+        )
         arg_size = mgenc.get_number_of_arguments()
         block_sig += ":" * (arg_size - 1)
         return self.universe.symbol_for(block_sig)

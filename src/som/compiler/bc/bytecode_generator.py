@@ -42,8 +42,12 @@ def emit_push_local(mgenc, idx, ctx):
 
 
 def emit_push_field(mgenc, field_name):
-    _emit3(mgenc, BC.push_field,
-           mgenc.get_field_index(field_name), mgenc.get_max_context_level())
+    _emit3(
+        mgenc,
+        BC.push_field,
+        mgenc.get_field_index(field_name),
+        mgenc.get_max_context_level(),
+    )
 
 
 def emit_push_global(mgenc, glob):
@@ -59,8 +63,12 @@ def emit_pop_local(mgenc, idx, ctx):
 
 
 def emit_pop_field(mgenc, field_name):
-    _emit3(mgenc, BC.pop_field,
-                mgenc.get_field_index(field_name), mgenc.get_max_context_level())
+    _emit3(
+        mgenc,
+        BC.pop_field,
+        mgenc.get_field_index(field_name),
+        mgenc.get_max_context_level(),
+    )
 
 
 def emit_super_send(mgenc, msg):

@@ -8,28 +8,28 @@ class Lexer(object):
     _PRIMITIVE = "primitive"
 
     def __init__(self, input_file):
-        self.line_number  = 0
-        self._chars_read  = 0 # all characters read, excluding the current line
-        self._infile      = input_file
-        self._sym         = Symbol.NONE
-        self._symc        = '\0'
-        self.text         = ""
-        self.peek_done    = False
-        self._next_sym    = Symbol.NONE
-        self._next_symc   = '\0'
-        self._next_text   = ""
-        self._buf         = ""
-        self._bufp        = 0
+        self.line_number = 0
+        self._chars_read = 0  # all characters read, excluding the current line
+        self._infile = input_file
+        self._sym = Symbol.NONE
+        self._symc = "\0"
+        self.text = ""
+        self.peek_done = False
+        self._next_sym = Symbol.NONE
+        self._next_symc = "\0"
+        self._next_text = ""
+        self._buf = ""
+        self._bufp = 0
 
     def get_source_coordinate(self):
-        return SourceCoordinate(self.line_number,
-                                self._bufp + 1,
-                                self._chars_read + self._bufp)
+        return SourceCoordinate(
+            self.line_number, self._bufp + 1, self._chars_read + self._bufp
+        )
 
     def _lex_number(self):
         self._sym = Symbol.Integer
-        self._symc = '\0'
-        self.text = ''
+        self._symc = "\0"
+        self.text = ""
 
         saw_decimal_mark = False
 
@@ -37,8 +37,11 @@ class Lexer(object):
             self.text += self._current_char()
             self._bufp += 1
 
-            if (not saw_decimal_mark and '.' == self._current_char() and
-                    self._bufchar(self._bufp + 1).isdigit()):
+            if (
+                not saw_decimal_mark
+                and self._current_char() == "."
+                and self._bufchar(self._bufp + 1).isdigit()
+            ):
                 self._sym = Symbol.Double
                 saw_decimal_mark = True
                 self.text += self._current_char()
@@ -47,38 +50,38 @@ class Lexer(object):
     def _lex_operator(self):
         if self._is_operator(self._bufchar(self._bufp + 1)):
             self._sym = Symbol.OperatorSequence
-            self._symc = '\0'
+            self._symc = "\0"
             self.text = ""
             while self._is_operator(self._current_char()):
                 self.text += self._current_char()
                 self._bufp += 1
-        elif self._current_char() == '~':
+        elif self._current_char() == "~":
             self._match(Symbol.Not)
-        elif self._current_char() == '&':
+        elif self._current_char() == "&":
             self._match(Symbol.And)
-        elif self._current_char() == '|':
+        elif self._current_char() == "|":
             self._match(Symbol.Or)
-        elif self._current_char() == '*':
+        elif self._current_char() == "*":
             self._match(Symbol.Star)
-        elif self._current_char() == '/':
+        elif self._current_char() == "/":
             self._match(Symbol.Div)
-        elif self._current_char() == '\\':
+        elif self._current_char() == "\\":
             self._match(Symbol.Mod)
-        elif self._current_char() == '+':
+        elif self._current_char() == "+":
             self._match(Symbol.Plus)
-        elif self._current_char() == '=':
+        elif self._current_char() == "=":
             self._match(Symbol.Equal)
-        elif self._current_char() == '>':
+        elif self._current_char() == ">":
             self._match(Symbol.More)
-        elif self._current_char() == '<':
+        elif self._current_char() == "<":
             self._match(Symbol.Less)
-        elif self._current_char() == ',':
+        elif self._current_char() == ",":
             self._match(Symbol.Comma)
-        elif self._current_char() == '@':
+        elif self._current_char() == "@":
             self._match(Symbol.At)
-        elif self._current_char() == '%':
+        elif self._current_char() == "%":
             self._match(Symbol.Per)
-        elif self._current_char() == '-':
+        elif self._current_char() == "-":
             self._match(Symbol.Minus)
 
     def _lex_escape_char(self):
@@ -105,7 +108,7 @@ class Lexer(object):
         self._bufp += 1
 
     def _lex_string_char(self):
-        if self._current_char() == '\\':
+        if self._current_char() == "\\":
             self._bufp += 1
             self._lex_escape_char()
         else:
@@ -118,11 +121,11 @@ class Lexer(object):
 
     def _lex_string(self):
         self._sym = Symbol.STString
-        self._symc = '\0'
+        self._symc = "\0"
         self._bufp += 1
         self.text = ""
 
-        while self._current_char() != '\'':
+        while self._current_char() != "'":
             self._lex_string_char()
 
         self._bufp += 1
@@ -130,7 +133,7 @@ class Lexer(object):
     def get_sym(self):
         if self.peek_done:
             self.peek_done = False
-            self._sym  = self._next_sym
+            self._sym = self._next_sym
             self._symc = self._next_symc
             self.text = self._next_text
             return self._sym
@@ -138,49 +141,51 @@ class Lexer(object):
         while True:
             if not self._has_more_input():
                 self._sym = Symbol.NONE
-                self._symc = '\0'
+                self._symc = "\0"
                 self.text = self._symc
                 return self._sym
             self._skip_white_space()
             self._skip_comment()
 
-            if (not self._end_of_buffer()          and
-                    not self._current_char().isspace() and
-                    not self._current_char() == '"'):
+            if (
+                not self._end_of_buffer()
+                and not self._current_char().isspace()
+                and self._current_char() != '"'
+            ):
                 break
 
-        if self._current_char() == '\'':
+        if self._current_char() == "'":
             self._lex_string()
-        elif self._current_char() == '[':
+        elif self._current_char() == "[":
             self._match(Symbol.NewBlock)
-        elif self._current_char() == ']':
+        elif self._current_char() == "]":
             self._match(Symbol.EndBlock)
-        elif self._current_char() == ':':
-            if self._bufchar(self._bufp + 1) == '=':
+        elif self._current_char() == ":":
+            if self._bufchar(self._bufp + 1) == "=":
                 self._bufp += 2
                 self._sym = Symbol.Assign
-                self._symc = '\0'
+                self._symc = "\0"
                 self.text = ":="
             else:
                 self._bufp += 1
                 self._sym = Symbol.Colon
-                self._symc = ':'
+                self._symc = ":"
                 self.text = ":"
 
-        elif self._current_char() == '(':
+        elif self._current_char() == "(":
             self._match(Symbol.NewTerm)
-        elif self._current_char() == ')':
+        elif self._current_char() == ")":
             self._match(Symbol.EndTerm)
-        elif self._current_char() == '#':
+        elif self._current_char() == "#":
             self._match(Symbol.Pound)
-        elif self._current_char() == '^':
+        elif self._current_char() == "^":
             self._match(Symbol.Exit)
-        elif self._current_char() == '.':
+        elif self._current_char() == ".":
             self._match(Symbol.Period)
-        elif self._current_char() == '-':
-            if self._buf[self._bufp:].startswith(self._SEPARATOR):
+        elif self._current_char() == "-":
+            if self._buf[self._bufp :].startswith(self._SEPARATOR):
                 self.text = ""
-                while self._current_char() == '-':
+                while self._current_char() == "-":
                     self.text += self._current_char()
                     self._bufp += 1
                 self._sym = Symbol.Separator
@@ -192,43 +197,42 @@ class Lexer(object):
 
         elif self._next_word_in_buffer_is(self._PRIMITIVE):
             self._bufp += len(self._PRIMITIVE)
-            self._sym  = Symbol.Primitive
-            self._symc = '\0'
+            self._sym = Symbol.Primitive
+            self._symc = "\0"
             self.text = self._PRIMITIVE
         elif self._current_char().isalpha():
-            self._symc = '\0'
+            self._symc = "\0"
             self.text = ""
-            while self._current_char().isalnum() or self._current_char() == '_':
+            while self._current_char().isalnum() or self._current_char() == "_":
                 self.text += self._current_char()
                 self._bufp += 1
             self._sym = Symbol.Identifier
-            if self._current_char() == ':':
+            if self._current_char() == ":":
                 self._sym = Symbol.Keyword
                 self._bufp += 1
-                self.text += ':'
+                self.text += ":"
                 if self._current_char().isalpha():
                     self._sym = Symbol.KeywordSequence
-                    while (self._current_char().isalpha() or
-                           self._current_char() == ':'):
+                    while self._current_char().isalpha() or self._current_char() == ":":
                         self.text += self._current_char()
                         self._bufp += 1
         elif self._current_char().isdigit():
             self._lex_number()
         else:
-            self._sym  = Symbol.NONE
+            self._sym = Symbol.NONE
             self._symc = self._current_char()
             self.text = self._symc
 
         return self._sym
 
     def _next_word_in_buffer_is(self, text):
-        if not self._buf[self._bufp:].startswith(text):
+        if not self._buf[self._bufp :].startswith(text):
             return False
         char_after_text = self._bufchar(self._bufp + len(text))
         return not char_after_text.isalnum()
 
     def peek(self):
-        save_sym  = self._sym
+        save_sym = self._sym
         save_symc = self._symc
         save_text = self.text
 
@@ -236,11 +240,11 @@ class Lexer(object):
             raise ValueError("SOM lexer: cannot peek twice!")
 
         self.get_sym()
-        self._next_sym  = self._sym
+        self._next_sym = self._sym
         self._next_symc = self._symc
         self._next_text = self.text
 
-        self._sym  = save_sym
+        self._sym = save_sym
         self._symc = save_symc
         self.text = save_text
 
@@ -262,7 +266,7 @@ class Lexer(object):
         try:
             self._chars_read += len(self._buf)
             self._buf = self._infile.readline()
-            if self._buf == '':
+            if self._buf == "":
                 return -1
             self.line_number += 1
             self._bufp = 0
@@ -302,15 +306,28 @@ class Lexer(object):
 
     @staticmethod
     def _is_operator(c):
-        return (c == '~'  or c == '&' or c == '|' or c == '*' or c == '/' or
-                c == '\\' or c == '+' or c == '=' or c == '>' or c == '<' or
-                c == ','  or c == '@' or c == '%' or c == '-')
+        return (
+            c == "~"
+            or c == "&"
+            or c == "|"
+            or c == "*"
+            or c == "/"
+            or c == "\\"
+            or c == "+"
+            or c == "="
+            or c == ">"
+            or c == "<"
+            or c == ","
+            or c == "@"
+            or c == "%"
+            or c == "-"
+        )
 
     def _match(self, s):
-        self._sym  = s
+        self._sym = s
         self._symc = self._current_char()
         self.text = self._symc
         self._bufp += 1
 
-    def _bufchar(self, p):
-        return '\0' if p >= len(self._buf) else self._buf[p]
+    def _bufchar(self, idx):
+        return "\0" if idx >= len(self._buf) else self._buf[idx]

@@ -1,20 +1,21 @@
 from som.compiler.method_generation_context import MethodGenerationContextBase
-from som.interpreter.bc.bytecodes import bytecode_length, bytecode_stack_effect,\
-    bytecode_stack_effect_depends_on_send, Bytecodes
+from som.interpreter.bc.bytecodes import (
+    bytecode_length,
+    bytecode_stack_effect,
+    bytecode_stack_effect_depends_on_send,
+    Bytecodes,
+)
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import BcMethod
 
 
 class MethodGenerationContext(MethodGenerationContextBase):
+    def __init__(self, universe, outer=None):
+        MethodGenerationContextBase.__init__(self, universe, outer, [], [])
 
-    def __init__(self, universe, outer = None):
-        MethodGenerationContextBase.__init__(self, universe, outer)
-
-        self._arguments   = []
-        self._locals      = []
-        self._literals    = []
-        self._finished    = False
-        self._bytecode    = []
+        self._literals = []
+        self._finished = False
+        self._bytecode = []
 
     def add_argument(self, arg):
         self._arguments.append(arg)
@@ -25,29 +26,36 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         num_locals = len(self._locals)
 
-        meth = BcMethod(list(self._literals), num_locals, self._compute_stack_depth(),
-                        len(self._bytecode), self._signature)
+        meth = BcMethod(
+            list(self._literals),
+            num_locals,
+            self._compute_stack_depth(),
+            len(self._bytecode),
+            self._signature,
+        )
 
         # copy bytecodes into method
         i = 0
-        for bc in self._bytecode:
-            meth.set_bytecode(i, bc)
+        for bytecode in self._bytecode:
+            meth.set_bytecode(i, bytecode)
             i += 1
 
         # return the method - the holder field is to be set later on!
         return meth
 
     def _compute_stack_depth(self):
-        depth     = 0
+        depth = 0
         max_depth = 0
-        i         = 0
+        i = 0
 
         while i < len(self._bytecode):
             bc = self._bytecode[i]
 
             if bytecode_stack_effect_depends_on_send(bc):
                 signature = self._literals[self._bytecode[i + 1]]
-                depth += bytecode_stack_effect(bc, signature.get_number_of_signature_arguments())
+                depth += bytecode_stack_effect(
+                    bc, signature.get_number_of_signature_arguments()
+                )
             else:
                 depth += bytecode_stack_effect(bc)
 
@@ -107,19 +115,18 @@ class MethodGenerationContext(MethodGenerationContextBase):
             triplet[2] = True
             return True
 
-        if self._outer_genc:
+        if self.outer_genc:
             triplet[1] = triplet[1] + 1
-            return self._outer_genc.find_var(var, triplet)
-        else:
-            return False
+            return self.outer_genc.find_var(var, triplet)
+        return False
 
     def get_max_context_level(self):
-        if self._outer_genc is None:
+        if self.outer_genc is None:
             return 0
-        return 1 + self._outer_genc.get_max_context_level()
+        return 1 + self.outer_genc.get_max_context_level()
 
-    def add_bytecode(self, bc):
-        self._bytecode.append(bc)
+    def add_bytecode(self, bytecode):
+        self._bytecode.append(bytecode)
 
     def has_bytecode(self):
         return len(self._bytecode) > 0
@@ -129,7 +136,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
 
 def create_bootstrap_method(universe):
-    """ Create a fake bootstrap method to simplify later frame traversal """
+    """Create a fake bootstrap method to simplify later frame traversal"""
     bootstrap_method = BcMethod([], 0, 2, 1, universe.symbol_for("bootstrap"))
 
     bootstrap_method.set_bytecode(0, Bytecodes.halt)

@@ -154,8 +154,15 @@ disable=print-statement,
         too-few-public-methods,
         too-many-arguments,
         too-many-locals,
+        too-many-instance-attributes,
+        too-many-branches,
+        too-many-statements,
         consider-using-with,
-        fixme
+        fixme,
+        raise-missing-from,
+        raising-format-tuple,
+        import-outside-toplevel,
+        consider-using-in
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -448,13 +455,15 @@ function-naming-style=snake_case
 #function-rgx=
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names=i,
-           j,
-           k,
+good-names=i, j, k,
+           b, bc,
+           c,
            ex,
            Run,
            x, y,
+           m,
            n,
+           s,
            _
 
 # Good variable names regexes, separated by a comma. If names match any regex,

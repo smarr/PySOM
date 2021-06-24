@@ -2,19 +2,21 @@ from som.compiler.symbol import Symbol, symbol_as_str
 
 
 class ParseError(Exception):
-    def __init__(self, message, expected_sym, parser):
-        self._message           = message
+    def __init__(self, message, expected_sym, parser):  # pylint: disable=W
+        self._message = message
         self._source_coordinate = parser._lexer.get_source_coordinate()
-        self._text              = parser._text
-        self._raw_buffer        = parser._lexer.get_raw_buffer()
-        self._file_name         = parser._file_name
-        self._expected_sym      = expected_sym
-        self._found_sym         = parser._sym
+        self._text = parser._text
+        self._raw_buffer = parser._lexer.get_raw_buffer()
+        self._file_name = parser._file_name
+        self._expected_sym = expected_sym
+        self._found_sym = parser._sym
 
     def _is_printable_symbol(self):
-        return (self._found_sym == Symbol.Integer or
-                self._found_sym == Symbol.Double  or
-                self._found_sym >= Symbol.STString)
+        return (
+            self._found_sym == Symbol.Integer
+            or self._found_sym == Symbol.Double
+            or self._found_sym >= Symbol.STString
+        )
 
     def _expected_sym_str(self):
         return symbol_as_str(self._expected_sym)
@@ -29,19 +31,19 @@ class ParseError(Exception):
 
         expected = self._expected_sym_str()
 
-        return (msg % {
-            'file'       : self._file_name,
-            'line'       : self._source_coordinate.start_line,
-            'column'     : self._source_coordinate.start_column,
-            'expected'   : expected,
-            'found'      : found})
+        return msg % {
+            "file": self._file_name,
+            "line": self._source_coordinate.start_line,
+            "column": self._source_coordinate.start_column,
+            "expected": expected,
+            "found": found,
+        }
 
 
 class ParseErrorSymList(ParseError):
-
     def __init__(self, message, expected_syms, parser):
         ParseError.__init__(self, message, 0, parser)
         self._expected_syms = expected_syms
 
     def _expected_sym_str(self):
-        return  ", ".join([symbol_as_str(x) for x in self._expected_syms])
+        return ", ".join([symbol_as_str(x) for x in self._expected_syms])

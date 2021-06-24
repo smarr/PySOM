@@ -18,16 +18,18 @@ from ...vmobjects.string import String
 
 
 class Parser(ParserBase):
-
     def __init__(self, reader, file_name, universe):
         ParserBase.__init__(self, reader, file_name, universe)
         self._source_reader = reader
 
     def _get_source_section(self, coord):
         return SourceSection(
-            self._source_reader, "method", coord,
+            self._source_reader,
+            "method",
+            coord,
             self._lexer.get_number_of_characters_read(),
-            self._file_name)
+            self._file_name,
+        )
 
     def _assign_source(self, node, coord):
         node.assign_source_section(self._get_source_section(coord))
@@ -47,9 +49,9 @@ class Parser(ParserBase):
             if self._accept(Symbol.Exit):
                 expressions.append(self._result(mgenc))
                 return self._create_sequence_node(coordinate, expressions)
-            elif self._sym == Symbol.EndBlock:
+            if self._sym == Symbol.EndBlock:
                 return self._create_sequence_node(coordinate, expressions)
-            elif self._sym == Symbol.EndTerm:
+            if self._sym == Symbol.EndTerm:
                 # the end of the method has been found (EndTerm) - make it
                 # implicitly return "self"
                 self_exp = self._variable_read(mgenc, "self")
@@ -66,7 +68,8 @@ class Parser(ParserBase):
             nil_exp = create_global_node(
                 self.universe.symNil,
                 self.universe,
-                self._get_source_section(coordinate))
+                self._get_source_section(coordinate),
+            )
             return nil_exp
         if len(expressions) == 1:
             return expressions[0]
@@ -74,14 +77,15 @@ class Parser(ParserBase):
         return SequenceNode(expressions[:], self._get_source_section(coordinate))
 
     def _result(self, mgenc):
-        exp   = self._expression(mgenc)
+        exp = self._expression(mgenc)
         coord = self._lexer.get_source_coordinate()
 
         self._accept(Symbol.Period)
 
         if mgenc.is_block_method:
-            node = ReturnNonLocalNode(mgenc.get_outer_self_context_level(),
-                                      exp, self.universe)
+            node = ReturnNonLocalNode(
+                mgenc.get_outer_self_context_level(), exp, self.universe
+            )
             mgenc.make_catch_non_local_return()
             return self._assign_source(node, coord)
         return exp
@@ -93,9 +97,12 @@ class Parser(ParserBase):
         coord = self._lexer.get_source_coordinate()
 
         if not self._sym_is_identifier():
-            raise ParseError("Assignments should always target variables or"
-                             " fields, but found instead a %(found)s",
-                             Symbol.Identifier, self)
+            raise ParseError(
+                "Assignments should always target variables or"
+                " fields, but found instead a %(found)s",
+                Symbol.Identifier,
+                self,
+            )
 
         variable = self._assignment()
         self._peek_for_next_symbol_from_lexer()
@@ -116,10 +123,12 @@ class Parser(ParserBase):
     def _evaluation(self, mgenc):
         exp = self._primary(mgenc)
 
-        if (self._sym_is_identifier()            or
-            self._sym == Symbol.Keyword          or
-            self._sym == Symbol.OperatorSequence or
-            self._sym_in(self._binary_op_syms)):
+        if (
+            self._sym_is_identifier()
+            or self._sym == Symbol.Keyword
+            or self._sym == Symbol.OperatorSequence
+            or self._sym_in(self._binary_op_syms)
+        ):
             exp = self._messages(mgenc, exp)
 
         self._super_send = False
@@ -144,7 +153,7 @@ class Parser(ParserBase):
             bgenc = MethodGenerationContext(self.universe, mgenc)
             bgenc.holder = mgenc.holder
 
-            block_body   = self._nested_block(bgenc)
+            block_body = self._nested_block(bgenc)
             block_method = bgenc.assemble(block_body)
             mgenc.add_embedded_block_method(block_method)
 
@@ -162,8 +171,9 @@ class Parser(ParserBase):
         while self._sym_is_identifier():
             msg = self._unary_message(mgenc, msg)
 
-        while (self._sym == Symbol.OperatorSequence or
-               self._sym_in(self._binary_op_syms)):
+        while self._sym == Symbol.OperatorSequence or self._sym_in(
+            self._binary_op_syms
+        ):
             msg = self._binary_message(mgenc, msg)
 
         if self._sym == Symbol.Keyword:
@@ -179,7 +189,9 @@ class Parser(ParserBase):
         selector = self._unary_selector()
 
         if is_super_send:
-            msg = SuperMessageNode(selector, receiver, [], mgenc.holder.get_super_class())
+            msg = SuperMessageNode(
+                selector, receiver, [], mgenc.holder.get_super_class()
+            )
         else:
             msg = UninitializedMessageNode(selector, self.universe, receiver, [])
         return self._assign_source(msg, coord)
@@ -188,12 +200,14 @@ class Parser(ParserBase):
         is_super_send = self._super_send
         self._super_send = False
 
-        coord    = self._lexer.get_source_coordinate()
+        coord = self._lexer.get_source_coordinate()
         selector = self._binary_selector()
-        args     = [self._binary_operand(mgenc)]
+        args = [self._binary_operand(mgenc)]
 
         if is_super_send:
-            msg = SuperMessageNode(selector, receiver, args, mgenc.holder.get_super_class())
+            msg = SuperMessageNode(
+                selector, receiver, args, mgenc.holder.get_super_class()
+            )
         else:
             msg = UninitializedMessageNode(selector, self.universe, receiver, args)
         return self._assign_source(msg, coord)
@@ -211,7 +225,7 @@ class Parser(ParserBase):
 
         coord = self._lexer.get_source_coordinate()
         arguments = []
-        keyword   = []
+        keyword = []
 
         while self._sym == Symbol.Keyword:
             keyword.append(self._keyword())
@@ -221,7 +235,9 @@ class Parser(ParserBase):
         args = arguments[:]
 
         if is_super_send:
-            msg = SuperMessageNode(selector, receiver, args, mgenc.holder.get_super_class())
+            msg = SuperMessageNode(
+                selector, receiver, args, mgenc.holder.get_super_class()
+            )
         else:
             msg = UninitializedMessageNode(selector, self.universe, receiver, args)
         return self._assign_source(msg, coord)
@@ -229,8 +245,9 @@ class Parser(ParserBase):
     def _formula(self, mgenc):
         operand = self._binary_operand(mgenc)
 
-        while (self._sym == Symbol.OperatorSequence or
-               self._sym_in(self._binary_op_syms)):
+        while self._sym == Symbol.OperatorSequence or self._sym_in(
+            self._binary_op_syms
+        ):
             operand = self._binary_message(mgenc, operand)
 
         self._super_send = False
@@ -251,7 +268,7 @@ class Parser(ParserBase):
             if self._next_sym == Symbol.NewTerm:
                 return self._literal_array()
             return self._literal_symbol()
-        elif self._sym == Symbol.STString:
+        if self._sym == Symbol.STString:
             return self._literal_string()
         return self._literal_number()
 
@@ -290,8 +307,7 @@ class Parser(ParserBase):
         # first lookup in local variables, or method arguments
         variable = mgenc.get_variable(variable_name)
         if variable:
-            return variable.get_read_node(
-                mgenc.get_context_level(variable_name))
+            return variable.get_read_node(mgenc.get_context_level(variable_name))
 
         # otherwise, it might be an object field
         var_symbol = self.universe.symbol_for(variable_name)
@@ -305,22 +321,26 @@ class Parser(ParserBase):
     def _variable_write(self, mgenc, variable_name, exp):
         if variable_name == "self":
             raise ParseError(
-                "It is not possible to write to `self`, it is a pseudo variable", Symbol.NONE, self)
+                "It is not possible to write to `self`, it is a pseudo variable",
+                Symbol.NONE,
+                self,
+            )
         if variable_name == "super":
             raise ParseError(
-                "It is not possible to write to `super`, it is a pseudo variable", Symbol.NONE, self)
+                "It is not possible to write to `super`, it is a pseudo variable",
+                Symbol.NONE,
+                self,
+            )
 
         variable = mgenc.get_variable(variable_name)
         if variable:
-            return variable.get_write_node(
-                mgenc.get_context_level(variable_name), exp)
+            return variable.get_write_node(mgenc.get_context_level(variable_name), exp)
 
         field_name = self.universe.symbol_for(variable_name)
         field_write = mgenc.get_object_field_write(field_name, exp)
         if field_write:
             return field_write
-        else:
-            raise RuntimeError("Neither a variable nor a field found in current"
-                               " scope that is named " + variable_name + ".")
-
-
+        raise RuntimeError(
+            "Neither a variable nor a field found in current"
+            " scope that is named " + variable_name + "."
+        )
