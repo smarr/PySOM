@@ -71,18 +71,18 @@ jobs:
           ./som-${{ matrix.id }}-interp -cp core-lib/Smalltalk:core-lib/TestSuite:core-lib/SomSom/src/compiler:core-lib/SomSom/src/vm:core-lib/SomSom/src/vmobjects:core-lib/SomSom/src/interpreter:core-lib/SomSom/src/primitives \
             core-lib/SomSom/tests/SomSomTests.som
 
-      - name: Install and Run PyLint
-        run: |
-          pip install pylint
-          pylint src/rlib src/rtruffle tests
-        if: matrix.python-version == '3.8'
-      
       - name: Install and Run Black
         run: |
           pip install black
           black --check --diff src/rlib src/rtruffle tests
         if: matrix.python-version == '3.8'
 
+      - name: Install and Run PyLint
+        run: |
+          pip install pylint
+          pylint src/rlib src/rtruffle tests
+        if: matrix.python-version == '3.8'
+      
 
 concurrency:
   group: "workflow = ${{ github.workflow }}, ref = ${{ github.event.ref }}, pr = ${{ github.event.pull_request.id }}"
