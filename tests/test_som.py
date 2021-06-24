@@ -4,40 +4,44 @@ import pytest
 from som.vm.current import current_universe
 
 
-@pytest.mark.parametrize("test_name", [
-        "Array"         ,
-        "Block"         ,
-        "ClassLoading"  ,
+@pytest.mark.parametrize(
+    "test_name",
+    [
+        "Array",
+        "Block",
+        "ClassLoading",
         "ClassStructure",
-
-        "Closure"       ,
-        "Coercion"      ,
+        "Closure",
+        "Coercion",
         "CompilerReturn",
         "DoesNotUnderstand",
-        "Double"        ,
-
-        "Empty"         ,
-        "Global"        ,
-        "Hash"          ,
-        "Integer"       ,
-
-        "Preliminary"   ,
-        "Reflection"    ,
-        "SelfBlock"     ,
+        "Double",
+        "Empty",
+        "Global",
+        "Hash",
+        "Integer",
+        "Preliminary",
+        "Reflection",
+        "SelfBlock",
         "SpecialSelectors",
-        "Super"         ,
-
-        "Set"           ,
-        "String"        ,
-        "Symbol"        ,
-        "System"        ,
-        "Vector"        ])
+        "Super",
+        "Set",
+        "String",
+        "Symbol",
+        "System",
+        "Vector",
+    ],
+)
 def test_som(test_name):
     current_universe.reset(True)
     core_lib_path = os.path.dirname(os.path.abspath(__file__)) + "/../core-lib/"
-    args = ["-cp", core_lib_path + "Smalltalk",
-            core_lib_path + "TestSuite/TestHarness.som", test_name]
+    args = [
+        "-cp",
+        core_lib_path + "Smalltalk",
+        core_lib_path + "TestSuite/TestHarness.som",
+        test_name,
+    ]
 
     current_universe.interpret(args)
 
-    assert 0 == current_universe.last_exit_code()
+    assert current_universe.last_exit_code() == 0
