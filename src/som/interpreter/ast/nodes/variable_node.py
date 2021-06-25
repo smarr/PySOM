@@ -56,7 +56,7 @@ class _NonLocalVariableNode(ContextualNode):
 
 
 class _NonLocalVariableReadNode(_NonLocalVariableNode):
-    def _do_var_read(self, _block):  # pylint: disable=W
+    def _do_var_read(self, _block):  # pylint: disable=W,R
         raise Exception("Implemented in subclass")
 
     def execute(self, frame):
@@ -169,17 +169,16 @@ class _LocalVariableWriteNode(_LocalVariableNode):
         _LocalVariableNode.__init__(self, frame_idx, source_section)
         self._expr = self.adopt_child(expr)
 
+
+class LocalSharedWriteNode(_LocalVariableWriteNode):
     def execute(self, frame):
         val = self._expr.execute(frame)
-        self._do_write(frame, val)
+        frame.set_shared_temp(self._frame_idx, val)
         return val
 
 
-class LocalSharedWriteNode(_LocalVariableWriteNode):
-    def _do_write(self, frame, value):
-        frame.set_shared_temp(self._frame_idx, value)
-
-
 class LocalUnsharedWriteNode(_LocalVariableWriteNode):
-    def _do_write(self, frame, value):
-        frame.set_temp(self._frame_idx, value)
+    def execute(self, frame):
+        val = self._expr.execute(frame)
+        frame.set_temp(self._frame_idx, val)
+        return val

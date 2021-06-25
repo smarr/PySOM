@@ -31,6 +31,10 @@ class AbstractToDoNode(ExpressionNode):
         self._do_loop(rcvr, args[0], args[1])
         return rcvr
 
+    @staticmethod
+    def _do_loop(_rcvr, _a1, _a2):  # pylint: disable=W
+        raise Exception("Implemented in Subclass")
+
 
 def get_printable_location(block_method):
     assert isinstance(block_method, AstMethod)

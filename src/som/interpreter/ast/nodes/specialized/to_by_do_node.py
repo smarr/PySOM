@@ -33,6 +33,10 @@ class AbstractToByDoNode(AbstractToDoNode):
         self._to_by_loop(rcvr, args[0], args[1], args[2])
         return rcvr
 
+    @staticmethod
+    def _to_by_loop(_rcvr, _limit, _step, _body):
+        raise Exception("Implemented in Subclass")
+
 
 def get_printable_location(block_method):
     assert isinstance(block_method, AstMethod)

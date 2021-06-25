@@ -28,7 +28,7 @@ class AbstractWhileMessageNode(ExpressionNode):
         self._do_while(rcvr_value, body_block)
         return nilObject
 
-    def _do_while(self, _rcvr, _body):
+    def _do_while(self, _rcvr, _body):  # pylint: disable=W,R
         raise Exception("Implemented in Subclass")
 
 
