@@ -66,7 +66,7 @@ class Parser(ParserBase):
     def _create_sequence_node(self, coordinate, expressions):
         if not expressions:
             nil_exp = create_global_node(
-                self.universe.symNil,
+                self.universe.sym_nil,
                 self.universe,
                 self._get_source_section(coordinate),
             )

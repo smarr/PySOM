@@ -35,7 +35,7 @@ class _AbstractPrimitive(AbstractObject):
         return self._is_empty
 
     def get_class(self, universe):
-        return universe.primitiveClass
+        return universe.primitive_class
 
     def __str__(self):
         if self._holder:

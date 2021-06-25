@@ -20,7 +20,7 @@ class Double(AbstractObject):
         return str(self._embedded_double)
 
     def get_class(self, universe):
-        return universe.doubleClass
+        return universe.double_class
 
     @staticmethod
     def _get_float(obj):

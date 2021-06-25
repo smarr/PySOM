@@ -148,7 +148,7 @@ class BcMethod(AbstractObject):
         )
 
     def get_class(self, universe):
-        return universe.methodClass
+        return universe.method_class
 
     @jit.elidable
     def get_inline_cache_class(self, bytecode_index):

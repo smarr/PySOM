@@ -78,8 +78,8 @@ class ClassGenerationContext(object):
 
         # Allocate the class of the resulting class
         result_class = Class(
-            self.universe.metaclassClass.get_number_of_instance_fields(),
-            self.universe.metaclassClass,
+            self.universe.metaclass_class.get_number_of_instance_fields(),
+            self.universe.metaclass_class,
         )
 
         # Initialize the class of the resulting class

@@ -54,4 +54,4 @@ class Symbol(String):
         return "#" + self._string
 
     def get_class(self, universe):
-        return universe.symbolClass
+        return universe.symbol_class

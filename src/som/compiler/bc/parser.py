@@ -188,11 +188,11 @@ class Parser(ParserBase):
             emit_send(mgenc, msg)
 
     def _try_inc_or_dec_bytecodes(self, msg, is_super_send, mgenc):
-        is_inc_or_dec = msg is self.universe.symPlus or msg is self.universe.symMinus
+        is_inc_or_dec = msg is self.universe.sym_plus or msg is self.universe.sym_minus
         if is_inc_or_dec and not is_super_send:
             if self._sym == Symbol.Integer and self._text == "1":
                 self._expect(Symbol.Integer)
-                if msg is self.universe.symPlus:
+                if msg is self.universe.sym_plus:
                     emit_inc(mgenc)
                 else:
                     emit_dec(mgenc)
@@ -336,7 +336,7 @@ class Parser(ParserBase):
         # a return
         if not mgenc.is_finished():
             if not mgenc.has_bytecode():
-                nil_sym = self.universe.symNil
+                nil_sym = self.universe.sym_nil
                 mgenc.add_literal_if_absent(nil_sym)
                 emit_push_global(mgenc, nil_sym)
             emit_return_local(mgenc)

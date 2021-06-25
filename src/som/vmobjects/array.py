@@ -871,4 +871,4 @@ class Array(AbstractObject):
         return self._strategy.copy_and_extend_with(self._storage, value)
 
     def get_class(self, universe):
-        return universe.arrayClass
+        return universe.array_class

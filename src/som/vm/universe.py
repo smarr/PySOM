@@ -46,20 +46,20 @@ class Assoc(object):
 class Universe(object):
 
     _immutable_fields_ = [
-        "objectClass",
-        "classClass",
-        "metaclassClass",
-        "nilClass",
-        "integerClass",
-        "arrayClass",
-        "methodClass",
-        "symbolClass",
-        "primitiveClass",
-        "systemClass",
-        "blockClass",
-        "blockClasses[*]",
-        "stringClass",
-        "doubleClass",
+        "object_class",
+        "class_class",
+        "metaclass_class",
+        "nil_class",
+        "integer_class",
+        "array_class",
+        "method_class",
+        "symbol_class",
+        "primitive_class",
+        "system_class",
+        "block_class",
+        "block_classes[*]",
+        "string_class",
+        "double_class",
         "_symbol_table",
         "_globals",
         "_object_system_initialized",
@@ -69,25 +69,25 @@ class Universe(object):
         self._symbol_table = {}
         self._globals = {}
 
-        self.objectClass = None
-        self.classClass = None
-        self.metaclassClass = None
+        self.object_class = None
+        self.class_class = None
+        self.metaclass_class = None
 
-        self.nilClass = None
-        self.integerClass = None
-        self.arrayClass = None
-        self.methodClass = None
-        self.symbolClass = None
-        self.primitiveClass = None
-        self.systemClass = None
-        self.blockClass = None
-        self.blockClasses = None
-        self.stringClass = None
-        self.doubleClass = None
+        self.nil_class = None
+        self.integer_class = None
+        self.array_class = None
+        self.method_class = None
+        self.symbol_class = None
+        self.primitive_class = None
+        self.system_class = None
+        self.block_class = None
+        self.block_classes = None
+        self.string_class = None
+        self.double_class = None
 
-        self.symNil = None
-        self.symPlus = None
-        self.symMinus = None
+        self.sym_nil = None
+        self.sym_plus = None
+        self.sym_minus = None
 
         self._last_exit_code = 0
         self._avoid_exit = avoid_exit
@@ -133,7 +133,7 @@ class Universe(object):
         if len(arguments) == 0:
             return self._start_shell()
         arguments_array = self.new_array_with_strings(arguments)
-        initialize = self.systemClass.lookup_invokable(self.symbol_for("initialize:"))
+        initialize = self.system_class.lookup_invokable(self.symbol_for("initialize:"))
         return self._start_execution(system_object, initialize, arguments_array)
 
     def handle_arguments(self, arguments):
@@ -201,87 +201,89 @@ class Universe(object):
 
     def _initialize_object_system(self):
         # Allocate the Metaclass classes
-        self.metaclassClass = self.new_metaclass_class()
+        self.metaclass_class = self.new_metaclass_class()
 
         # Allocate the rest of the system classes
-        self.objectClass = self.new_system_class()
-        self.nilClass = self.new_system_class()
-        self.classClass = self.new_system_class()
-        self.arrayClass = self.new_system_class()
-        self.symbolClass = self.new_system_class()
-        self.methodClass = self.new_system_class()
-        self.integerClass = self.new_system_class()
-        self.primitiveClass = self.new_system_class()
-        self.stringClass = self.new_system_class()
-        self.doubleClass = self.new_system_class()
+        self.object_class = self.new_system_class()
+        self.nil_class = self.new_system_class()
+        self.class_class = self.new_system_class()
+        self.array_class = self.new_system_class()
+        self.symbol_class = self.new_system_class()
+        self.method_class = self.new_system_class()
+        self.integer_class = self.new_system_class()
+        self.primitive_class = self.new_system_class()
+        self.string_class = self.new_system_class()
+        self.double_class = self.new_system_class()
 
         # Setup the class reference for the nil object
-        nilObject.set_class(self.nilClass)
+        nilObject.set_class(self.nil_class)
 
         # Initialize the system classes
-        self._initialize_system_class(self.objectClass, None, "Object")
-        self._initialize_system_class(self.classClass, self.objectClass, "Class")
-        self._initialize_system_class(self.metaclassClass, self.classClass, "Metaclass")
-        self._initialize_system_class(self.nilClass, self.objectClass, "Nil")
-        self._initialize_system_class(self.arrayClass, self.objectClass, "Array")
-        self._initialize_system_class(self.methodClass, self.objectClass, "Method")
-        self._initialize_system_class(self.integerClass, self.objectClass, "Integer")
+        self._initialize_system_class(self.object_class, None, "Object")
+        self._initialize_system_class(self.class_class, self.object_class, "Class")
         self._initialize_system_class(
-            self.primitiveClass, self.objectClass, "Primitive"
+            self.metaclass_class, self.class_class, "Metaclass"
         )
-        self._initialize_system_class(self.stringClass, self.objectClass, "String")
-        self._initialize_system_class(self.symbolClass, self.stringClass, "Symbol")
-        self._initialize_system_class(self.doubleClass, self.objectClass, "Double")
+        self._initialize_system_class(self.nil_class, self.object_class, "Nil")
+        self._initialize_system_class(self.array_class, self.object_class, "Array")
+        self._initialize_system_class(self.method_class, self.object_class, "Method")
+        self._initialize_system_class(self.integer_class, self.object_class, "Integer")
+        self._initialize_system_class(
+            self.primitive_class, self.object_class, "Primitive"
+        )
+        self._initialize_system_class(self.string_class, self.object_class, "String")
+        self._initialize_system_class(self.symbol_class, self.string_class, "Symbol")
+        self._initialize_system_class(self.double_class, self.object_class, "Double")
 
         # Load methods and fields into the system classes
-        self._load_system_class(self.objectClass)
-        self._load_system_class(self.classClass)
-        self._load_system_class(self.metaclassClass)
-        self._load_system_class(self.nilClass)
-        self._load_system_class(self.arrayClass)
-        self._load_system_class(self.methodClass)
-        self._load_system_class(self.stringClass)
-        self._load_system_class(self.symbolClass)
-        self._load_system_class(self.integerClass)
-        self._load_system_class(self.primitiveClass)
-        self._load_system_class(self.doubleClass)
+        self._load_system_class(self.object_class)
+        self._load_system_class(self.class_class)
+        self._load_system_class(self.metaclass_class)
+        self._load_system_class(self.nil_class)
+        self._load_system_class(self.array_class)
+        self._load_system_class(self.method_class)
+        self._load_system_class(self.string_class)
+        self._load_system_class(self.symbol_class)
+        self._load_system_class(self.integer_class)
+        self._load_system_class(self.primitive_class)
+        self._load_system_class(self.double_class)
 
         # Load the generic block class
-        self.blockClass = self.load_class(self.symbol_for("Block"))
+        self.block_class = self.load_class(self.symbol_for("Block"))
 
         # Setup the true and false objects
-        trueClassName = self.symbol_for("True")
-        trueClass = self.load_class(trueClassName)
-        trueClass.load_primitives(False, self)
-        trueObject.set_class(trueClass)
+        true_class_name = self.symbol_for("True")
+        true_class = self.load_class(true_class_name)
+        true_class.load_primitives(False, self)
+        trueObject.set_class(true_class)
 
-        falseClassName = self.symbol_for("False")
-        falseClass = self.load_class(falseClassName)
-        falseClass.load_primitives(False, self)
-        falseObject.set_class(falseClass)
+        false_class_name = self.symbol_for("False")
+        false_class = self.load_class(false_class_name)
+        false_class.load_primitives(False, self)
+        falseObject.set_class(false_class)
 
         # Load the system class and create an instance of it
-        self.systemClass = self.load_class(self.symbol_for("System"))
-        system_object = self.new_instance(self.systemClass)
+        self.system_class = self.load_class(self.symbol_for("System"))
+        system_object = self.new_instance(self.system_class)
 
-        self.symNil = self.symbol_for("nil")
-        self.symPlus = self.symbol_for("+")
-        self.symMinus = self.symbol_for("+")
+        self.sym_nil = self.symbol_for("nil")
+        self.sym_plus = self.symbol_for("+")
+        self.sym_minus = self.symbol_for("+")
 
         # Put special objects and classes into the dictionary of globals
-        self.set_global(self.symNil, nilObject)
+        self.set_global(self.sym_nil, nilObject)
         self.set_global(self.symbol_for("true"), trueObject)
         self.set_global(self.symbol_for("false"), falseObject)
         self.set_global(self.symbol_for("system"), system_object)
-        self.set_global(self.symbol_for("System"), self.systemClass)
-        self.set_global(self.symbol_for("Block"), self.blockClass)
+        self.set_global(self.symbol_for("System"), self.system_class)
+        self.set_global(self.symbol_for("Block"), self.block_class)
 
-        self.set_global(self.symbol_for("Nil"), self.nilClass)
+        self.set_global(self.symbol_for("Nil"), self.nil_class)
 
-        self.set_global(trueClassName, trueClass)
-        self.set_global(falseClassName, falseClass)
+        self.set_global(true_class_name, true_class)
+        self.set_global(false_class_name, false_class)
 
-        self.blockClasses = [self.blockClass] + [
+        self.block_classes = [self.block_class] + [
             self._make_block_class(i) for i in [1, 2, 3]
         ]
 
@@ -336,7 +338,7 @@ class Universe(object):
         system_class = Class(0, system_class_class)
 
         # Setup the metaclass hierarchy
-        system_class.get_class(self).set_class(self.metaclassClass)
+        system_class.get_class(self).set_class(self.metaclass_class)
         return system_class
 
     def _initialize_system_class(self, system_class, super_class, name):
@@ -345,7 +347,7 @@ class Universe(object):
             system_class.set_super_class(super_class)
             system_class.get_class(self).set_super_class(super_class.get_class(self))
         else:
-            system_class.get_class(self).set_super_class(self.classClass)
+            system_class.get_class(self).set_super_class(self.class_class)
 
         # Initialize the array of instance fields
         system_class.set_instance_fields(Array.from_size(0))
@@ -390,7 +392,7 @@ class Universe(object):
         return self._globals.get(name, None)
 
     def _get_block_class(self, number_of_arguments):
-        return self.blockClasses[number_of_arguments]
+        return self.block_classes[number_of_arguments]
 
     def _make_block_class(self, number_of_arguments):
         # Compute the name of the block class with the given number of

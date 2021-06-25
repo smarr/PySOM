@@ -21,7 +21,7 @@ class BcBlock(AbstractObject):
         return self._context
 
     def get_class(self, universe):
-        return universe.blockClasses[self._method.get_number_of_arguments()]
+        return universe.block_classes[self._method.get_number_of_arguments()]
 
     class Evaluation(Primitive):
 

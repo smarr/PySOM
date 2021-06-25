@@ -21,7 +21,7 @@ class Integer(AbstractObject):
         return str(self._embedded_integer)
 
     def get_class(self, universe):
-        return universe.integerClass
+        return universe.integer_class
 
     def _to_double(self):
         from .double import Double

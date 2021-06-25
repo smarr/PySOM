@@ -140,5 +140,5 @@ def create_bootstrap_method(universe):
     bootstrap_method = BcMethod([], 0, 2, 1, universe.symbol_for("bootstrap"))
 
     bootstrap_method.set_bytecode(0, Bytecodes.halt)
-    bootstrap_method.set_holder(universe.systemClass)
+    bootstrap_method.set_holder(universe.system_class)
     return bootstrap_method

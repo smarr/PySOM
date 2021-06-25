@@ -61,7 +61,7 @@ class AstMethod(AbstractObject):
         return "Method(" + holder + ">>" + str(self.get_signature()) + ")"
 
     def get_class(self, universe):
-        return universe.methodClass
+        return universe.method_class
 
     def merge_point_string(self):
         """debug info for the jit"""

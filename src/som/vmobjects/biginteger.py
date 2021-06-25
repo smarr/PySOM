@@ -19,7 +19,7 @@ class BigInteger(AbstractObject):
         return str(self._embedded_biginteger)
 
     def get_class(self, universe):
-        return universe.integerClass
+        return universe.integer_class
 
     def _to_double(self):
         from .double import Double
