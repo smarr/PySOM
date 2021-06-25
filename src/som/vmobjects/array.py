@@ -2,8 +2,9 @@ from rlib.arithmetic import IntType
 from rlib.erased import new_erasing_pair
 from rlib.jit import JitDriver
 from rlib.objectmodel import instantiate
-from som.vmobjects.abstract_object import AbstractObject
 from rlib.debug import make_sure_not_resized
+
+from som.vmobjects.abstract_object import AbstractObject
 from som.vm.globals import nilObject, falseObject, trueObject
 from som.vmobjects.double import Double
 from som.vmobjects.integer import Integer
@@ -35,52 +36,66 @@ def put_all_bool_pl(block_method):
     return "#putAll: (bool_strategy) %s" % block_method.merge_point_string()
 
 
-put_all_obj_driver  = JitDriver(greens=['block_method'], reds='auto',
-                                is_recursive=True,
-                                get_printable_location=put_all_obj_pl)
-put_all_nil_driver  = JitDriver(greens=['block_method'], reds='auto',
-                                is_recursive=True,
-                                get_printable_location=put_all_nil_pl)
-put_all_double_driver = JitDriver(greens=['block_method'], reds='auto',
-                                  is_recursive=True,
-                                  get_printable_location=put_all_double_pl)
-put_all_long_driver = JitDriver(greens=['block_method'], reds='auto',
-                                is_recursive=True,
-                                get_printable_location=put_all_long_pl)
-put_all_bool_driver = JitDriver(greens=['block_method'], reds='auto',
-                                is_recursive=True,
-                                get_printable_location=put_all_bool_pl)
+put_all_obj_driver = JitDriver(
+    greens=["block_method"],
+    reds="auto",
+    is_recursive=True,
+    get_printable_location=put_all_obj_pl,
+)
+put_all_nil_driver = JitDriver(
+    greens=["block_method"],
+    reds="auto",
+    is_recursive=True,
+    get_printable_location=put_all_nil_pl,
+)
+put_all_double_driver = JitDriver(
+    greens=["block_method"],
+    reds="auto",
+    is_recursive=True,
+    get_printable_location=put_all_double_pl,
+)
+put_all_long_driver = JitDriver(
+    greens=["block_method"],
+    reds="auto",
+    is_recursive=True,
+    get_printable_location=put_all_long_pl,
+)
+put_all_bool_driver = JitDriver(
+    greens=["block_method"],
+    reds="auto",
+    is_recursive=True,
+    get_printable_location=put_all_bool_pl,
+)
 
 
 class _ArrayStrategy(object):
-
     @staticmethod
     def _set_all_with_value(array, value, size):
         if value is nilObject:
-            array._storage  = _empty_strategy.new_storage_for(size)
+            array._storage = _empty_strategy.new_storage_for(size)
             array._strategy = _empty_strategy
         elif isinstance(value, Integer):
             int_arr = [value.get_embedded_integer()] * size
-            array._storage  = _long_strategy._erase(int_arr)
+            array._storage = _long_strategy._erase(int_arr)
             array._strategy = _long_strategy
         elif isinstance(value, Double):
             double_arr = [value.get_embedded_double()] * size
-            array._storage  = _double_strategy._erase(double_arr)
+            array._storage = _double_strategy._erase(double_arr)
             array._strategy = _double_strategy
         elif value is trueObject or value is falseObject:
             bool_arr = [value is trueObject] * size
-            array._storage  = _bool_strategy._erase(bool_arr)
+            array._storage = _bool_strategy._erase(bool_arr)
             array._strategy = _bool_strategy
         else:
             obj_arr = [value] * size
-            array._storage  = _obj_strategy._erase(obj_arr)
+            array._storage = _obj_strategy._erase(obj_arr)
             array._strategy = _obj_strategy
 
     @staticmethod
     def _set_all_with_block(array, block, size):
         # Handle first the empty case
         if size == 0:
-            array._storage  = _empty_strategy.new_storage_for(0)
+            array._storage = _empty_strategy.new_storage_for(0)
             array._strategy = _empty_strategy
             return
 
@@ -93,55 +108,55 @@ class _ArrayStrategy(object):
         assert i < size
         first = block_method.invoke(block, [])
         if first is nilObject:
-            _ArrayStrategy._set_remaining_with_block_as_nil(array, block, size,
-                                                            1)
+            _ArrayStrategy._set_remaining_with_block_as_nil(array, block, size, 1)
         elif isinstance(first, Integer):
             long_store = [0] * size
             long_store[0] = first.get_embedded_integer()
-            _ArrayStrategy._set_remaining_with_block_as_long(array, block, size,
-                                                             1, long_store)
+            _ArrayStrategy._set_remaining_with_block_as_long(
+                array, block, size, 1, long_store
+            )
         elif isinstance(first, Double):
             double_store = [0.0] * size
             double_store[0] = first.get_embedded_double()
-            _ArrayStrategy._set_remaining_with_block_as_double(array, block,
-                                                               size, 1,
-                                                               double_store)
+            _ArrayStrategy._set_remaining_with_block_as_double(
+                array, block, size, 1, double_store
+            )
         elif first is trueObject or first is falseObject:
             bool_store = [first is trueObject] * size
-            _ArrayStrategy._set_remaining_with_block_as_double(array, block,
-                                                               size, 1,
-                                                               bool_store)
+            _ArrayStrategy._set_remaining_with_block_as_double(
+                array, block, size, 1, bool_store
+            )
         else:
             obj_store = [None] * size
             obj_store[0] = first
-            _ArrayStrategy._set_remaining_with_block_as_obj(array, block, size,
-                                                            1, obj_store)
+            _ArrayStrategy._set_remaining_with_block_as_obj(
+                array, block, size, 1, obj_store
+            )
 
     @staticmethod
     def _set_remaining_with_block_as_nil(array, block, size, next_i):
         block_method = block.get_method()
         while next_i < size:
-            put_all_nil_driver.jit_merge_point(block_method = block_method)
+            put_all_nil_driver.jit_merge_point(block_method=block_method)
             result = block_method.invoke(block, [])
             if result is not nilObject:
                 # ok, fall back, let's go straight to obj strategy
                 # todo: perhaps, partially empty would be better?
                 new_storage = [nilObject] * size
                 new_storage[next_i] = result
-                _ArrayStrategy._set_remaining_with_block_as_obj(array, block,
-                                                                size,
-                                                                next_i + 1,
-                                                                new_storage)
+                _ArrayStrategy._set_remaining_with_block_as_obj(
+                    array, block, size, next_i + 1, new_storage
+                )
                 return
             next_i += 1
         array._strategy = _empty_strategy
-        array._storage  = _empty_strategy.new_storage_for(size)
+        array._storage = _empty_strategy.new_storage_for(size)
 
     @staticmethod
     def _set_remaining_with_block_as_long(array, block, size, next_i, storage):
         block_method = block.get_method()
         while next_i < size:
-            put_all_long_driver.jit_merge_point(block_method = block_method)
+            put_all_long_driver.jit_merge_point(block_method=block_method)
             result = block_method.invoke(block, [])
             if isinstance(result, Integer):
                 storage[next_i] = result.get_embedded_integer()
@@ -150,20 +165,19 @@ class _ArrayStrategy(object):
                 new_storage = [None] * size
                 for i in range(0, next_i + 1):
                     new_storage[i] = Integer(storage[i])
-                _ArrayStrategy._set_remaining_with_block_as_obj(array, block,
-                                                                size,
-                                                                next_i + 1,
-                                                                new_storage)
+                _ArrayStrategy._set_remaining_with_block_as_obj(
+                    array, block, size, next_i + 1, new_storage
+                )
                 return
             next_i += 1
         array._strategy = _long_strategy
-        array._storage  = _long_strategy._erase(storage)
+        array._storage = _long_strategy._erase(storage)
 
     @staticmethod
     def _set_remaining_with_block_as_double(array, block, size, next_i, storage):
         block_method = block.get_method()
         while next_i < size:
-            put_all_double_driver.jit_merge_point(block_method = block_method)
+            put_all_double_driver.jit_merge_point(block_method=block_method)
             result = block_method.invoke(block, [])
             if isinstance(result, Double):
                 storage[next_i] = result.get_embedded_double()
@@ -172,20 +186,19 @@ class _ArrayStrategy(object):
                 new_storage = [None] * size
                 for i in range(0, next_i + 1):
                     new_storage[i] = Double(storage[i])
-                _ArrayStrategy._set_remaining_with_block_as_obj(array, block,
-                                                                size,
-                                                                next_i + 1,
-                                                                new_storage)
+                _ArrayStrategy._set_remaining_with_block_as_obj(
+                    array, block, size, next_i + 1, new_storage
+                )
                 return
             next_i += 1
         array._strategy = _double_strategy
-        array._storage  = _double_strategy._erase(storage)
+        array._storage = _double_strategy._erase(storage)
 
     @staticmethod
     def _set_remaining_with_block_as_bool(array, block, size, next_i, storage):
         block_method = block.get_method()
         while next_i < size:
-            put_all_bool_driver.jit_merge_point(block_method = block_method)
+            put_all_bool_driver.jit_merge_point(block_method=block_method)
             result = block_method.invoke(block, [])
             if result is trueObject or result is falseObject:
                 storage[next_i] = result is trueObject
@@ -194,33 +207,31 @@ class _ArrayStrategy(object):
                 new_storage = [None] * size
                 for i in range(0, next_i + 1):
                     new_storage[i] = Double(storage[i])
-                _ArrayStrategy._set_remaining_with_block_as_obj(array, block,
-                                                                size,
-                                                                next_i + 1,
-                                                                new_storage)
+                _ArrayStrategy._set_remaining_with_block_as_obj(
+                    array, block, size, next_i + 1, new_storage
+                )
                 return
             next_i += 1
         array._strategy = _bool_strategy
-        array._storage  = _bool_strategy._erase(storage)
-
+        array._storage = _bool_strategy._erase(storage)
 
     @staticmethod
     def _set_remaining_with_block_as_obj(array, block, size, next_i, storage):
         block_method = block.get_method()
 
         while next_i < size:
-            put_all_obj_driver.jit_merge_point(block_method = block_method)
+            put_all_obj_driver.jit_merge_point(block_method=block_method)
             storage[next_i] = block_method.invoke(block, [])
             next_i += 1
 
         array._strategy = _obj_strategy
-        array._storage  = _obj_strategy._erase(storage)
+        array._storage = _obj_strategy._erase(storage)
 
 
 class _ObjectStrategy(_ArrayStrategy):
 
     _erase, _unerase = new_erasing_pair("obj_list")
-    _erase   = staticmethod(_erase)
+    _erase = staticmethod(_erase)
     _unerase = staticmethod(_unerase)
 
     def get_idx(self, storage, idx):
@@ -277,7 +288,7 @@ class _ObjectStrategy(_ArrayStrategy):
         for i, _ in enumerate(store):
             new[i] = store[i]
 
-        new[old_size]  = value
+        new[old_size] = value
 
         return Array._from_storage_and_strategy(self._erase(new), _obj_strategy)
 
@@ -285,7 +296,7 @@ class _ObjectStrategy(_ArrayStrategy):
 class _LongStrategy(_ArrayStrategy):
 
     _erase, _unerase = new_erasing_pair("int_list")
-    _erase   = staticmethod(_erase)
+    _erase = staticmethod(_erase)
     _unerase = staticmethod(_unerase)
 
     def get_idx(self, storage, idx):
@@ -363,7 +374,7 @@ class _LongStrategy(_ArrayStrategy):
         for i, v in enumerate(store):
             new[i] = v
 
-        new[old_size]  = value.get_embedded_integer()
+        new[old_size] = value.get_embedded_integer()
 
         return Array._from_storage_and_strategy(self._erase(new), _long_strategy)
 
@@ -371,7 +382,7 @@ class _LongStrategy(_ArrayStrategy):
 class _DoubleStrategy(_ArrayStrategy):
 
     _erase, _unerase = new_erasing_pair("double_list")
-    _erase   = staticmethod(_erase)
+    _erase = staticmethod(_erase)
     _unerase = staticmethod(_unerase)
 
     def get_idx(self, storage, idx):
@@ -424,8 +435,7 @@ class _DoubleStrategy(_ArrayStrategy):
 
     def copy(self, storage):
         store = self._unerase(storage)
-        return Array._from_storage_and_strategy(self._erase(store[:]),
-                                                _double_strategy)
+        return Array._from_storage_and_strategy(self._erase(store[:]), _double_strategy)
 
     def copy_and_extend_with(self, storage, value):
         assert isinstance(value, Double)
@@ -438,16 +448,15 @@ class _DoubleStrategy(_ArrayStrategy):
         for i, v in enumerate(store):
             new[i] = v
 
-        new[old_size]  = value.get_embedded_double()
+        new[old_size] = value.get_embedded_double()
 
-        return Array._from_storage_and_strategy(self._erase(new),
-                                                _double_strategy)
+        return Array._from_storage_and_strategy(self._erase(new), _double_strategy)
 
 
 class _BoolStrategy(_ArrayStrategy):
 
     _erase, _unerase = new_erasing_pair("bool_list")
-    _erase   = staticmethod(_erase)
+    _erase = staticmethod(_erase)
     _unerase = staticmethod(_unerase)
 
     def get_idx(self, storage, idx):
@@ -500,8 +509,7 @@ class _BoolStrategy(_ArrayStrategy):
 
     def copy(self, storage):
         store = self._unerase(storage)
-        return Array._from_storage_and_strategy(self._erase(store[:]),
-                                                _bool_strategy)
+        return Array._from_storage_and_strategy(self._erase(store[:]), _bool_strategy)
 
     def copy_and_extend_with(self, storage, value):
         assert value is trueObject or value is falseObject
@@ -514,10 +522,9 @@ class _BoolStrategy(_ArrayStrategy):
         for i, v in enumerate(store):
             new[i] = v
 
-        new[old_size]  = value is trueObject
+        new[old_size] = value is trueObject
 
-        return Array._from_storage_and_strategy(self._erase(new),
-                                                _bool_strategy)
+        return Array._from_storage_and_strategy(self._erase(new), _bool_strategy)
 
 
 class _EmptyStrategy(_ArrayStrategy):
@@ -525,7 +532,7 @@ class _EmptyStrategy(_ArrayStrategy):
     # We have these basic erase/unerase methods, and then the once to be used, which
     # do also the wrapping with Integer objects of the integer value
     __erase, __unerase = new_erasing_pair("Integer")
-    __erase   = staticmethod(__erase)
+    __erase = staticmethod(__erase)
     __unerase = staticmethod(__unerase)
 
     def _erase(self, anInt):
@@ -539,8 +546,7 @@ class _EmptyStrategy(_ArrayStrategy):
         size = self._unerase(storage)
         if 0 <= idx < size:
             return nilObject
-        else:
-            raise IndexError()
+        raise IndexError()
 
     def set_idx(self, array, idx, value):
         size = self._unerase(array._storage)
@@ -552,7 +558,9 @@ class _EmptyStrategy(_ArrayStrategy):
             # We need to transition to the _PartiallyEmpty strategy, because
             # we are not guaranteed to set all elements of the array.
 
-            array._storage  = _partially_empty_strategy.new_storage_with_values([nilObject] * size)
+            array._storage = _partially_empty_strategy.new_storage_with_values(
+                [nilObject] * size
+            )
             array._strategy = _partially_empty_strategy
             array._strategy.set_idx(array, idx, value)
         else:
@@ -593,37 +601,37 @@ class _EmptyStrategy(_ArrayStrategy):
         size = self._unerase(storage)
         if value is nilObject:
             return Array.from_size(size + 1)
-        else:
-            new = [nilObject] * (size + 1)
-            new[-1] = value
-            return Array._from_storage_and_strategy(_ObjectStrategy._erase(new),
-                                                    _obj_strategy)
+        new = [nilObject] * (size + 1)
+        new[-1] = value
+        return Array._from_storage_and_strategy(
+            _ObjectStrategy._erase(new), _obj_strategy
+        )
 
 
 class _PartialStorage(object):
 
-    _immutable_fields_ = ['storage', 'size']
+    _immutable_fields_ = ["storage", "size"]
 
     @staticmethod
     def from_obj_values(storage):
         # Currently, we support only the direct transition from empty
         # to partially empty
-        assert isinstance(storage,    list)
+        assert isinstance(storage, list)
         assert isinstance(storage[0], AbstractObject)
         self = instantiate(_PartiallyEmptyStrategy)
-        self.storage        = storage
-        self.size           = len(storage)
+        self.storage = storage
+        self.size = len(storage)
         self.empty_elements = self.size
-        self.type           = None
+        self.type = None
         return self
 
     @staticmethod
     def from_size(size):
         self = instantiate(_PartiallyEmptyStrategy)
         self.storage = [nilObject] * size
-        self.size    = size
+        self.size = size
         self.empty_elements = size
-        self.type    = None
+        self.type = None
         return self
 
 
@@ -634,7 +642,7 @@ class _PartiallyEmptyStrategy(_ArrayStrategy):
     # is homogeneous in one type
 
     _erase, _unerase = new_erasing_pair("partial_storage")
-    _erase   = staticmethod(_erase)
+    _erase = staticmethod(_erase)
     _unerase = staticmethod(_unerase)
 
     def get_idx(self, storage, idx):
@@ -649,10 +657,9 @@ class _PartiallyEmptyStrategy(_ArrayStrategy):
         if value is nilObject:
             if store.storage[idx] is nilObject:
                 return
-            else:
-                store.storage[idx] = nilObject
-                store.empty_elements += 1
-                return
+            store.storage[idx] = nilObject
+            store.empty_elements += 1
+            return
         if store.storage[idx] is nilObject:
             store.empty_elements -= 1
 
@@ -702,21 +709,20 @@ class _PartiallyEmptyStrategy(_ArrayStrategy):
 
     @staticmethod
     def new_storage_for(size):
-        return _PartiallyEmptyStrategy._erase(
-            _PartiallyEmptyStrategy.from_size(size))
+        return _PartiallyEmptyStrategy._erase(_PartiallyEmptyStrategy.from_size(size))
 
     @staticmethod
     def new_storage_with_values(values):
         assert isinstance(values, list)
         make_sure_not_resized(values)
-        return _PartiallyEmptyStrategy._erase(
-            _PartialStorage.from_obj_values(values))
+        return _PartiallyEmptyStrategy._erase(_PartialStorage.from_obj_values(values))
 
     def copy(self, storage):
         store = self._unerase(storage)
         return Array._from_storage_and_strategy(
             self._erase(_PartialStorage.from_obj_values(store.storage[:])),
-            _partially_empty_strategy)
+            _partially_empty_strategy,
+        )
 
     def copy_and_extend_with(self, storage, value):
         store = self._unerase(storage)
@@ -729,22 +735,23 @@ class _PartiallyEmptyStrategy(_ArrayStrategy):
             new[i] = store.storage[i]
 
         new_store = instantiate(_PartiallyEmptyStrategy)
-        new_store.storage        = new
-        new_store.size           = new_size
+        new_store.storage = new
+        new_store.size = new_size
         new_store.empty_elements = store.empty_elements + 1
-        new_store.type           = store.type
+        new_store.type = store.type
 
-        new_arr = Array._from_storage_and_strategy(self._erase(new_store),
-                                                   _partially_empty_strategy)
+        new_arr = Array._from_storage_and_strategy(
+            self._erase(new_store), _partially_empty_strategy
+        )
         new_arr.set_indexable_field(old_size, value)
         return new_arr
 
 
-_obj_strategy    = _ObjectStrategy()
-_long_strategy   = _LongStrategy()
+_obj_strategy = _ObjectStrategy()
+_long_strategy = _LongStrategy()
 _double_strategy = _DoubleStrategy()
-_bool_strategy   = _BoolStrategy()
-_empty_strategy  = _EmptyStrategy()
+_bool_strategy = _BoolStrategy()
+_empty_strategy = _EmptyStrategy()
 _partially_empty_strategy = _PartiallyEmptyStrategy()
 
 
@@ -760,19 +767,19 @@ class Array(AbstractObject):
         self = instantiate(Array)
         # self = Array()
         self._strategy = strategy
-        self._storage  = storage
+        self._storage = storage
         return self
 
     @staticmethod
-    def from_size(size, strategy = _empty_strategy):
+    def from_size(size, strategy=_empty_strategy):
         self = instantiate(Array)
         # self = Array()
         self._strategy = strategy
-        self._storage  = strategy.new_storage_for(size)
+        self._storage = strategy.new_storage_for(size)
         return self
 
     @staticmethod
-    def from_values(values, strategy = None):
+    def from_values(values, strategy=None):
         self = instantiate(Array)
         # self = Array()
         make_sure_not_resized(values)
@@ -785,8 +792,9 @@ class Array(AbstractObject):
 
     @staticmethod
     def from_integers(ints):
-        return Array._from_storage_and_strategy(_long_strategy._erase(ints),
-                                                _long_strategy)
+        return Array._from_storage_and_strategy(
+            _long_strategy._erase(ints), _long_strategy
+        )
 
     @staticmethod
     def from_objects(values):
@@ -798,32 +806,32 @@ class Array(AbstractObject):
 
     @staticmethod
     def _determine_strategy(values):
-        is_empty    = True
+        is_empty = True
         only_double = True
-        only_long   = True
-        only_bool   = True
-        for v in values:
-            if v is None or v is nilObject:
+        only_long = True
+        only_bool = True
+        for value in values:
+            if value is None or value is nilObject:
                 continue
-            if isinstance(v, int) or isinstance(v, Integer):
-                is_empty    = False
+            if isinstance(value, int) or isinstance(value, Integer):
+                is_empty = False
                 only_double = False
-                only_bool   = False
+                only_bool = False
                 continue
-            if isinstance(v, float) or isinstance(v, Double):
-                is_empty  = False
+            if isinstance(value, float) or isinstance(value, Double):
+                is_empty = False
                 only_long = False
                 only_bool = False
                 continue
-            if isinstance(v, bool) or v is trueObject or v is falseObject:
-                is_empty    = False
-                only_long   = False
+            if isinstance(value, bool) or value is trueObject or value is falseObject:
+                is_empty = False
+                only_long = False
                 only_double = False
                 continue
-            only_long   = False
+            only_long = False
             only_double = False
-            only_bool   = False
-            is_empty    = False
+            only_bool = False
+            is_empty = False
 
         if is_empty:
             return _empty_strategy

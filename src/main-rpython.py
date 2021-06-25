@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 
 from som.compiler.parse_error import ParseError
 from som.interp_type import is_ast_interpreter, is_bytecode_interpreter
 from som.vm.universe import main, Exit
-
-import os
 
 try:
     import rpython.rlib
@@ -22,13 +21,13 @@ except ImportError:
 def entry_point(argv):
     try:
         main(argv)
-    except Exit as e:
-        return e.code
-    except ParseError as e:
-        os.write(2, str(e))
+    except Exit as ex:
+        return ex.code
+    except ParseError as ex:
+        os.write(2, str(ex))
         return 1
-    except Exception as e:
-        os.write(2, "ERROR: %s thrown during execution.\n" % e)
+    except Exception as ex:  # pylint: disable=broad-except
+        os.write(2, "ERROR: %s thrown during execution.\n" % ex)
         return 1
     return 1
 
@@ -36,28 +35,30 @@ def entry_point(argv):
 # _____ Define and setup target ___
 
 
-def target(driver, args):
-    exe_name = 'som-'
+def target(driver, _args):
+    exe_name = "som-"
     if is_ast_interpreter():
-        exe_name += 'ast-'
+        exe_name += "ast-"
     elif is_bytecode_interpreter():
-        exe_name += 'bc-'
+        exe_name += "bc-"
 
     if driver.config.translation.jit:
-        exe_name += 'jit'
+        exe_name += "jit"
     else:
-        exe_name += 'interp'
+        exe_name += "interp"
 
     driver.exe_name = exe_name
     return entry_point, None
 
 
-def jitpolicy(driver):
+def jitpolicy(_driver):
     from rpython.jit.codewriter.policy import JitPolicy
+
     return JitPolicy()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from rpython.translator.driver import TranslationDriver
+
     f, _ = target(TranslationDriver(), sys.argv)
     sys.exit(f(sys.argv))

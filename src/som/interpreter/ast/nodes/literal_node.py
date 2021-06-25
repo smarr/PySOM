@@ -5,9 +5,9 @@ class LiteralNode(ExpressionNode):
 
     _immutable_fields_ = ["_value"]
 
-    def __init__(self, value, source_section = None):
+    def __init__(self, value, source_section=None):
         ExpressionNode.__init__(self, source_section)
         self._value = value
 
-    def execute(self, frame):
+    def execute(self, _frame):
         return self._value

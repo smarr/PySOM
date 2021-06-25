@@ -9,8 +9,8 @@ class _AbstractPrimitive(AbstractObject):
         AbstractObject.__init__(self)
 
         self._signature = universe.symbol_for(signature_string)
-        self._is_empty  = is_empty
-        self._holder    = None
+        self._is_empty = is_empty
+        self._holder = None
 
     @staticmethod
     def is_primitive():
@@ -18,7 +18,7 @@ class _AbstractPrimitive(AbstractObject):
 
     @staticmethod
     def is_invokable():
-        """ We use this method to identify methods and primitives """
+        """We use this method to identify methods and primitives"""
         return True
 
     def get_signature(self):
@@ -64,7 +64,7 @@ class _AstUnaryPrimitive(_AbstractPrimitive):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, rcvr, args):
+    def invoke(self, rcvr, _args):
         prim_fn = self._prim_fn
         return prim_fn(rcvr)
 
@@ -162,10 +162,12 @@ class _BcTernaryPrimitive(_AbstractPrimitive):
         return 3
 
 
-def _empty_invoke(ivkbl, _a = None, _b = None):
-    """ Write a warning to the screen """
-    print("Warning: undefined primitive #%s called" %
-          ivkbl.get_signature().get_embedded_string())
+def _empty_invoke(ivkbl, _a=None, _b=None):
+    """Write a warning to the screen"""
+    print(
+        "Warning: undefined primitive #%s called"
+        % ivkbl.get_signature().get_embedded_string()
+    )
 
 
 if is_ast_interpreter():
@@ -181,5 +183,5 @@ else:
 
 
 def empty_primitive(signature_string, universe):
-    """ Return an empty primitive with the given signature """
+    """Return an empty primitive with the given signature"""
     return Primitive(signature_string, universe, _empty_invoke, True)

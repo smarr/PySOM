@@ -1,5 +1,4 @@
 class AbstractObject(object):
-
     def __init__(self):
         pass
 
@@ -12,4 +11,5 @@ class AbstractObject(object):
 
     def __str__(self):
         from som.vm.current import current_universe
+
         return "a " + self.get_class(current_universe).get_name().get_embedded_string()

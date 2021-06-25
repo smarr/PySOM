@@ -4,19 +4,18 @@ from .literal_node import LiteralNode
 
 class BlockNode(LiteralNode):
 
-    _immutable_fields_ = ['universe']
+    _immutable_fields_ = ["universe"]
 
-    def __init__(self, value, universe, source_section = None):
+    def __init__(self, value, universe, source_section=None):
         LiteralNode.__init__(self, value, source_section)
         self.universe = universe
 
-    def execute(self, frame):
+    def execute(self, _frame):
         return AstBlock(self._value, (None, None, None, None))
 
 
 class BlockNodeWithContext(BlockNode):
-
-    def __init__(self, value, universe, source_section = None):
+    def __init__(self, value, universe, source_section=None):
         BlockNode.__init__(self, value, universe, source_section)
 
     def execute(self, frame):

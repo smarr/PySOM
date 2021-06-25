@@ -12,16 +12,18 @@ else:
 
 class _Class(Object):
 
-    _immutable_fields_ = ["_super_class"
-                          "_name",
-                          "_instance_fields"
-                          "_invokables_table",
-                          "has_primitives"]
+    _immutable_fields_ = [
+        "_super_class",
+        "_name",
+        "_instance_fields",
+        "_invokables_table",
+        "has_primitives",
+    ]
 
     def __init__(self, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
         Object.__init__(self, obj_class, number_of_fields)
         self._super_class = nilObject
-        self._name        = None
+        self._name = None
         self._instance_fields = None
         self._invokables_table = None
         self.has_primitives = False
@@ -73,7 +75,7 @@ class _Class(Object):
             i.set_holder(self)
 
     def get_number_of_instance_invokables(self):
-        """ Return the number of instance invokables in this class """
+        """Return the number of instance invokables in this class"""
         return len(self._invokables_table)
 
     def get_instance_invokables_for_disassembler(self):
@@ -112,12 +114,19 @@ class _Class(Object):
         return -1
 
     def add_primitive(self, value, warn_if_not_existing):
-        if warn_if_not_existing and (not self._invokables_table or
-                                     value.get_signature() not in self._invokables_table):
+        if warn_if_not_existing and (
+            not self._invokables_table
+            or value.get_signature() not in self._invokables_table
+        ):
             from som.vm.universe import std_print, std_println
-            std_print("Warning: Primitive " + value.get_signature().get_embedded_string())
+
+            std_print(
+                "Warning: Primitive " + value.get_signature().get_embedded_string()
+            )
             std_println(
-                " is not in class definition for class " + self.get_name().get_embedded_string())
+                " is not in class definition for class "
+                + self.get_name().get_embedded_string()
+            )
 
         value.set_holder(self)
         if self._invokables_table is None:
@@ -127,7 +136,7 @@ class _Class(Object):
     def get_instance_field_name(self, index):
         return self.get_instance_fields().get_indexable_field(index)
 
-    @jit.elidable_promote('all')
+    @jit.elidable_promote("all")
     def get_number_of_instance_fields(self):
         # Get the total number of instance fields in this class
         return self.get_instance_fields().get_number_of_indexable_fields()
@@ -142,16 +151,19 @@ class _Class(Object):
         return False
 
     def load_primitives(self, display_warning, universe):
-        from som.primitives.known import (primitives_for_class,
-                                          PrimitivesNotFound)
+        from som.primitives.known import primitives_for_class, PrimitivesNotFound
+
         try:
             prims = primitives_for_class(self)
             prims(universe).install_primitives_in(self)
         except PrimitivesNotFound:
             if display_warning:
                 from som.vm.universe import error_println
-                error_println("Loading of primitives failed for %s. Currently, "
-                              "we support primitives only for known classes" % self.get_name())
+
+                error_println(
+                    "Loading of primitives failed for %s. Currently, "
+                    "we support primitives only for known classes" % self.get_name()
+                )
 
     def __str__(self):
         return "Class(" + self.get_name().get_embedded_string() + ")"
@@ -170,19 +182,22 @@ class _ClassWithLayout(_Class):
     def set_instance_fields(self, value):
         assert isinstance(value, Array)
         self._instance_fields = value
-        if (self._layout_for_instances is None or
-                value.get_number_of_indexable_fields() !=
-                self._layout_for_instances.get_number_of_fields()):
+        if (
+            self._layout_for_instances is None
+            or value.get_number_of_indexable_fields()
+            != self._layout_for_instances.get_number_of_fields()
+        ):
             self._layout_for_instances = ObjectLayout(
-                value.get_number_of_indexable_fields(), self)
+                value.get_number_of_indexable_fields(), self
+            )
 
     def get_layout_for_instances(self):
         return self._layout_for_instances
 
-    def update_instance_layout_with_initialized_field(self, field_idx,
-                                                      spec_type):
-        updated = self._layout_for_instances.with_initialized_field(field_idx,
-                                                                    spec_type)
+    def update_instance_layout_with_initialized_field(self, field_idx, spec_type):
+        updated = self._layout_for_instances.with_initialized_field(
+            field_idx, spec_type
+        )
         if updated is not self._layout_for_instances:
             self._layout_for_instances = updated
         return self._layout_for_instances

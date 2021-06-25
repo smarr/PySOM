@@ -1,8 +1,7 @@
+from math import fmod
 from rlib.float import float_to_str
 from som.vm.globals import trueObject, falseObject
 from som.vmobjects.abstract_object import AbstractObject
-
-import math
 
 
 class Double(AbstractObject):
@@ -27,6 +26,7 @@ class Double(AbstractObject):
     def _get_float(obj):
         from .integer import Integer
         from .biginteger import BigInteger
+
         if isinstance(obj, Double):
             return obj.get_embedded_double()
         if isinstance(obj, Integer):
@@ -54,6 +54,7 @@ class Double(AbstractObject):
 
     def prim_as_string(self):
         from .string import String
+
         s = float_to_str(self._embedded_double)
         return String(s)
 
@@ -67,16 +68,17 @@ class Double(AbstractObject):
 
     def prim_int_div(self, right):
         from .integer import Integer
+
         r = self._get_float(right)
         return Integer(int(self._embedded_double / r))
 
     def prim_modulo(self, right):
         r = self._get_float(right)
-        return Double(math.fmod(self._embedded_double, r))
+        return Double(fmod(self._embedded_double, r))
 
     def prim_remainder(self, right):
         r = self._get_float(right)
-        return Double(math.fmod(self._embedded_double, r))
+        return Double(fmod(self._embedded_double, r))
 
     def prim_and(self, right):
         raise NotImplementedError("bit operations on Double are not supported.")
@@ -85,33 +87,28 @@ class Double(AbstractObject):
         r = self._get_float(right)
         if self._embedded_double == r:
             return trueObject
-        else:
-            return falseObject
+        return falseObject
 
     def prim_unequals(self, right):
         r = self._get_float(right)
         if self._embedded_double != r:
             return trueObject
-        else:
-            return falseObject
+        return falseObject
 
     def prim_less_than(self, right):
         r = self._get_float(right)
         if self._embedded_double < r:
             return trueObject
-        else:
-            return falseObject
+        return falseObject
 
     def prim_less_than_or_equal(self, right):
         r = self._get_float(right)
         if self._embedded_double <= r:
             return trueObject
-        else:
-            return falseObject
+        return falseObject
 
     def prim_greater_than(self, right):
         r = self._get_float(right)
         if self._embedded_double > r:
             return trueObject
-        else:
-            return falseObject
+        return falseObject

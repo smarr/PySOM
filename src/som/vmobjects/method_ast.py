@@ -7,19 +7,24 @@ from som.vmobjects.abstract_object import AbstractObject
 
 class AstMethod(AbstractObject):
 
-    _immutable_fields_ = ["_signature", "_invokable",
-                          "_embedded_block_methods", "universe", "_holder"]
+    _immutable_fields_ = [
+        "_signature",
+        "_invokable",
+        "_embedded_block_methods",
+        "universe",
+        "_holder",
+    ]
 
     def __init__(self, signature, invokable, embedded_block_methods, universe):
         AbstractObject.__init__(self)
 
-        self._signature    = signature
-        self._invokable    = invokable
+        self._signature = signature
+        self._invokable = invokable
 
         self._embedded_block_methods = embedded_block_methods
         self.universe = universe
 
-        self._holder   = None
+        self._holder = None
 
     @staticmethod
     def is_primitive():
@@ -27,7 +32,7 @@ class AstMethod(AbstractObject):
 
     @staticmethod
     def is_invokable():
-        """ We use this method to identify methods and primitives """
+        """We use this method to identify methods and primitives"""
         return True
 
     def get_signature(self):
@@ -41,7 +46,7 @@ class AstMethod(AbstractObject):
         for method in self._embedded_block_methods:
             method.set_holder(value)
 
-    @jit.elidable_promote('all')
+    @jit.elidable_promote("all")
     def get_number_of_arguments(self):
         return self.get_signature().get_number_of_signature_arguments()
 
@@ -52,13 +57,15 @@ class AstMethod(AbstractObject):
         if self._holder:
             holder = self._holder.get_name().get_embedded_string()
         else:
-            holder = 'nil'
+            holder = "nil"
         return "Method(" + holder + ">>" + str(self.get_signature()) + ")"
 
     def get_class(self, universe):
         return universe.methodClass
 
     def merge_point_string(self):
-        """ debug info for the jit """
-        return "%s>>%s" % (self.get_holder().get_name().get_embedded_string(),
-                           self.get_signature().get_embedded_string())
+        """debug info for the jit"""
+        return "%s>>%s" % (
+            self.get_holder().get_name().get_embedded_string(),
+            self.get_signature().get_embedded_string(),
+        )

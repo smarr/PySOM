@@ -1,36 +1,34 @@
+import os
+import time
+
 from rlib import jit
 from rlib.string_stream import encode_to_bytes
+from rlib.exit import Exit
+from rlib.osext import path_split
 
 from som.compiler.bc.method_generation_context import create_bootstrap_method
 from som.interpreter.bc.frame import create_bootstrap_frame
 
 from som.interp_type import is_ast_interpreter
 
-if is_ast_interpreter():
-    from som.vmobjects.object_with_layout import ObjectWithLayout as Object
-    from som.vmobjects.block_ast          import block_evaluation_primitive
-    from som.vm.shell                     import AstShell
-else:
-    from som.vmobjects.object   import Object
-    from som.vmobjects.block_bc import block_evaluation_primitive
-    from som.vm.shell           import BcShell
-
-from som.vmobjects.array         import Array
-from som.vmobjects.clazz         import Class
+from som.vmobjects.array import Array
+from som.vmobjects.clazz import Class
 from som.vmobjects.object_without_fields import ObjectWithoutFields
-from som.vmobjects.symbol        import Symbol
-from som.vmobjects.string        import String
+from som.vmobjects.symbol import Symbol
+from som.vmobjects.string import String
 
 from som.vm.globals import nilObject, trueObject, falseObject
 
 import som.compiler.sourcecode_compiler as sourcecode_compiler
 
-import os
-import time
-
-
-from rlib.exit  import Exit
-from rlib.osext import path_split
+if is_ast_interpreter():
+    from som.vmobjects.object_with_layout import ObjectWithLayout as Object
+    from som.vmobjects.block_ast import block_evaluation_primitive
+    from som.vm.shell import AstShell
+else:
+    from som.vmobjects.object import Object
+    from som.vmobjects.block_bc import block_evaluation_primitive
+    from som.vm.shell import BcShell
 
 
 class Assoc(object):
@@ -39,7 +37,7 @@ class Assoc(object):
 
     def __init__(self, global_name, value):
         self.global_name = global_name
-        self.value       = value
+        self.value = value
 
     def __str__(self):
         return "(%s => %s)" % (self.global_name, self.value)
@@ -48,53 +46,54 @@ class Assoc(object):
 class Universe(object):
 
     _immutable_fields_ = [
-            "objectClass",
-            "classClass",
-            "metaclassClass",
-            "nilClass",
-            "integerClass",
-            "arrayClass",
-            "methodClass",
-            "symbolClass",
-            "primitiveClass",
-            "systemClass",
-            "blockClass",
-            "blockClasses[*]",
-            "stringClass",
-            "doubleClass",
-            "_symbol_table",
-            "_globals",
-            "_object_system_initialized"]
+        "objectClass",
+        "classClass",
+        "metaclassClass",
+        "nilClass",
+        "integerClass",
+        "arrayClass",
+        "methodClass",
+        "symbolClass",
+        "primitiveClass",
+        "systemClass",
+        "blockClass",
+        "blockClasses[*]",
+        "stringClass",
+        "doubleClass",
+        "_symbol_table",
+        "_globals",
+        "_object_system_initialized",
+    ]
 
-    def __init__(self, avoid_exit = False):
-        self._symbol_table   = {}
-        self._globals        = {}
+    def __init__(self, avoid_exit=False):
+        self._symbol_table = {}
+        self._globals = {}
 
-        self.objectClass    = None
-        self.classClass     = None
+        self.objectClass = None
+        self.classClass = None
         self.metaclassClass = None
 
-        self.nilClass       = None
-        self.integerClass   = None
-        self.arrayClass     = None
-        self.methodClass    = None
-        self.symbolClass    = None
+        self.nilClass = None
+        self.integerClass = None
+        self.arrayClass = None
+        self.methodClass = None
+        self.symbolClass = None
         self.primitiveClass = None
-        self.systemClass    = None
-        self.blockClass     = None
-        self.blockClasses   = None
-        self.stringClass    = None
-        self.doubleClass    = None
+        self.systemClass = None
+        self.blockClass = None
+        self.blockClasses = None
+        self.stringClass = None
+        self.doubleClass = None
 
         self.symNil = None
         self.symPlus = None
         self.symMinus = None
 
         self._last_exit_code = 0
-        self._avoid_exit     = avoid_exit
+        self._avoid_exit = avoid_exit
         self._dump_bytecodes = False
-        self.classpath       = None
-        self.start_time      = time.time()  # a float of the time in seconds
+        self.classpath = None
+        self.start_time = time.time()  # a float of the time in seconds
         self._object_system_initialized = False
 
     def reset(self, avoid_exit):
@@ -133,13 +132,12 @@ class Universe(object):
         # Start the shell if no filename is given
         if len(arguments) == 0:
             return self._start_shell()
-        else:
-            arguments_array = self.new_array_with_strings(arguments)
-            initialize = self.systemClass.lookup_invokable(self.symbol_for("initialize:"))
-            return self._start_execution(system_object, initialize, arguments_array)
+        arguments_array = self.new_array_with_strings(arguments)
+        initialize = self.systemClass.lookup_invokable(self.symbol_for("initialize:"))
+        return self._start_execution(system_object, initialize, arguments_array)
 
     def handle_arguments(self, arguments):
-        got_classpath  = False
+        got_classpath = False
         remaining_args = []
         saw_others = False
 
@@ -149,7 +147,7 @@ class Universe(object):
                 if i + 1 >= len(arguments):
                     self._print_usage_and_exit()
                 self.setup_classpath(arguments[i + 1])
-                i += 1    # skip class path
+                i += 1  # skip class path
                 got_classpath = True
             elif arguments[i] == "-d" and not saw_others:
                 self._dump_bytecodes = True
@@ -175,12 +173,12 @@ class Universe(object):
 
         return remaining_args
 
-    def setup_classpath(self, cp):
-        self.classpath = cp.split(os.pathsep)
+    def setup_classpath(self, class_path):
+        self.classpath = class_path.split(os.pathsep)
 
     @staticmethod
     def _default_classpath():
-        return ['.']
+        return ["."]
 
     # take argument of the form "../foo/Test.som" and return
     # "../foo", "Test", "som"
@@ -193,7 +191,7 @@ class Universe(object):
         std_println("Usage: som [-options] [args...]                          ")
         std_println("                                                         ")
         std_println("where options include:                                   ")
-        std_println("    -cp <directories separated by " + os.pathsep     + ">")
+        std_println("    -cp <directories separated by " + os.pathsep + ">")
         std_println("        set search path for application classes")
         std_println("    -d  enable disassembling")
         std_println("    -h  print this help")
@@ -206,32 +204,34 @@ class Universe(object):
         self.metaclassClass = self.new_metaclass_class()
 
         # Allocate the rest of the system classes
-        self.objectClass     = self.new_system_class()
-        self.nilClass        = self.new_system_class()
-        self.classClass      = self.new_system_class()
-        self.arrayClass      = self.new_system_class()
-        self.symbolClass     = self.new_system_class()
-        self.methodClass     = self.new_system_class()
-        self.integerClass    = self.new_system_class()
-        self.primitiveClass  = self.new_system_class()
-        self.stringClass     = self.new_system_class()
-        self.doubleClass     = self.new_system_class()
+        self.objectClass = self.new_system_class()
+        self.nilClass = self.new_system_class()
+        self.classClass = self.new_system_class()
+        self.arrayClass = self.new_system_class()
+        self.symbolClass = self.new_system_class()
+        self.methodClass = self.new_system_class()
+        self.integerClass = self.new_system_class()
+        self.primitiveClass = self.new_system_class()
+        self.stringClass = self.new_system_class()
+        self.doubleClass = self.new_system_class()
 
         # Setup the class reference for the nil object
         nilObject.set_class(self.nilClass)
 
         # Initialize the system classes
-        self._initialize_system_class(self.objectClass,                 None, "Object")
-        self._initialize_system_class(self.classClass,      self.objectClass, "Class")
-        self._initialize_system_class(self.metaclassClass,   self.classClass, "Metaclass")
-        self._initialize_system_class(self.nilClass,        self.objectClass, "Nil")
-        self._initialize_system_class(self.arrayClass,      self.objectClass, "Array")
-        self._initialize_system_class(self.methodClass,     self.objectClass, "Method")
-        self._initialize_system_class(self.integerClass,    self.objectClass, "Integer")
-        self._initialize_system_class(self.primitiveClass,  self.objectClass, "Primitive")
-        self._initialize_system_class(self.stringClass,     self.objectClass, "String")
-        self._initialize_system_class(self.symbolClass,     self.stringClass, "Symbol")
-        self._initialize_system_class(self.doubleClass,     self.objectClass, "Double")
+        self._initialize_system_class(self.objectClass, None, "Object")
+        self._initialize_system_class(self.classClass, self.objectClass, "Class")
+        self._initialize_system_class(self.metaclassClass, self.classClass, "Metaclass")
+        self._initialize_system_class(self.nilClass, self.objectClass, "Nil")
+        self._initialize_system_class(self.arrayClass, self.objectClass, "Array")
+        self._initialize_system_class(self.methodClass, self.objectClass, "Method")
+        self._initialize_system_class(self.integerClass, self.objectClass, "Integer")
+        self._initialize_system_class(
+            self.primitiveClass, self.objectClass, "Primitive"
+        )
+        self._initialize_system_class(self.stringClass, self.objectClass, "String")
+        self._initialize_system_class(self.symbolClass, self.stringClass, "Symbol")
+        self._initialize_system_class(self.doubleClass, self.objectClass, "Double")
 
         # Load methods and fields into the system classes
         self._load_system_class(self.objectClass)
@@ -250,13 +250,13 @@ class Universe(object):
         self.blockClass = self.load_class(self.symbol_for("Block"))
 
         # Setup the true and false objects
-        trueClassName    = self.symbol_for("True")
-        trueClass        = self.load_class(trueClassName)
+        trueClassName = self.symbol_for("True")
+        trueClass = self.load_class(trueClassName)
         trueClass.load_primitives(False, self)
         trueObject.set_class(trueClass)
 
-        falseClassName   = self.symbol_for("False")
-        falseClass       = self.load_class(falseClassName)
+        falseClassName = self.symbol_for("False")
+        falseClass = self.load_class(falseClassName)
         falseClass.load_primitives(False, self)
         falseObject.set_class(falseClass)
 
@@ -269,20 +269,21 @@ class Universe(object):
         self.symMinus = self.symbol_for("+")
 
         # Put special objects and classes into the dictionary of globals
-        self.set_global(self.symNil,               nilObject)
-        self.set_global(self.symbol_for("true"),   trueObject)
-        self.set_global(self.symbol_for("false"),  falseObject)
+        self.set_global(self.symNil, nilObject)
+        self.set_global(self.symbol_for("true"), trueObject)
+        self.set_global(self.symbol_for("false"), falseObject)
         self.set_global(self.symbol_for("system"), system_object)
         self.set_global(self.symbol_for("System"), self.systemClass)
-        self.set_global(self.symbol_for("Block"),  self.blockClass)
+        self.set_global(self.symbol_for("Block"), self.blockClass)
 
-        self.set_global(self.symbol_for("Nil"),    self.nilClass)
+        self.set_global(self.symbol_for("Nil"), self.nilClass)
 
-        self.set_global( trueClassName,  trueClass)
+        self.set_global(trueClassName, trueClass)
         self.set_global(falseClassName, falseClass)
 
-        self.blockClasses = [self.blockClass] + \
-                [self._make_block_class(i) for i in [1, 2, 3]]
+        self.blockClasses = [self.blockClass] + [
+            self._make_block_class(i) for i in [1, 2, 3]
+        ]
 
         self._object_system_initialized = True
         return system_object
@@ -311,8 +312,7 @@ class Universe(object):
         num_fields = instance_class.get_number_of_instance_fields()
         if num_fields == 0:
             return ObjectWithoutFields(instance_class)
-        else:
-            return Object(instance_class, num_fields)
+        return Object(instance_class, num_fields)
 
     def new_metaclass_class(self):
         # Allocate the metaclass classes
@@ -343,8 +343,7 @@ class Universe(object):
         # Initialize the superclass hierarchy
         if super_class:
             system_class.set_super_class(super_class)
-            system_class.get_class(self).set_super_class(
-                super_class.get_class(self))
+            system_class.get_class(self).set_super_class(super_class.get_class(self))
         else:
             system_class.get_class(self).set_super_class(self.classClass)
 
@@ -366,8 +365,7 @@ class Universe(object):
         assoc = self._get_global(name)
         if assoc:
             return assoc.value
-        else:
-            return None
+        return None
 
     @jit.elidable
     def _get_global(self, name):
@@ -404,7 +402,8 @@ class Universe(object):
 
         # Add the appropriate value primitive to the block class
         result.add_primitive(
-            block_evaluation_primitive(number_of_arguments, self), True)
+            block_evaluation_primitive(number_of_arguments, self), True
+        )
 
         # Insert the block class into the dictionary of globals
         self.set_global(name, result)
@@ -425,7 +424,8 @@ class Universe(object):
         return result
 
     def _load_primitives(self, clazz, is_system_class):
-        if not clazz: return
+        if not clazz:
+            return
 
         if clazz.needs_primitives() or is_system_class:
             clazz.load_primitives(not is_system_class, self)
@@ -435,23 +435,27 @@ class Universe(object):
         result = self._load_class(system_class.get_name(), system_class)
 
         if not result:
-            error_println(system_class.get_name().get_embedded_string()
-                   + " class could not be loaded. It is likely that the"
-                   + " class path has not been initialized properly."
-                   + " Please make sure that the '-cp' parameter is given on the command-line.")
+            error_println(
+                system_class.get_name().get_embedded_string()
+                + " class could not be loaded. It is likely that the"
+                + " class path has not been initialized properly."
+                + " Please make sure that the '-cp' parameter is given on the command-line."
+            )
             self.exit(200)
 
         self._load_primitives(result, True)
 
     def _load_class(self, name, system_class):
         # Try loading the class from all different paths
-        for cpEntry in self.classpath:
+        for cp_entry in self.classpath:
             try:
                 # Load the class from a file and return the loaded class
                 result = sourcecode_compiler.compile_class_from_file(
-                    cpEntry, name.get_embedded_string(), system_class, self)
+                    cp_entry, name.get_embedded_string(), system_class, self
+                )
                 if self._dump_bytecodes:
                     from som.compiler.disassembler import dump
+
                     dump(result.get_class(self))
                     dump(result)
 
@@ -468,12 +472,12 @@ class Universe(object):
         result = sourcecode_compiler.compile_class_from_string(stmt, None, self)
         if self._dump_bytecodes:
             from som.compiler.disassembler import dump
+
             dump(result)
         return result
 
 
 class _ASTUniverse(Universe):
-
     def _start_shell(self):
         shell = AstShell(self)
         return shell.start()
@@ -486,7 +490,6 @@ class _ASTUniverse(Universe):
 
 
 class _BCUniverse(Universe):
-
     def _start_shell(self):
         bootstrap_method = create_bootstrap_method(self)
         shell = BcShell(self, bootstrap_method)
@@ -494,7 +497,9 @@ class _BCUniverse(Universe):
 
     def _start_execution(self, system_object, initialize, arguments_array):
         bootstrap_method = create_bootstrap_method(self)
-        bootstrap_frame = create_bootstrap_frame(bootstrap_method, system_object, arguments_array)
+        bootstrap_frame = create_bootstrap_frame(
+            bootstrap_method, system_object, arguments_array
+        )
         # Lookup the initialize invokable on the system class
         return initialize.invoke(bootstrap_frame)
 
@@ -510,18 +515,17 @@ class _BCUniverse(Universe):
         return system_object
 
 
-def create_universe(avoid_exit = False):
+def create_universe(avoid_exit=False):
     if is_ast_interpreter():
         return _ASTUniverse(avoid_exit)
-    else:
-        return _BCUniverse(avoid_exit)
+    return _BCUniverse(avoid_exit)
 
 
 def error_print(msg):
     os.write(2, encode_to_bytes(msg or ""))
 
 
-def error_println(msg = b""):
+def error_println(msg=b""):
     os.write(2, encode_to_bytes(msg + "\n"))
 
 
@@ -529,17 +533,18 @@ def std_print(msg):
     os.write(1, encode_to_bytes(msg or ""))
 
 
-def std_println(msg = ""):
+def std_println(msg=""):
     os.write(1, encode_to_bytes(msg + "\n"))
 
 
 def main(args):
-    jit.set_param(None, 'trace_limit', 15000)
+    jit.set_param(None, "trace_limit", 15000)
     from som.vm.current import current_universe
+
     u = current_universe
     u.interpret(args[1:])
     u.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise RuntimeError("Universe should not be used as main anymore")

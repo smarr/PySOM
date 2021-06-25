@@ -9,17 +9,17 @@ from .....vmobjects.method_ast import AstMethod
 
 class AbstractWhileMessageNode(ExpressionNode):
 
-    _immutable_fields_ = ['_predicate_bool', '_rcvr_expr?', '_body_expr?',
-                          'universe']
-    _child_nodes_      = ['_rcvr_expr', '_body_expr']
+    _immutable_fields_ = ["_predicate_bool", "_rcvr_expr?", "_body_expr?", "universe"]
+    _child_nodes_ = ["_rcvr_expr", "_body_expr"]
 
-    def __init__(self, rcvr_expr, body_expr, predicate_bool_obj, universe,
-                 source_section):
+    def __init__(
+        self, rcvr_expr, body_expr, predicate_bool_obj, universe, source_section
+    ):
         ExpressionNode.__init__(self, source_section)
         self._predicate_bool = predicate_bool_obj
-        self._rcvr_expr      = self.adopt_child(rcvr_expr)
-        self._body_expr      = self.adopt_child(body_expr)
-        self.universe       = universe
+        self._rcvr_expr = self.adopt_child(rcvr_expr)
+        self._body_expr = self.adopt_child(body_expr)
+        self.universe = universe
 
     def execute(self, frame):
         rcvr_value = self._rcvr_expr.execute(frame)
@@ -27,6 +27,10 @@ class AbstractWhileMessageNode(ExpressionNode):
 
         self._do_while(rcvr_value, body_block)
         return nilObject
+
+    def _do_while(self, _rcvr, _body):
+        raise Exception("Implemented in Subclass")
+
 
 # def get_printable_location_while_value(body_method, node):
 #     assert isinstance(body_method, AstMethod)
@@ -54,34 +58,37 @@ def get_printable_location_while(body_method, condition_method, while_type):
     assert isinstance(condition_method, AstMethod)
     assert isinstance(body_method, AstMethod)
 
-    return "%s while %s: %s" % (condition_method.merge_point_string(),
-                                while_type,
-                                body_method.merge_point_string())
+    return "%s while %s: %s" % (
+        condition_method.merge_point_string(),
+        while_type,
+        body_method.merge_point_string(),
+    )
 
 
 while_driver = jit.JitDriver(
-    greens=['body_method', 'condition_method', 'node'], reds='auto',
+    greens=["body_method", "condition_method", "node"],
+    reds="auto",
     is_recursive=True,
-    get_printable_location = get_printable_location_while)
+    get_printable_location=get_printable_location_while,
+)
 
 
 class WhileMessageNode(AbstractWhileMessageNode):
-
-    def execute_evaluated(self, frame, rcvr, args):
+    def execute_evaluated(self, _frame, rcvr, args):
         self._do_while(rcvr, args[0])
         return nilObject
 
     def _do_while(self, rcvr_block, body_block):
         condition_method = rcvr_block.get_method()
-        body_method      = body_block.get_method()
+        body_method = body_block.get_method()
 
         if rcvr_block.is_same_context(body_block):
             rcvr_block = body_block
 
         while True:
-            while_driver.jit_merge_point(body_method     = body_method,
-                                         condition_method= condition_method,
-                                         node            = self)
+            while_driver.jit_merge_point(
+                body_method=body_method, condition_method=condition_method, node=self
+            )
 
             # STEFAN: looks stupid but might help the jit
             if rcvr_block is body_block:
@@ -93,22 +100,32 @@ class WhileMessageNode(AbstractWhileMessageNode):
             body_method.invoke(body_block, [])
 
     @staticmethod
-    def can_specialize(selector, rcvr, args, node):
+    def can_specialize(selector, _rcvr, args, _node):
         sel = selector.get_embedded_string()
-        return isinstance(args[0], AstBlock) and (sel == "whileTrue:" or
-                                               sel == "whileFalse:")
+        return isinstance(args[0], AstBlock) and (
+            sel == "whileTrue:" or sel == "whileFalse:"
+        )
 
     @staticmethod
-    def specialize_node(selector, rcvr, args, node):
+    def specialize_node(selector, _rcvr, _args, node):
         sel = selector.get_embedded_string()
         if sel == "whileTrue:":
             return node.replace(
-                WhileMessageNode(node._rcvr_expr, node._arg_exprs[0],
-                                 trueObject, node.universe,
-                                 node.source_section))
-        else:
-            assert sel == "whileFalse:"
-            return node.replace(
-                WhileMessageNode(node._rcvr_expr, node._arg_exprs[0],
-                                 falseObject, node.universe,
-                                 node.source_section))
+                WhileMessageNode(
+                    node._rcvr_expr,  # pylint: disable=protected-access
+                    node._arg_exprs[0],  # pylint: disable=protected-access
+                    trueObject,
+                    node.universe,
+                    node.source_section,
+                )
+            )
+        assert sel == "whileFalse:"
+        return node.replace(
+            WhileMessageNode(
+                node._rcvr_expr,  # pylint: disable=protected-access
+                node._arg_exprs[0],  # pylint: disable=protected-access
+                falseObject,
+                node.universe,
+                node.source_section,
+            )
+        )

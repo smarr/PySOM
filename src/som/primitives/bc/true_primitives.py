@@ -1,7 +1,7 @@
 from som.primitives.true_primitives import TruePrimitivesBase as _Base
 
 
-def _and(ivkbl, frame):
+def _and(_ivkbl, frame):
     block = frame.pop()
     frame.pop()
     block_method = block.get_method()
