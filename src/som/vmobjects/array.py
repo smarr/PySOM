@@ -806,12 +806,8 @@ class Array(AbstractObject):
 
     @staticmethod
     def from_objects(values):
-        # self = instantiate(Array)
         make_sure_not_resized(values)
         return Array(_obj_strategy, _obj_strategy.new_storage_with_values(values))
-        # self.strategy = _obj_strategy
-        # self.storage = self.strategy.new_storage_with_values(values)
-        # return self
 
     def __init__(self, strategy, storage):  # pylint: disable=super-init-not-called
         self.strategy = strategy
