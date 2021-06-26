@@ -12,7 +12,7 @@ from som.vmobjects.integer import Integer
 
 class ArrayTest(unittest.TestCase):
     def assert_strategy(self, arr, strategy):
-        self.assertIsInstance(arr._strategy, strategy)  # pylint: disable=W
+        self.assertIsInstance(arr.strategy, strategy)  # pylint: disable=W
 
     def test_empty_array(self):
         arr = Array.from_size(0)
