@@ -13,7 +13,7 @@ _EMPTY_LIST = []
 
 class ObjectWithLayout(ObjectWithoutFields):
 
-    _immutable_fields_ = ["_object_layout?", "_fields?", "prim_fields?"]
+    _immutable_fields_ = ["_object_layout?", "fields?", "prim_fields?"]
 
     # Static field indices and number of object fields
     NUMBER_OF_OBJECT_FIELDS = 0
@@ -57,9 +57,9 @@ class ObjectWithLayout(ObjectWithoutFields):
 
         n = self._object_layout.get_number_of_used_extended_ptr_locations()
         if n > 0:
-            self._fields = [nilObject] * n
+            self.fields = [nilObject] * n
         else:
-            self._fields = None  ## for some reason _EMPTY_LIST doesn't typecheck here
+            self.fields = None  ## for some reason _EMPTY_LIST doesn't typecheck here
 
     def get_object_layout(self):
         return promote(self._object_layout)
@@ -116,9 +116,9 @@ class ObjectWithLayout(ObjectWithoutFields):
 
         n = self._object_layout.get_number_of_used_extended_ptr_locations()
         if n > 0:
-            self._fields = [nilObject] * n
+            self.fields = [nilObject] * n
         else:
-            self._fields = None
+            self.fields = None
 
         self._set_all_fields(field_values)
 
@@ -149,7 +149,7 @@ class ObjectWithLayout(ObjectWithoutFields):
 
     def get_number_of_fields(self):
         # Get the number of fields in this object
-        return len(self._fields)
+        return len(self.fields)
 
     def is_primitive_set(self, mask):
         return (promote(self._primitive_used_map) & mask) != 0

@@ -99,12 +99,12 @@ class ObjectArrayStorageLocation(_AbstractObjectStorageLocation):
 
     def read_location(self, obj):
         # assert isinstance(obj, ObjectWithLayout)
-        return obj._fields[self._ext_idx]
+        return obj.fields[self._ext_idx]
 
     def write_location(self, obj, value):
         # assert isinstance(obj, ObjectWithLayout)
         assert value is not None
-        obj._fields[self._ext_idx] = value
+        obj.fields[self._ext_idx] = value
 
 
 class _AbstractPrimitiveStorageLocation(_AbstractStorageLocation):
