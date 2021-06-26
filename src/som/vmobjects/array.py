@@ -1,7 +1,6 @@
 from rlib.arithmetic import IntType
 from rlib.erased import new_erasing_pair
 from rlib.jit import JitDriver
-from rlib.objectmodel import instantiate
 from rlib.debug import make_sure_not_resized
 
 from som.vmobjects.abstract_object import AbstractObject
@@ -612,27 +611,25 @@ class _PartialStorage(object):
 
     _immutable_fields_ = ["storage", "size"]
 
+    def __init__(self, storage, size, num_empty, storage_type):
+        self.storage = storage
+        self.size = size
+        self.empty_elements = num_empty
+        self.type = storage_type
+
+
     @staticmethod
     def from_obj_values(storage):
         # Currently, we support only the direct transition from empty
         # to partially empty
         assert isinstance(storage, list)
         assert isinstance(storage[0], AbstractObject)
-        self = instantiate(_PartiallyEmptyStrategy)
-        self.storage = storage
-        self.size = len(storage)
-        self.empty_elements = self.size
-        self.type = None
-        return self
+        size = len(storage)
+        return _PartialStorage(storage, size, size, None)
 
     @staticmethod
     def from_size(size):
-        self = instantiate(_PartiallyEmptyStrategy)
-        self.storage = [nilObject] * size
-        self.size = size
-        self.empty_elements = size
-        self.type = None
-        return self
+        return _PartialStorage([nilObject] * size, size, size, None)
 
 
 class _PartiallyEmptyStrategy(_ArrayStrategy):
@@ -709,7 +706,7 @@ class _PartiallyEmptyStrategy(_ArrayStrategy):
 
     @staticmethod
     def new_storage_for(size):
-        return _PartiallyEmptyStrategy._erase(_PartiallyEmptyStrategy.from_size(size))
+        return _PartiallyEmptyStrategy._erase(_PartialStorage.from_size(size))
 
     @staticmethod
     def new_storage_with_values(values):
@@ -734,12 +731,7 @@ class _PartiallyEmptyStrategy(_ArrayStrategy):
         for i, _ in enumerate(store.storage):
             new[i] = store.storage[i]
 
-        new_store = instantiate(_PartiallyEmptyStrategy)
-        new_store.storage = new
-        new_store.size = new_size
-        new_store.empty_elements = store.empty_elements + 1
-        new_store.type = store.type
-
+        new_store = _PartialStorage(new, new_size, store.empty_elements + 1, store.type)
         new_arr = Array._from_storage_and_strategy(
             self._erase(new_store), _partially_empty_strategy
         )
@@ -755,6 +747,45 @@ _empty_strategy = _EmptyStrategy()
 _partially_empty_strategy = _PartiallyEmptyStrategy()
 
 
+def _determine_strategy(values):
+    is_empty = True
+    only_double = True
+    only_long = True
+    only_bool = True
+    for value in values:
+        if value is None or value is nilObject:
+            continue
+        if isinstance(value, int) or isinstance(value, Integer):
+            is_empty = False
+            only_double = False
+            only_bool = False
+            continue
+        if isinstance(value, float) or isinstance(value, Double):
+            is_empty = False
+            only_long = False
+            only_bool = False
+            continue
+        if isinstance(value, bool) or value is trueObject or value is falseObject:
+            is_empty = False
+            only_long = False
+            only_double = False
+            continue
+        only_long = False
+        only_double = False
+        only_bool = False
+        is_empty = False
+
+    if is_empty:
+        return _empty_strategy
+    if only_double:
+        return _double_strategy
+    if only_long:
+        return _long_strategy
+    if only_bool:
+        return _bool_strategy
+    return _obj_strategy
+
+
 class Array(AbstractObject):
 
     # _strategy is the strategy object
@@ -764,31 +795,17 @@ class Array(AbstractObject):
 
     @staticmethod
     def _from_storage_and_strategy(storage, strategy):
-        self = instantiate(Array)
-        # self = Array()
-        self._strategy = strategy
-        self._storage = storage
-        return self
+        return Array(strategy, storage)
 
     @staticmethod
-    def from_size(size, strategy=_empty_strategy):
-        self = instantiate(Array)
-        # self = Array()
-        self._strategy = strategy
-        self._storage = strategy.new_storage_for(size)
-        return self
+    def from_size(size):
+        return Array(_empty_strategy, _empty_strategy.new_storage_for(size))
 
     @staticmethod
-    def from_values(values, strategy=None):
-        self = instantiate(Array)
-        # self = Array()
+    def from_values(values):
         make_sure_not_resized(values)
-        if strategy is None:
-            self._strategy = self._determine_strategy(values)
-        else:
-            self._strategy = strategy
-        self._storage = self._strategy.new_storage_with_values(values)
-        return self
+        suitable_strategy = _determine_strategy(values)
+        return Array(suitable_strategy, suitable_strategy.new_storage_with_values(values))
 
     @staticmethod
     def from_integers(ints):
@@ -798,50 +815,16 @@ class Array(AbstractObject):
 
     @staticmethod
     def from_objects(values):
-        self = instantiate(Array)
+        # self = instantiate(Array)
         make_sure_not_resized(values)
-        self._strategy = _obj_strategy
-        self._storage = self._strategy.new_storage_with_values(values)
-        return self
+        return Array(_obj_strategy, _obj_strategy.new_storage_with_values(values))
+        # self._strategy = _obj_strategy
+        # self._storage = self._strategy.new_storage_with_values(values)
+        # return self
 
-    @staticmethod
-    def _determine_strategy(values):
-        is_empty = True
-        only_double = True
-        only_long = True
-        only_bool = True
-        for value in values:
-            if value is None or value is nilObject:
-                continue
-            if isinstance(value, int) or isinstance(value, Integer):
-                is_empty = False
-                only_double = False
-                only_bool = False
-                continue
-            if isinstance(value, float) or isinstance(value, Double):
-                is_empty = False
-                only_long = False
-                only_bool = False
-                continue
-            if isinstance(value, bool) or value is trueObject or value is falseObject:
-                is_empty = False
-                only_long = False
-                only_double = False
-                continue
-            only_long = False
-            only_double = False
-            only_bool = False
-            is_empty = False
-
-        if is_empty:
-            return _empty_strategy
-        if only_double:
-            return _double_strategy
-        if only_long:
-            return _long_strategy
-        if only_bool:
-            return _bool_strategy
-        return _obj_strategy
+    def __init__(self, strategy, storage):
+        self._strategy = strategy
+        self._storage = storage
 
     def get_indexable_field(self, index):
         # Get the indexable field with the given index
