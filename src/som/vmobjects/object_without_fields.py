@@ -15,5 +15,5 @@ class ObjectWithoutFields(AbstractObject):
     def set_class(self, value):
         self._class = value
 
-    def get_number_of_fields(self):
+    def get_number_of_fields(self):  # pylint: disable=no-self-use
         return 0

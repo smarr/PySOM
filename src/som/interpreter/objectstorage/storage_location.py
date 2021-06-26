@@ -53,13 +53,13 @@ class _AbstractStorageLocation(object):
 
 
 class UnwrittenStorageLocation(_AbstractStorageLocation):
-    def is_set(self, _obj):
+    def is_set(self, _obj):  # pylint: disable=no-self-use
         return False
 
-    def read_location(self, _obj):
+    def read_location(self, _obj):  # pylint: disable=no-self-use
         return nilObject
 
-    def write_location(self, _obj, value):
+    def write_location(self, _obj, value):  # pylint: disable=no-self-use
         if value is not nilObject:
             raise UninitializedStorageLocationException()
 
@@ -71,17 +71,17 @@ class _AbstractObjectStorageLocation(_AbstractStorageLocation):
         _AbstractStorageLocation.__init__(self, layout)
         self._field_idx = field_idx
 
-    def is_set(self, _obj):
+    def is_set(self, _obj):  # pylint: disable=no-self-use
         return True
 
 
 def _make_object_direct_storage_location(field_idx):
     class _ObjectDirectStorageLocationI(_AbstractObjectStorageLocation):
-        def read_location(self, obj):
+        def read_location(self, obj):  # pylint: disable=no-self-use
             # assert isinstance(obj, ObjectWithLayout)
             return getattr(obj, "_field" + str(field_idx))
 
-        def write_location(self, obj, value):
+        def write_location(self, obj, value):  # pylint: disable=no-self-use
             assert value is not None
             # assert isinstance(obj, ObjectWithLayout)
             setattr(obj, "_field" + str(field_idx), value)

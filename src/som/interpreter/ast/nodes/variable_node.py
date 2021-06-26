@@ -141,7 +141,7 @@ class LocalSharedTempReadNode(_LocalVariableNode):
 
 
 class LocalSelfReadNode(ExpressionNode):
-    def execute(self, frame):
+    def execute(self, frame):  # pylint: disable=no-self-use
         return frame.get_self()
 
 

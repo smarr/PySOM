@@ -66,5 +66,5 @@ def block_evaluate(block, frame):
 
 def _invoke(ivkbl, frame):
     assert isinstance(ivkbl, BcBlock.Evaluation)
-    rcvr = frame.get_stack_element(ivkbl._number_of_arguments - 1)
+    rcvr = frame.get_stack_element(ivkbl._number_of_arguments - 1)  # pylint: disable=W
     block_evaluate(rcvr, frame)

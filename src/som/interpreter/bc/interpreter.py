@@ -335,6 +335,6 @@ jitdriver = jit.JitDriver(
 
 
 def jitpolicy(_driver):
-    from rpython.jit.codewriter.policy import JitPolicy
+    from rpython.jit.codewriter.policy import JitPolicy  # pylint: disable=import-error
 
     return JitPolicy()

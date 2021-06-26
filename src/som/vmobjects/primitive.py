@@ -121,7 +121,7 @@ class _BcUnaryPrimitive(_AbstractPrimitive):
         result = prim_fn(rcvr)
         frame.set_top(result)
 
-    def get_number_of_signature_arguments(self):
+    def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 1
 
 
@@ -139,7 +139,7 @@ class _BcBinaryPrimitive(_AbstractPrimitive):
         result = prim_fn(rcvr, arg)
         frame.set_top(result)
 
-    def get_number_of_signature_arguments(self):
+    def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 2
 
 
@@ -158,7 +158,7 @@ class _BcTernaryPrimitive(_AbstractPrimitive):
         result = prim_fn(rcvr, arg1, arg2)
         frame.set_top(result)
 
-    def get_number_of_signature_arguments(self):
+    def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 3
 
 

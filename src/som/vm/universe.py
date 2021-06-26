@@ -122,6 +122,9 @@ class Universe(object):
 
         return self._start_method_execution(clazz, invokable)
 
+    def _start_method_execution(self, _c, _i):  # pylint: disable=no-self-use
+        raise Exception("Implemented by Subclass")
+
     def interpret(self, arguments):
         # Check for command line switches
         arguments = self.handle_arguments(arguments)
@@ -135,6 +138,12 @@ class Universe(object):
         arguments_array = self.new_array_with_strings(arguments)
         initialize = self.system_class.lookup_invokable(self.symbol_for("initialize:"))
         return self._start_execution(system_object, initialize, arguments_array)
+
+    def _start_execution(self, _s, _i, _a):  # pylint: disable=no-self-use
+        raise Exception("Implemented by Subclass")
+
+    def _start_shell(self):  # pylint: disable=no-self-use
+        raise Exception("Implemented by Subclass")
 
     def handle_arguments(self, arguments):
         got_classpath = False
@@ -484,10 +493,12 @@ class _ASTUniverse(Universe):
         shell = AstShell(self)
         return shell.start()
 
-    def _start_execution(self, system_object, initialize, arguments_array):
+    def _start_execution(
+        self, system_object, initialize, arguments_array
+    ):  # pylint: disable=no-self-use
         return initialize.invoke(system_object, [arguments_array])
 
-    def _start_method_execution(self, clazz, invokable):
+    def _start_method_execution(self, clazz, invokable):  # pylint: disable=no-self-use
         return invokable.invoke(clazz, [])
 
 
