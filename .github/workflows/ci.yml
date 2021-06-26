@@ -12,7 +12,7 @@ jobs:
           - name: AST Interpreter PyPy2
             id:   ast
             interp: AST
-            python-version: pypy2 
+            python-version: pypy2
           - name: Bytecode Interpreter PyPy2
             id:   bc
             interp: BC
@@ -74,15 +74,15 @@ jobs:
       - name: Install and Run Black
         run: |
           pip install black
-          black --check --diff src/rlib src/rtruffle tests
+          black --check --diff src tests
         if: matrix.python-version == '3.8'
 
       - name: Install and Run PyLint
         run: |
           pip install pylint
-          pylint src/rlib src/rtruffle tests
+          pylint src tests
         if: matrix.python-version == '3.8'
-      
+
 
 concurrency:
   group: "workflow = ${{ github.workflow }}, ref = ${{ github.event.ref }}, pr = ${{ github.event.pull_request.id }}"
