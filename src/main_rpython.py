@@ -9,7 +9,7 @@ from som.interp_type import is_ast_interpreter, is_bytecode_interpreter
 from som.vm.universe import main, Exit
 
 try:
-    import rpython.rlib
+    import rpython.rlib  # pylint: disable=unused-import
 except ImportError:
     "NOT_RPYTHON"
     print("Failed to load RPython library. Please make sure it is on PYTHONPATH")
@@ -52,13 +52,13 @@ def target(driver, _args):
 
 
 def jitpolicy(_driver):
-    from rpython.jit.codewriter.policy import JitPolicy
+    from rpython.jit.codewriter.policy import JitPolicy  # pylint: disable=import-error
 
     return JitPolicy()
 
 
 if __name__ == "__main__":
-    from rpython.translator.driver import TranslationDriver
+    from rpython.translator.driver import TranslationDriver  # pylint: disable=E
 
     f, _ = target(TranslationDriver(), sys.argv)
     sys.exit(f(sys.argv))

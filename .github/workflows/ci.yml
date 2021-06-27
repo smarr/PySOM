@@ -62,7 +62,7 @@ jobs:
           export SOM_INTERP=${{ matrix.interp }}
           PYTHONPATH=$PYTHONPATH:.pypy:src pytest
           PYTHONPATH=$PYTHONPATH:.pypy ./som.sh -cp Smalltalk TestSuite/TestHarness.som
-          PYTHONPATH=$PYTHONPATH:.pypy .pypy/rpython/bin/rpython --batch src/main-rpython.py
+          PYTHONPATH=$PYTHONPATH:.pypy .pypy/rpython/bin/rpython --batch src/main_rpython.py
           ./som-${{ matrix.id }}-interp -cp Smalltalk TestSuite/TestHarness.som
 
       - name: SomSom Tests
