@@ -7,4 +7,4 @@ then
   OPT="-Ojit"
 fi
 
-../pypy/rpython/bin/rpython $OPT src/main-rpython.py
+../pypy/rpython/bin/rpython $OPT src/main_rpython.py

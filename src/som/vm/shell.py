@@ -6,16 +6,19 @@ from som.vm.globals import nilObject
 
 
 class _Shell(object):
-
     def __init__(self, universe):
         self.universe = universe
 
+    def _exec(self, shell_object, shell_method, it):  # pylint: disable=W,R
+        raise Exception("Implemented by Subclass")
+
     def start(self):
         from som.vm.universe import std_println, error_println
+
         counter = 0
         it = nilObject
 
-        std_println("SOM Shell. Type \"quit\" to exit.\n")
+        std_println('SOM Shell. Type "quit" to exit.\n')
 
         while True:
             try:
@@ -23,13 +26,17 @@ class _Shell(object):
                 stmt = raw_input("---> ")
                 if stmt == "quit" or stmt == "":
                     return it
-                elif stmt == "\n":
+                if stmt == "\n":
                     continue
 
                 # Generate a temporary class with a run method
-                stmt = ("Shell_Class_" + str(counter) +
-                        " = ( run: it = ( | tmp | tmp := (" + stmt +
-                        " ). 'it = ' print. ^tmp println ) )")
+                stmt = (
+                    "Shell_Class_"
+                    + str(counter)
+                    + " = ( run: it = ( | tmp | tmp := ("
+                    + stmt
+                    + " ). 'it = ' print. ^tmp println ) )"
+                )
                 counter += 1
 
                 # Compile and load the newly generated class
@@ -39,24 +46,24 @@ class _Shell(object):
                 if shell_class:
                     shell_object = self.universe.new_instance(shell_class)
                     shell_method = shell_class.lookup_invokable(
-                        self.universe.symbol_for("run:"))
+                        self.universe.symbol_for("run:")
+                    )
 
                     it = self._exec(shell_object, shell_method, it)
-            except Exception as e:
+            except Exception as ex:  # pylint: disable=broad-except
                 if not we_are_translated():  # this cannot be done in rpython
                     import traceback
+
                     traceback.print_exc()
-                error_println("Caught exception: %s" % e)
+                error_println("Caught exception: %s" % ex)
 
 
 class AstShell(_Shell):
-
     def _exec(self, shell_object, shell_method, it):
         return shell_method.invoke(shell_object, [it])
 
 
 class BcShell(_Shell):
-
     def __init__(self, universe, bootstrap_method):
         _Shell.__init__(self, universe)
         self._bootstrap_method = bootstrap_method

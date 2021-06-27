@@ -11,7 +11,7 @@ class BcBlock(AbstractObject):
 
     def __init__(self, method, context):
         AbstractObject.__init__(self)
-        self._method  = method
+        self._method = method
         self._context = context
 
     def get_method(self):
@@ -21,15 +21,16 @@ class BcBlock(AbstractObject):
         return self._context
 
     def get_class(self, universe):
-        return universe.blockClasses[self._method.get_number_of_arguments()]
+        return universe.block_classes[self._method.get_number_of_arguments()]
 
     class Evaluation(Primitive):
 
-        _immutable_fields_ = ['_number_of_arguments']
+        _immutable_fields_ = ["_number_of_arguments"]
 
         def __init__(self, num_args, universe, invoke):
-            Primitive.__init__(self, self._compute_signature_string(num_args),
-                               universe, invoke)
+            Primitive.__init__(
+                self, self._compute_signature_string(num_args), universe, invoke
+            )
             self._number_of_arguments = num_args
 
         @staticmethod
@@ -54,7 +55,7 @@ def block_evaluate(block, frame):
     from som.interpreter.bc.interpreter import interpret
 
     context = block.get_context()
-    method  = block.get_method()
+    method = block.get_method()
     new_frame = create_frame(frame, method, context)
     new_frame.copy_arguments_from(frame, method.get_number_of_arguments())
 
@@ -65,5 +66,5 @@ def block_evaluate(block, frame):
 
 def _invoke(ivkbl, frame):
     assert isinstance(ivkbl, BcBlock.Evaluation)
-    rcvr = frame.get_stack_element(ivkbl._number_of_arguments - 1)
+    rcvr = frame.get_stack_element(ivkbl._number_of_arguments - 1)  # pylint: disable=W
     block_evaluate(rcvr, frame)

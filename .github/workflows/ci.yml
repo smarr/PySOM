@@ -12,7 +12,7 @@ jobs:
           - name: AST Interpreter PyPy2
             id:   ast
             interp: AST
-            python-version: pypy2 
+            python-version: pypy2
           - name: Bytecode Interpreter PyPy2
             id:   bc
             interp: BC
@@ -62,7 +62,7 @@ jobs:
           export SOM_INTERP=${{ matrix.interp }}
           PYTHONPATH=$PYTHONPATH:.pypy:src pytest
           PYTHONPATH=$PYTHONPATH:.pypy ./som.sh -cp Smalltalk TestSuite/TestHarness.som
-          PYTHONPATH=$PYTHONPATH:.pypy .pypy/rpython/bin/rpython --batch src/main-rpython.py
+          PYTHONPATH=$PYTHONPATH:.pypy .pypy/rpython/bin/rpython --batch src/main_rpython.py
           ./som-${{ matrix.id }}-interp -cp Smalltalk TestSuite/TestHarness.som
 
       - name: SomSom Tests
@@ -70,6 +70,19 @@ jobs:
         run: |
           ./som-${{ matrix.id }}-interp -cp core-lib/Smalltalk:core-lib/TestSuite:core-lib/SomSom/src/compiler:core-lib/SomSom/src/vm:core-lib/SomSom/src/vmobjects:core-lib/SomSom/src/interpreter:core-lib/SomSom/src/primitives \
             core-lib/SomSom/tests/SomSomTests.som
+
+      - name: Install and Run Black
+        run: |
+          pip install black
+          black --check --diff src tests
+        if: matrix.python-version == '3.8'
+
+      - name: Install and Run PyLint
+        run: |
+          pip install pylint
+          pylint src tests
+        if: matrix.python-version == '3.8'
+
 
 concurrency:
   group: "workflow = ${{ github.workflow }}, ref = ${{ github.event.ref }}, pr = ${{ github.event.pull_request.id }}"

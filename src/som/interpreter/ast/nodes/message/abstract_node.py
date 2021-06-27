@@ -1,19 +1,17 @@
 from rlib.debug import make_sure_not_resized
-from rlib.jit   import unroll_safe
+from rlib.jit import unroll_safe
 
-from ..expression_node import ExpressionNode
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
-from .....vmobjects.abstract_object import AbstractObject
+from som.vmobjects.abstract_object import AbstractObject
 
 
 class AbstractMessageNode(ExpressionNode):
 
-    _immutable_fields_ = ['_selector', 'universe',
-                          '_rcvr_expr?', '_arg_exprs?[*]']
-    _child_nodes_      = ['_rcvr_expr',  '_arg_exprs[*]']
+    _immutable_fields_ = ["_selector", "universe", "_rcvr_expr?", "_arg_exprs?[*]"]
+    _child_nodes_ = ["_rcvr_expr", "_arg_exprs[*]"]
 
-    def __init__(self, selector, universe, rcvr_expr, arg_exprs,
-                 source_section = None):
+    def __init__(self, selector, universe, rcvr_expr, arg_exprs, source_section=None):
         ExpressionNode.__init__(self, source_section)
         self._selector = selector
         self.universe = universe
@@ -31,5 +29,3 @@ class AbstractMessageNode(ExpressionNode):
         else:
             args = [arg_exp.execute(frame) for arg_exp in self._arg_exprs]
         return rcvr, args
-
-

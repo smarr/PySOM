@@ -8,6 +8,7 @@ from rlib import jit
 
 def _do_push_global(bytecode_index, frame, method):
     from som.vm.current import current_universe
+
     global_name = method.get_constant(bytecode_index)
 
     # Get the global from the universe
@@ -70,7 +71,7 @@ def _do_return_non_local(frame, ctx_level):
         # this can get a bit nasty when using nested blocks. In this case
         # the "sender" will be the surrounding block and not the object
         # that actually sent the 'value' message.
-        block  = frame.get_argument(0, 0)
+        block = frame.get_argument(0, 0)
         sender = frame.get_previous_frame().get_outer_context().get_argument(0, 0)
 
         # ... and execute the escapedBlock message instead
@@ -82,6 +83,7 @@ def _do_return_non_local(frame, ctx_level):
 
 def _do_send(bytecode_index, frame, method):
     from som.vm.current import current_universe
+
     signature = method.get_constant(bytecode_index)
 
     # Get the number of arguments from the signature
@@ -91,8 +93,9 @@ def _do_send(bytecode_index, frame, method):
     receiver = frame.get_stack_element(num_args - 1)
 
     # Send the message
-    _send(method, frame, signature, receiver.get_class(current_universe),
-          bytecode_index)
+    _send(
+        method, frame, signature, receiver.get_class(current_universe), bytecode_index
+    )
 
 
 @jit.unroll_safe
@@ -103,9 +106,11 @@ def interpret(method, frame):
         # profiling only needs to be done on pc = 0
         if current_bc_idx == 0:
             jitdriver.can_enter_jit(
-                bytecode_index=current_bc_idx, method=method, frame=frame)
+                bytecode_index=current_bc_idx, method=method, frame=frame
+            )
         jitdriver.jit_merge_point(
-            bytecode_index=current_bc_idx, method=method, frame=frame)
+            bytecode_index=current_bc_idx, method=method, frame=frame
+        )
 
         bytecode = method.get_bytecode(current_bc_idx)
 
@@ -116,20 +121,24 @@ def interpret(method, frame):
         next_bc_idx = current_bc_idx + bc_length
 
         # Handle the current bytecode
-        if   bytecode == Bytecodes.halt:
+        if bytecode == Bytecodes.halt:
             return frame.top()
-        elif bytecode == Bytecodes.dup:
+        if bytecode == Bytecodes.dup:
             frame.push(frame.top())
         elif bytecode == Bytecodes.push_local:
             frame.push(
                 frame.get_local(
                     method.get_bytecode(current_bc_idx + 1),
-                    method.get_bytecode(current_bc_idx + 2)))
+                    method.get_bytecode(current_bc_idx + 2),
+                )
+            )
         elif bytecode == Bytecodes.push_argument:
             frame.push(
                 frame.get_argument(
                     method.get_bytecode(current_bc_idx + 1),
-                    method.get_bytecode(current_bc_idx + 2)))
+                    method.get_bytecode(current_bc_idx + 2),
+                )
+            )
         elif bytecode == Bytecodes.push_field:
             field_index = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)
@@ -147,12 +156,14 @@ def interpret(method, frame):
             frame.set_local(
                 method.get_bytecode(current_bc_idx + 1),
                 method.get_bytecode(current_bc_idx + 2),
-                frame.pop())
+                frame.pop(),
+            )
         elif bytecode == Bytecodes.pop_argument:
             frame.set_argument(
                 method.get_bytecode(current_bc_idx + 1),
                 method.get_bytecode(current_bc_idx + 2),
-                frame.pop())
+                frame.pop(),
+            )
         elif bytecode == Bytecodes.pop_field:
             _do_pop_field(current_bc_idx, frame, method)
         elif bytecode == Bytecodes.send:
@@ -162,8 +173,7 @@ def interpret(method, frame):
         elif bytecode == Bytecodes.return_local:
             return frame.top()
         elif bytecode == Bytecodes.return_non_local:
-            return _do_return_non_local(
-                frame, method.get_bytecode(current_bc_idx + 1))
+            return _do_return_non_local(frame, method.get_bytecode(current_bc_idx + 1))
         elif bytecode == Bytecodes.return_self:
             return frame.get_argument(0, 0)
         elif bytecode == Bytecodes.inc:
@@ -171,6 +181,7 @@ def interpret(method, frame):
             from som.vmobjects.integer import Integer
             from som.vmobjects.double import Double
             from som.vmobjects.biginteger import BigInteger
+
             if isinstance(val, Integer):
                 result = val.prim_inc()
             elif isinstance(val, Double):
@@ -185,6 +196,7 @@ def interpret(method, frame):
             from som.vmobjects.integer import Integer
             from som.vmobjects.double import Double
             from som.vmobjects.biginteger import BigInteger
+
             if isinstance(val, Integer):
                 result = val.prim_dec()
             elif isinstance(val, Double):
@@ -281,6 +293,7 @@ def _send_escaped_block(receiver, frame, block):
 
 def _lookup_and_send(receiver, frame, selector_string, arguments):
     from som.vm.current import current_universe
+
     selector = current_universe.symbol_for(selector_string)
     invokable = receiver.get_class(current_universe).lookup_invokable(selector)
 
@@ -294,30 +307,34 @@ def _lookup_and_send(receiver, frame, selector_string, arguments):
 def get_printable_location(bytecode_index, method):
     from som.vmobjects.method_bc import BcMethod
     from som.interpreter.bc.bytecodes import bytecode_as_str
+
     assert isinstance(method, BcMethod)
     bc = method.get_bytecode(bytecode_index)
-    return "%s @ %d in %s" % (bytecode_as_str(bc),
-                              bytecode_index,
-                              method.merge_point_string())
+    return "%s @ %d in %s" % (
+        bytecode_as_str(bc),
+        bytecode_index,
+        method.merge_point_string(),
+    )
 
 
 jitdriver = jit.JitDriver(
-    name='Interpreter',
-    greens=['bytecode_index', 'method'],
-    reds=['frame'],
+    name="Interpreter",
+    greens=["bytecode_index", "method"],
+    reds=["frame"],
     # virtualizables=['frame'],
     get_printable_location=get_printable_location,
     # the next line is a workaround around a likely bug in RPython
     # for some reason, the inlining heuristics default to "never inline" when
     # two different jit drivers are involved (in our case, the primitive
     # driver, and this one).
-
     # the next line says that calls involving this jitdriver should always be
     # inlined once (which means that things like Integer>>< will be inlined
     # into a while loop again, when enabling this drivers).
-    should_unroll_one_iteration = lambda bytecode_index, method: True)
+    should_unroll_one_iteration=lambda bytecode_index, method: True,
+)
 
 
-def jitpolicy(driver):
-    from rpython.jit.codewriter.policy import JitPolicy
+def jitpolicy(_driver):
+    from rpython.jit.codewriter.policy import JitPolicy  # pylint: disable=import-error
+
     return JitPolicy()

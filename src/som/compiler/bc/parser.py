@@ -1,13 +1,32 @@
-from .bytecode_generator import emit_inc, emit_dec, emit_dup, emit_pop, emit_send, emit_pop_field, emit_pop_local, emit_return_local, emit_return_self, emit_super_send, emit_push_field, emit_push_global, emit_push_block, emit_push_local, emit_push_argument, emit_pop_argument, emit_push_constant, emit_push_constant_index, emit_return_non_local
-from .method_generation_context import MethodGenerationContext
-from ..parser import ParserBase
-from ..symbol import Symbol
-from ...vmobjects.integer import Integer
-from ...vmobjects.string import String
+from som.compiler.bc.bytecode_generator import (
+    emit_inc,
+    emit_dec,
+    emit_dup,
+    emit_pop,
+    emit_send,
+    emit_pop_field,
+    emit_pop_local,
+    emit_return_local,
+    emit_return_self,
+    emit_super_send,
+    emit_push_field,
+    emit_push_global,
+    emit_push_block,
+    emit_push_local,
+    emit_push_argument,
+    emit_pop_argument,
+    emit_push_constant,
+    emit_push_constant_index,
+    emit_return_non_local,
+)
+from som.compiler.bc.method_generation_context import MethodGenerationContext
+from som.compiler.parser import ParserBase
+from som.compiler.symbol import Symbol
+from som.vmobjects.integer import Integer
+from som.vmobjects.string import String
 
 
 class Parser(ParserBase):
-
     def __init__(self, reader, file_name, universe):
         ParserBase.__init__(self, reader, file_name, universe)
 
@@ -25,7 +44,6 @@ class Parser(ParserBase):
             mgenc.set_finished()
 
         self._expect(Symbol.EndTerm)
-        return None
 
     def _block_body(self, mgenc, seen_period):
         if self._accept(Symbol.Exit):
@@ -69,44 +87,44 @@ class Parser(ParserBase):
         mgenc.set_finished()
 
     def _assignation(self, mgenc):
-        l = []
+        assignments = []
 
-        self._assignments(mgenc, l)
+        self._assignments(mgenc, assignments)
         self._evaluation(mgenc)
 
-        for _assignment in l:
+        for _assignment in assignments:
             emit_dup(mgenc)
 
-        for assignment in l:
+        for assignment in assignments:
             self._gen_pop_variable(mgenc, assignment)
-        return None
 
-    def _assignments(self, mgenc, l):
+    def _assignments(self, mgenc, assignments):
         if self._sym_is_identifier():
-            l.append(self._assignment(mgenc))
+            assignments.append(self._assignment(mgenc))
             self._peek_for_next_symbol_from_lexer()
             if self._next_sym == Symbol.Assign:
-                self._assignments(mgenc, l)
+                self._assignments(mgenc, assignments)
 
     def _assignment(self, mgenc):
-        v   = self._variable()
-        var = self.universe.symbol_for(v)
+        variable = self._variable()
+        var = self.universe.symbol_for(variable)
         mgenc.add_literal_if_absent(var)
 
         self._expect(Symbol.Assign)
-        return v
+        return variable
 
     def _evaluation(self, mgenc):
         self._primary(mgenc)
 
-        if (self._sym_is_identifier()            or
-            self._sym == Symbol.Keyword          or
-            self._sym == Symbol.OperatorSequence or
-            self._sym_in(self._binary_op_syms)):
+        if (
+            self._sym_is_identifier()
+            or self._sym == Symbol.Keyword
+            or self._sym == Symbol.OperatorSequence
+            or self._sym_in(self._binary_op_syms)
+        ):
             self._messages(mgenc)
 
         self._super_send = False
-        return None
 
     def _primary(self, mgenc):
         if self._sym_is_identifier():
@@ -137,17 +155,18 @@ class Parser(ParserBase):
                 # only the first message in a sequence can be a super send
                 self._unary_message(mgenc)
 
-            while (self._sym == Symbol.OperatorSequence or
-                   self._sym_in(self._binary_op_syms)):
+            while self._sym == Symbol.OperatorSequence or self._sym_in(
+                self._binary_op_syms
+            ):
                 self._binary_message(mgenc)
 
             if self._sym == Symbol.Keyword:
                 self._keyword_message(mgenc)
 
-        elif (self._sym == Symbol.OperatorSequence or
-              self._sym_in(self._binary_op_syms)):
-            while (self._sym == Symbol.OperatorSequence or
-                   self._sym_in(self._binary_op_syms)):
+        elif self._sym == Symbol.OperatorSequence or self._sym_in(self._binary_op_syms):
+            while self._sym == Symbol.OperatorSequence or self._sym_in(
+                self._binary_op_syms
+            ):
                 # only the first message in a sequence can be a super send
                 self._binary_message(mgenc)
 
@@ -169,11 +188,11 @@ class Parser(ParserBase):
             emit_send(mgenc, msg)
 
     def _try_inc_or_dec_bytecodes(self, msg, is_super_send, mgenc):
-        is_inc_or_dec = msg is self.universe.symPlus or msg is self.universe.symMinus
+        is_inc_or_dec = msg is self.universe.sym_plus or msg is self.universe.sym_minus
         if is_inc_or_dec and not is_super_send:
             if self._sym == Symbol.Integer and self._text == "1":
                 self._expect(Symbol.Integer)
-                if msg is self.universe.symPlus:
+                if msg is self.universe.sym_plus:
                     emit_inc(mgenc)
                 else:
                     emit_dec(mgenc)
@@ -206,14 +225,14 @@ class Parser(ParserBase):
         is_super_send = self._super_send
         self._super_send = False
 
-        kw = self._keyword()
+        keyword = self._keyword()
         self._formula(mgenc)
 
         while self._sym == Symbol.Keyword:
-            kw += self._keyword()
+            keyword += self._keyword()
             self._formula(mgenc)
 
-        msg = self.universe.symbol_for(kw)
+        msg = self.universe.symbol_for(keyword)
 
         if is_super_send:
             emit_super_send(mgenc, msg)
@@ -227,7 +246,9 @@ class Parser(ParserBase):
         if self._sym == Symbol.OperatorSequence or self._sym_in(self._binary_op_syms):
             self._binary_message(mgenc)
 
-        while self._sym == Symbol.OperatorSequence or self._sym_in(self._binary_op_syms):
+        while self._sym == Symbol.OperatorSequence or self._sym_in(
+            self._binary_op_syms
+        ):
             self._binary_message(mgenc)
 
         self._super_send = False
@@ -257,7 +278,7 @@ class Parser(ParserBase):
     def _literal_symbol(self, mgenc):
         self._expect(Symbol.Pound)
         if self._sym == Symbol.STString:
-            s    = self._string()
+            s = self._string()
             symb = self.universe.symbol_for(s)
         else:
             symb = self._selector()
@@ -302,7 +323,8 @@ class Parser(ParserBase):
             i += 1
 
         mgenc.update_literal(
-            array_size_placeholder, array_size_literal_idx, Integer(i - 1))
+            array_size_placeholder, array_size_literal_idx, Integer(i - 1)
+        )
         self._expect(Symbol.EndTerm)
 
     def _nested_block(self, mgenc):
@@ -314,7 +336,7 @@ class Parser(ParserBase):
         # a return
         if not mgenc.is_finished():
             if not mgenc.has_bytecode():
-                nil_sym = self.universe.symNil
+                nil_sym = self.universe.sym_nil
                 mgenc.add_literal_if_absent(nil_sym)
                 emit_push_global(mgenc, nil_sym)
             emit_return_local(mgenc)

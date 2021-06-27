@@ -1,5 +1,4 @@
 class Primitives(object):
-
     def __init__(self, universe):
         self.universe = universe
         self._holder = None
@@ -14,12 +13,13 @@ class Primitives(object):
     def install_primitives(self):
         raise NotImplementedError()
 
-    def _install_instance_primitive(self, primitive, warn_if_not_existing = False):
+    def _install_instance_primitive(self, primitive, warn_if_not_existing=False):
         # Install the given primitive as an instance primitive in the holder class
         self._holder.add_primitive(primitive, warn_if_not_existing)
 
-    def _install_class_primitive(self, primitive, warn_if_not_existing = False):
+    def _install_class_primitive(self, primitive, warn_if_not_existing=False):
         # Install the given primitive as an instance primitive in the class of
         # the holder class
-        self._holder.get_class(
-            self.universe).add_primitive(primitive, warn_if_not_existing)
+        self._holder.get_class(self.universe).add_primitive(
+            primitive, warn_if_not_existing
+        )

@@ -1,13 +1,13 @@
 from som.primitives.invokable_primitives import InvokablePrimitivesBase as _Base
 from som.vm.globals import nilObject
 from som.vmobjects.abstract_object import AbstractObject
-from som.vmobjects.array  import Array
-from som.vmobjects.method_ast      import AstMethod
-from som.vmobjects.primitive       import Primitive
+from som.vmobjects.array import Array
+from som.vmobjects.method_ast import AstMethod
+from som.vmobjects.primitive import Primitive
 
 
-def _invoke_on_with(ivkbl, rcvr, args):
-    assert isinstance(rcvr,    AstMethod)
+def _invoke_on_with(_ivkbl, rcvr, args):
+    assert isinstance(rcvr, AstMethod)
     assert isinstance(args[0], AbstractObject)
     assert isinstance(args[1], Array) or args[1] is nilObject
 
@@ -21,5 +21,6 @@ def _invoke_on_with(ivkbl, rcvr, args):
 class MethodPrimitives(_Base):
     def install_primitives(self):
         _Base.install_primitives(self)
-        self._install_instance_primitive(Primitive("invokeOn:with:",
-                                                   self.universe, _invoke_on_with))
+        self._install_instance_primitive(
+            Primitive("invokeOn:with:", self.universe, _invoke_on_with)
+        )

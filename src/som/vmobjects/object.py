@@ -1,6 +1,6 @@
-from .abstract_object import AbstractObject
-from .object_without_fields import ObjectWithoutFields
 from som.vm.globals import nilObject
+from som.vmobjects.abstract_object import AbstractObject
+from som.vmobjects.object_without_fields import ObjectWithoutFields
 
 
 class Object(ObjectWithoutFields):
@@ -10,12 +10,15 @@ class Object(ObjectWithoutFields):
     # Static field indices and number of object fields
     NUMBER_OF_OBJECT_FIELDS = 0
 
-    def __init__(self, obj_class, number_of_fields = NUMBER_OF_OBJECT_FIELDS):
+    def __init__(self, obj_class, number_of_fields=NUMBER_OF_OBJECT_FIELDS):
         cls = obj_class if obj_class is not None else nilObject
         ObjectWithoutFields.__init__(self, cls)
 
-        num_fields = (number_of_fields if number_of_fields != -1
-                      else self._get_default_number_of_fields())
+        num_fields = (
+            number_of_fields
+            if number_of_fields != -1
+            else self._get_default_number_of_fields()
+        )
         self._fields = [nilObject] * num_fields
 
     def get_class(self, universe):

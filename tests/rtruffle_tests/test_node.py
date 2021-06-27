@@ -3,7 +3,6 @@ from rtruffle.node import Node
 
 
 class NodeTest(unittest.TestCase):
-
     def test_adopt_child(self):
         child = ChildNode()
         parent = RootNode()
@@ -29,60 +28,60 @@ class NodeTest(unittest.TestCase):
         child1 = ChildNode()
         parent = RootNode(child1, None)
 
-        self.assertIs(child1, parent._child_node1)
-        self.assertIsNone(parent._child_node2)
+        self.assertIs(child1, parent.child_node1)
+        self.assertIsNone(parent.child_node2)
 
         child2 = ChildNode()
         child1.replace(child2)
 
-        self.assertIs(child2, parent._child_node1)
-        self.assertIsNone(parent._child_node2)
+        self.assertIs(child2, parent.child_node1)
+        self.assertIsNone(parent.child_node2)
 
     def test_replace_2(self):
         child1 = ChildNode()
         parent = RootNode(None, child1)
 
-        self.assertIsNone(parent._child_node1)
-        self.assertIs(child1, parent._child_node2)
+        self.assertIsNone(parent.child_node1)
+        self.assertIs(child1, parent.child_node2)
 
         child2 = ChildNode()
         child1.replace(child2)
 
-        self.assertIsNone(parent._child_node1)
-        self.assertIs(child2, parent._child_node2)
+        self.assertIsNone(parent.child_node1)
+        self.assertIs(child2, parent.child_node2)
 
     def test_replace_in_children(self):
         child1 = ChildNode()
         child2 = ChildNode()
         parent = RootNodeWithChildList([child1, child1, child1])
 
-        for each in parent._child_nodes:
+        for each in parent.child_nodes:
             self.assertIs(each, child1)
 
         child1.replace(child2)
 
-        for each in parent._child_nodes:
+        for each in parent.child_nodes:
             self.assertIs(each, child2)
 
 
 class RootNode(Node):
 
-    _child_nodes_ = ['_child_node1', '_child_node2']
+    _child_nodes_ = ["child_node1", "child_node2"]
 
-    def __init__(self, child_node1 = None, child_node2 = None):
+    def __init__(self, child_node1=None, child_node2=None):
         Node.__init__(self)
-        self._child_node1 = self.adopt_child(child_node1)
-        self._child_node2 = self.adopt_child(child_node2)
+        self.child_node1 = self.adopt_child(child_node1)
+        self.child_node2 = self.adopt_child(child_node2)
 
 
 class RootNodeWithChildList(Node):
 
-    _child_nodes_ = ['_child_nodes[*]']
+    _child_nodes_ = ["child_nodes[*]"]
 
-    def __init__(self, child_nodes = None):
+    def __init__(self, child_nodes=None):
         Node.__init__(self)
         assert isinstance(child_nodes, list)
-        self._child_nodes = self.adopt_children(child_nodes)
+        self.child_nodes = self.adopt_children(child_nodes)
 
 
 class ChildNode(Node):

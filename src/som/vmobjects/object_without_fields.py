@@ -5,7 +5,7 @@ class ObjectWithoutFields(AbstractObject):
 
     _immutable_fields_ = ["_class"]
 
-    def __init__(self, obj_class):
+    def __init__(self, obj_class):  # pylint: disable=W
         assert obj_class is None or isinstance(obj_class, ObjectWithoutFields)
         self._class = obj_class
 
@@ -15,5 +15,5 @@ class ObjectWithoutFields(AbstractObject):
     def set_class(self, value):
         self._class = value
 
-    def get_number_of_fields(self):
+    def get_number_of_fields(self):  # pylint: disable=no-self-use
         return 0

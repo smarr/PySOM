@@ -12,7 +12,6 @@ def _and(_rcvr, _arg):
 
 
 class FalsePrimitivesBase(Primitives):
-
     def install_primitives(self):
         self._install_instance_primitive(UnaryPrimitive("not", self.universe, _not))
         self._install_instance_primitive(BinaryPrimitive("and:", self.universe, _and))

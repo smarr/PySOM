@@ -8,8 +8,8 @@ class AbstractNode(object):
 def _get_all_child_fields(cls):
     field_names = []
     while cls is not AbstractNode:
-        if hasattr(cls, '_child_nodes_'):
-            field_names = field_names + cls._child_nodes_
+        if hasattr(cls, "_child_nodes_"):
+            field_names += cls._child_nodes_  # pylint: disable=protected-access
         cls = cls.__base__
     return field_names
 
@@ -18,9 +18,9 @@ def _generate_replace_method(cls):
     child_fields = unrolling_iterable(_get_all_child_fields(cls))
 
     def _replace_child_with(parent_node, old_child, new_child):
-        was_replaced = False
+        was_replaced = False  # pylint: disable=unused-variable
         for child_slot in child_fields:
-            if child_slot.endswith('[*]'):
+            if child_slot.endswith("[*]"):
                 slot_name = child_slot[:-3]
                 nodes = getattr(parent_node, slot_name)
                 if nodes and old_child in nodes:
@@ -28,7 +28,9 @@ def _generate_replace_method(cls):
                     for i, n in enumerate(nodes):
                         if n is old_child:
                             nodes[i] = new_child
-                    setattr(parent_node, slot_name, nodes[:])  # TODO: figure out whether we need the copy of the list here
+                    setattr(
+                        parent_node, slot_name, nodes[:]
+                    )  # TODO: figure out whether we need the copy of the list here
                     was_replaced = True
             else:
                 current = getattr(parent_node, child_slot)
@@ -42,13 +44,13 @@ def _generate_replace_method(cls):
         #         old_child, parent_node))
         return new_child
 
-    cls._replace_child_with = _replace_child_with
+    cls.replace_child_with = _replace_child_with
 
 
 class NodeInitializeMetaClass(type):
     def __init__(cls, name, bases, dic):
         type.__init__(cls, name, bases, dic)
-        cls._initialize_node_class()
+        cls._initialize_node_class()  # pylint: disable=no-value-for-parameter
 
     def _initialize_node_class(cls):
         _generate_replace_method(cls)

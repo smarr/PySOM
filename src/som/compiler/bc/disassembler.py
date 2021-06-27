@@ -6,8 +6,7 @@ from som.interpreter.bc.bytecodes import bytecode_as_str, bytecode_length, Bytec
 def dump(clazz):
     for inv in clazz.get_instance_invokables_for_disassembler():
         # output header and skip if the Invokable is a Primitive
-        error_print(str(clazz.get_name()) + ">>" +
-                    str(inv.get_signature()) + " = ")
+        error_print(str(clazz.get_name()) + ">>" + str(inv.get_signature()) + " = ")
 
         if inv.is_primitive():
             error_println("<primitive>")
@@ -21,10 +20,15 @@ def dump_method(m, indent):
     error_println("(")
 
     # output stack information
-    error_println("%s<%d locals, %d stack, %d bc_count>" % (indent,
-                           m.get_number_of_locals(),
-                           m.get_maximum_number_of_stack_elements(),
-                           m.get_number_of_bytecodes()))
+    error_println(
+        "%s<%d locals, %d stack, %d bc_count>"
+        % (
+            indent,
+            m.get_number_of_locals(),
+            m.get_maximum_number_of_stack_elements(),
+            m.get_number_of_bytecodes(),
+        )
+    )
 
     # output bytecodes
     b = 0
@@ -32,8 +36,10 @@ def dump_method(m, indent):
         error_print(indent)
 
         # bytecode index
-        if b < 10:  error_print(" ")
-        if b < 100: error_print(" ")
+        if b < 10:
+            error_print(" ")
+        if b < 100:
+            error_print(" ")
         error_print(" %d:" % b)
 
         # mnemonic
@@ -47,41 +53,81 @@ def dump_method(m, indent):
             continue
 
         if bytecode == Bytecodes.push_local:
-            error_println("local: " + str(m.get_bytecode(b + 1)) +
-                                   ", context: " + str(m.get_bytecode(b + 2)))
+            error_println(
+                "local: "
+                + str(m.get_bytecode(b + 1))
+                + ", context: "
+                + str(m.get_bytecode(b + 2))
+            )
         elif bytecode == Bytecodes.push_argument:
-            error_println("argument: " + str(m.get_bytecode(b + 1)) +
-                                   ", context " + str(m.get_bytecode(b + 2)))
+            error_println(
+                "argument: "
+                + str(m.get_bytecode(b + 1))
+                + ", context "
+                + str(m.get_bytecode(b + 2))
+            )
         elif bytecode == Bytecodes.push_field:
-            error_println("(index: " + str(m.get_bytecode(b + 1)) +
-                                   ") field: " + str(m.get_holder().get_instance_field_name(m.get_bytecode(b + 1))))
+            error_println(
+                "(index: "
+                + str(m.get_bytecode(b + 1))
+                + ") field: "
+                + str(m.get_holder().get_instance_field_name(m.get_bytecode(b + 1)))
+            )
         elif bytecode == Bytecodes.push_block:
             error_print("block: (index: " + str(m.get_bytecode(b + 1)) + ") ")
             dump_method(m.get_constant(b), indent + "\t")
         elif bytecode == Bytecodes.push_constant:
             constant = m.get_constant(b)
-            error_println("(index: " + str(m.get_bytecode(b + 1)) +
-                                   ") value: (" +
-                                   str(constant.get_class(current_universe).get_name()) +
-                                   ") " + str(constant))
+            error_println(
+                "(index: "
+                + str(m.get_bytecode(b + 1))
+                + ") value: ("
+                + str(constant.get_class(current_universe).get_name())
+                + ") "
+                + str(constant)
+            )
         elif bytecode == Bytecodes.push_global:
-            error_println("(index: " + str(m.get_bytecode(b + 1)) +
-                                   ") value: " + str(m.get_constant(b)))
+            error_println(
+                "(index: "
+                + str(m.get_bytecode(b + 1))
+                + ") value: "
+                + str(m.get_constant(b))
+            )
         elif bytecode == Bytecodes.pop_local:
-            error_println("local: "     + str(m.get_bytecode(b + 1)) +
-                                   ", context: " + str(m.get_bytecode(b + 2)))
+            error_println(
+                "local: "
+                + str(m.get_bytecode(b + 1))
+                + ", context: "
+                + str(m.get_bytecode(b + 2))
+            )
         elif bytecode == Bytecodes.pop_argument:
-            error_println("argument: "  + str(m.get_bytecode(b + 1)) +
-                                   ", context: " + str(m.get_bytecode(b + 2)))
+            error_println(
+                "argument: "
+                + str(m.get_bytecode(b + 1))
+                + ", context: "
+                + str(m.get_bytecode(b + 2))
+            )
         elif bytecode == Bytecodes.pop_field:
-            error_println("(index: "  + str(m.get_bytecode(b + 1)) +
-                                   ") field: " + str(m.get_holder().get_instance_field_name(m.get_bytecode(b + 1))))
+            error_println(
+                "(index: "
+                + str(m.get_bytecode(b + 1))
+                + ") field: "
+                + str(m.get_holder().get_instance_field_name(m.get_bytecode(b + 1)))
+            )
         elif bytecode == Bytecodes.send:
-            error_println("(index: "      + str(m.get_bytecode(b + 1)) +
-                                   ") signature: " + str(m.get_constant(b)))
+            error_println(
+                "(index: "
+                + str(m.get_bytecode(b + 1))
+                + ") signature: "
+                + str(m.get_constant(b))
+            )
         elif bytecode == Bytecodes.super_send:
-            error_println("(index: "      + str(m.get_bytecode(b + 1)) +
-                                   ") signature: " + str(m.get_constant(b)))
+            error_println(
+                "(index: "
+                + str(m.get_bytecode(b + 1))
+                + ") signature: "
+                + str(m.get_constant(b))
+            )
         else:
             error_println("<incorrect bytecode>")
 

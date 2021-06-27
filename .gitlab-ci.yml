@@ -23,11 +23,11 @@ bc_build_test_benchmark_job:
     - ./som.sh -cp Smalltalk TestSuite/TestHarness.som
 
     # Interpreter
-    - $RPYTHON --batch src/main-rpython.py
+    - $RPYTHON --batch src/main_rpython.py
     - ./som-bc-interp -cp Smalltalk TestSuite/TestHarness.som
     
     # JIT Compiled Version
-    - $RPYTHON --batch -Ojit src/main-rpython.py
+    - $RPYTHON --batch -Ojit src/main_rpython.py
     - ./som-bc-jit -cp Smalltalk TestSuite/TestHarness.som
     
     # Run Benchmarks
@@ -49,11 +49,11 @@ ast_build_test_benchmark_job:
     - ./som.sh -cp Smalltalk TestSuite/TestHarness.som
 
     # Interpreter
-    - $RPYTHON --batch src/main-rpython.py
+    - $RPYTHON --batch src/main_rpython.py
     - ./som-ast-interp -cp Smalltalk TestSuite/TestHarness.som
     
     # JIT Compiled Version
-    - $RPYTHON --batch -Ojit src/main-rpython.py
+    - $RPYTHON --batch -Ojit src/main_rpython.py
     - ./som-ast-jit -cp Smalltalk TestSuite/TestHarness.som
     
     # Run Benchmarks

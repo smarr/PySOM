@@ -6,23 +6,27 @@ from som.vmobjects.primitive import Primitive
 
 class AstBlock(AbstractObject):
 
-    _immutable_fields_ = ["_method", "_outer_rcvr", '_outer_args[*]',
-                          '_outer_tmps']
+    _immutable_fields_ = ["_method", "_outer_rcvr", "_outer_args[*]", "_outer_tmps"]
 
     def __init__(self, method, context_values):
         AbstractObject.__init__(self)
-        self._method         = method
-        self._outer_rcvr     = context_values[0]
-        self._outer_args     = context_values[1]
-        self._outer_tmps     = context_values[2]
+        self._method = method
+        self._outer_rcvr = context_values[0]
+        self._outer_args = context_values[1]
+        self._outer_tmps = context_values[2]
         self._outer_on_stack = context_values[3]
 
     def is_same_context(self, other_block):
         assert isinstance(other_block, AstBlock)
-        return (self._outer_rcvr == other_block._outer_rcvr and
-                self._outer_args == other_block._outer_args and
-                self._outer_tmps == other_block._outer_tmps and
-                self._outer_on_stack == other_block._outer_on_stack)
+        return (
+            self._outer_rcvr
+            == other_block._outer_rcvr  # pylint: disable=protected-access
+            and self._outer_args
+            == other_block._outer_args  # pylint: disable=protected-access
+            and self._outer_tmps
+            == other_block._outer_tmps  # pylint: disable=protected-access
+            and self._outer_on_stack == other_block._outer_on_stack  # pylint: disable=W
+        )
 
     def get_method(self):
         return jit.promote(self._method)
@@ -65,15 +69,16 @@ class AstBlock(AbstractObject):
         return self._outer_rcvr
 
     def get_class(self, universe):
-        return universe.blockClasses[self._method.get_number_of_arguments()]
+        return universe.block_classes[self._method.get_number_of_arguments()]
 
     class Evaluation(Primitive):
 
-        _immutable_fields_ = ['_number_of_arguments']
+        _immutable_fields_ = ["_number_of_arguments"]
 
         def __init__(self, num_args, universe, invoke):
-            Primitive.__init__(self, self._compute_signature_string(num_args),
-                               universe, invoke)
+            Primitive.__init__(
+                self, self._compute_signature_string(num_args), universe, invoke
+            )
             self._number_of_arguments = num_args
 
         @staticmethod

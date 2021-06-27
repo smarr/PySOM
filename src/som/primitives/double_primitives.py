@@ -1,11 +1,9 @@
+from math import cos, sin, sqrt
 from rlib.float import round_double, INFINITY
-from math import cos, sin
 
 from som.primitives.primitives import Primitives
 from som.vmobjects.double import Double
-from som.vmobjects.primitive   import UnaryPrimitive, BinaryPrimitive
-
-import math
+from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive
 
 
 def _as_string(rcvr):
@@ -13,7 +11,7 @@ def _as_string(rcvr):
 
 
 def _sqrt(rcvr):
-    return Double(math.sqrt(rcvr.get_embedded_double()))
+    return Double(sqrt(rcvr.get_embedded_double()))
 
 
 def _plus(left, right):
@@ -58,12 +56,14 @@ def _greater_than(left, right):
 
 def _round(rcvr):
     from som.vmobjects.integer import Integer
+
     int_value = int(round_double(rcvr.get_embedded_double(), 0))
     return Integer(int_value)
 
 
 def _as_integer(rcvr):
     from som.vmobjects.integer import Integer
+
     return Integer(int(rcvr.get_embedded_double()))
 
 
@@ -86,31 +86,51 @@ def _from_string(_rcvr, string):
         return Double(float(string.get_embedded_string()))
     except ValueError:
         from som.vm.globals import nilObject
+
         return nilObject
 
 
 class DoublePrimitives(Primitives):
-
     def install_primitives(self):
-        self._install_instance_primitive(UnaryPrimitive("asString", self.universe, _as_string))
-        self._install_instance_primitive(UnaryPrimitive("round",    self.universe, _round))
-        self._install_instance_primitive(UnaryPrimitive("asInteger", self.universe, _as_integer))
+        self._install_instance_primitive(
+            UnaryPrimitive("asString", self.universe, _as_string)
+        )
+        self._install_instance_primitive(UnaryPrimitive("round", self.universe, _round))
+        self._install_instance_primitive(
+            UnaryPrimitive("asInteger", self.universe, _as_integer)
+        )
 
-        self._install_instance_primitive(UnaryPrimitive("sqrt",     self.universe, _sqrt))
-        self._install_instance_primitive(BinaryPrimitive("+",        self.universe, _plus))
-        self._install_instance_primitive(BinaryPrimitive("-",        self.universe, _minus))
-        self._install_instance_primitive(BinaryPrimitive("*",        self.universe, _mult))
-        self._install_instance_primitive(BinaryPrimitive("//",       self.universe, _double_div))
-        self._install_instance_primitive(BinaryPrimitive("%",        self.universe, _mod))
-        self._install_instance_primitive(BinaryPrimitive("=",        self.universe, _equals))
-        self._install_instance_primitive(BinaryPrimitive("<",        self.universe, _less_than))
-        self._install_instance_primitive(BinaryPrimitive("<=",       self.universe, _less_than_or_equal))
-        self._install_instance_primitive(BinaryPrimitive(">",        self.universe, _greater_than))
-        self._install_instance_primitive(BinaryPrimitive("<>",       self.universe, _unequals))
-        self._install_instance_primitive(BinaryPrimitive("~=",       self.universe, _unequals))
+        self._install_instance_primitive(UnaryPrimitive("sqrt", self.universe, _sqrt))
+        self._install_instance_primitive(BinaryPrimitive("+", self.universe, _plus))
+        self._install_instance_primitive(BinaryPrimitive("-", self.universe, _minus))
+        self._install_instance_primitive(BinaryPrimitive("*", self.universe, _mult))
+        self._install_instance_primitive(
+            BinaryPrimitive("//", self.universe, _double_div)
+        )
+        self._install_instance_primitive(BinaryPrimitive("%", self.universe, _mod))
+        self._install_instance_primitive(BinaryPrimitive("=", self.universe, _equals))
+        self._install_instance_primitive(
+            BinaryPrimitive("<", self.universe, _less_than)
+        )
+        self._install_instance_primitive(
+            BinaryPrimitive("<=", self.universe, _less_than_or_equal)
+        )
+        self._install_instance_primitive(
+            BinaryPrimitive(">", self.universe, _greater_than)
+        )
+        self._install_instance_primitive(
+            BinaryPrimitive("<>", self.universe, _unequals)
+        )
+        self._install_instance_primitive(
+            BinaryPrimitive("~=", self.universe, _unequals)
+        )
 
         self._install_instance_primitive(UnaryPrimitive("sin", self.universe, _sin))
         self._install_instance_primitive(UnaryPrimitive("cos", self.universe, _cos))
 
-        self._install_class_primitive(UnaryPrimitive("PositiveInfinity", self.universe, _positive_infinity))
-        self._install_class_primitive(BinaryPrimitive("fromString:", self.universe, _from_string))
+        self._install_class_primitive(
+            UnaryPrimitive("PositiveInfinity", self.universe, _positive_infinity)
+        )
+        self._install_class_primitive(
+            BinaryPrimitive("fromString:", self.universe, _from_string)
+        )

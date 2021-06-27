@@ -1,12 +1,12 @@
-from .expression_node import ExpressionNode
-
 from rlib.jit import unroll_safe
+
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 class SequenceNode(ExpressionNode):
 
-    _immutable_fields_ = ['_exprs?[*]']
-    _child_nodes_      = ['_exprs[*]']
+    _immutable_fields_ = ["_exprs?[*]"]
+    _child_nodes_ = ["_exprs[*]"]
 
     def __init__(self, expressions, source_section):
         ExpressionNode.__init__(self, source_section)

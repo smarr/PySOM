@@ -1,6 +1,7 @@
-from .dispatch import lookup_and_send
-from .expression_node import ExpressionNode
 from som.vm.globals import nilObject, trueObject, falseObject
+
+from som.interpreter.ast.nodes.dispatch import lookup_and_send
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 def create_global_node(global_name, universe, source_section):
@@ -18,21 +19,22 @@ def create_global_node(global_name, universe, source_section):
 
     return _UninitializedGlobalReadNode(global_name, universe, source_section)
 
+
 class _UninitializedGlobalReadNode(ExpressionNode):
 
     _immutable_fields_ = ["_global_name", "universe"]
 
-    def __init__(self, global_name, universe, source_section = None):
+    def __init__(self, global_name, universe, source_section=None):
         ExpressionNode.__init__(self, source_section)
         self._global_name = global_name
-        self.universe    = universe
+        self.universe = universe
 
     def execute(self, frame):
         if self.universe.has_global(self._global_name):
             return self._specialize().execute(frame)
-        else:
-            return self.send_unknown_global(
-                frame.get_self(), self._global_name, self.universe)
+        return self.send_unknown_global(
+            frame.get_self(), self._global_name, self.universe
+        )
 
     @staticmethod
     def send_unknown_global(receiver, global_name, universe):
@@ -47,7 +49,7 @@ class _UninitializedGlobalReadNode(ExpressionNode):
 
 class _CachedGlobalReadNode(ExpressionNode):
 
-    _immutable_fields_ = ['_assoc']
+    _immutable_fields_ = ["_assoc"]
 
     def __init__(self, assoc, source_section):
         ExpressionNode.__init__(self, source_section)
@@ -59,7 +61,7 @@ class _CachedGlobalReadNode(ExpressionNode):
 
 class _ConstantGlobalReadNode(ExpressionNode):
 
-    _immutable_fields_ = ['_value']
+    _immutable_fields_ = ["_value"]
 
     def __init__(self, value, source_section):
         ExpressionNode.__init__(self, source_section)

@@ -12,7 +12,7 @@ class String(AbstractObject):
         return self._string
 
     def __str__(self):
-        return "\"" + self._string + "\""
+        return '"' + self._string + '"'
 
     def get_class(self, universe):
-        return universe.stringClass
+        return universe.string_class

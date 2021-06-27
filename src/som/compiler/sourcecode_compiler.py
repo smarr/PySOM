@@ -1,6 +1,6 @@
 import os
 from rlib.streamio import open_file_as_stream
-from rlib.string_stream    import StringStream
+from rlib.string_stream import StringStream
 
 from som.compiler.class_generation_context import ClassGenerationContext
 from som.interp_type import is_ast_interpreter
@@ -25,12 +25,14 @@ def compile_class_from_file(path, filename, system_class, universe):
         raise IOError()
 
     cname = result.get_name()
-    cnameC = cname.get_embedded_string()
+    cname_str = cname.get_embedded_string()
 
-    if filename != cnameC:
+    if filename != cname_str:
         from som.vm.universe import error_println
-        error_println("File name %s does not match class name %s."
-                      % (filename, cnameC))
+
+        error_println(
+            "File name %s does not match class name %s." % (filename, cname_str)
+        )
         universe.exit(1)
 
     return result

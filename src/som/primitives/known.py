@@ -1,7 +1,7 @@
-from rlib.unroll import unrolling_iterable
 from functools import reduce
+from rlib.unroll import unrolling_iterable
 
-from ..interp_type import is_ast_interpreter, is_bytecode_interpreter
+from som.interp_type import is_ast_interpreter, is_bytecode_interpreter
 
 """Captures the known primitives at load time of this module, i.e., at compile
    time with RPython.
@@ -10,21 +10,25 @@ from ..interp_type import is_ast_interpreter, is_bytecode_interpreter
 EXPECTED_NUMBER_OF_PRIMITIVE_FILES = 13
 
 
-class PrimitivesNotFound(Exception): pass
+class PrimitivesNotFound(Exception):
+    pass
 
 
-def _is_primitives_class(e):
+def _is_primitives_class(entry_pair):
     "NOT_RPYTHON"
     from som.primitives.primitives import Primitives
     import inspect
-    entry_name, entry = e
 
-    return (inspect.isclass(entry) and
-            issubclass(entry, Primitives)
-            and entry is not Primitives
-            and entry is not None
-            and entry_name is not None
-            and not entry_name.startswith("_"))
+    entry_name, entry = entry_pair
+
+    return (
+        inspect.isclass(entry)
+        and issubclass(entry, Primitives)
+        and entry is not Primitives
+        and entry is not None
+        and entry_name is not None
+        and not entry_name.startswith("_")
+    )
 
 
 def _setup_primitives():
@@ -32,16 +36,19 @@ def _setup_primitives():
     from importlib import import_module
     import inspect
     from glob import glob
+
     base_package = "som.primitives."
     if is_ast_interpreter():
-        base_package += 'ast.'
-        interp_dir = 'ast'
+        base_package += "ast."
+        interp_dir = "ast"
     else:
         assert is_bytecode_interpreter()
-        base_package += 'bc.'
-        interp_dir = 'bc'
+        base_package += "bc."
+        interp_dir = "bc"
 
-    directory = __file__.replace("known.pyc", "").replace("known.py", "") + interp_dir + "/"
+    directory = (
+        __file__.replace("known.pyc", "").replace("known.py", "") + interp_dir + "/"
+    )
     files = glob(directory + "*_primitives.py")
 
     module_names = [f.replace(directory, "").replace(".py", "") for f in files]
@@ -51,18 +58,23 @@ def _setup_primitives():
 
     all_prims = filter(_is_primitives_class, all_members)
 
-    prim_pairs = [(prim_name[:prim_name.find("Primitives")], cls)
-                  for (prim_name, cls) in all_prims]
+    prim_pairs = [
+        (prim_name[: prim_name.find("Primitives")], cls)
+        for (prim_name, cls) in all_prims
+    ]
 
     if EXPECTED_NUMBER_OF_PRIMITIVE_FILES != len(prim_pairs):
         print("")
         print("SOM PRIMITIVE DISCOVERY: following primitives found:")
-        for name, clazz in prim_pairs:
+        for name, _clazz in prim_pairs:
             print("   - %s" % name)
-        print("Expected number of primitive files: %d, found %d" % (
-            EXPECTED_NUMBER_OF_PRIMITIVE_FILES, len(prim_pairs)))
+        print(
+            "Expected number of primitive files: %d, found %d"
+            % (EXPECTED_NUMBER_OF_PRIMITIVE_FILES, len(prim_pairs))
+        )
         print("ERROR: did not find the expected number of primitive files!")
         import sys
+
         sys.exit(1)
     return prim_pairs
 

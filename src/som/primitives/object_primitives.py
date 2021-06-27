@@ -9,12 +9,12 @@ from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrim
 def _equals(op1, op2):
     if op1 is op2:
         return trueObject
-    else:
-        return falseObject
+    return falseObject
 
 
 def _hashcode(rcvr):
     from som.vmobjects.integer import Integer
+
     return Integer(compute_identity_hash(rcvr))
 
 
@@ -38,14 +38,17 @@ def _class(rcvr):
 
 
 class ObjectPrimitivesBase(Primitives):
-
     def install_primitives(self):
         self._install_instance_primitive(BinaryPrimitive("==", self.universe, _equals))
-        self._install_instance_primitive(UnaryPrimitive("hashcode", self.universe, _hashcode))
         self._install_instance_primitive(
-            BinaryPrimitive("instVarAt:", self.universe, _inst_var_at))
+            UnaryPrimitive("hashcode", self.universe, _hashcode)
+        )
         self._install_instance_primitive(
-            TernaryPrimitive("instVarAt:put:", self.universe, _inst_var_at_put))
+            BinaryPrimitive("instVarAt:", self.universe, _inst_var_at)
+        )
+        self._install_instance_primitive(
+            TernaryPrimitive("instVarAt:put:", self.universe, _inst_var_at_put)
+        )
 
         self._install_instance_primitive(UnaryPrimitive("halt", self.universe, _halt))
         self._install_instance_primitive(UnaryPrimitive("class", self.universe, _class))

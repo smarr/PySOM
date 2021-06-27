@@ -1,7 +1,8 @@
 try:
-    from rpython.rlib.streamio import open_file_as_stream
+    from rpython.rlib.streamio import open_file_as_stream  # pylint: disable=W
 except ImportError:
     "NOT_RPYTHON"
+
     def open_file_as_stream(file_name, mode):
         return open(file_name, mode)
 
@@ -22,6 +23,6 @@ def readall_from_stream(stream):
         if not data:
             break
         result.append(data)
-        if bufsize < 4194304:    # 4 Megs
+        if bufsize < 4194304:  # 4 Megs
             bufsize <<= 1
-    return ''.join(result)
+    return "".join(result)

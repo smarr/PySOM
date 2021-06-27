@@ -1,11 +1,12 @@
 class MethodGenerationContextBase(object):
-
-    def __init__(self, universe, outer = None):
-        self.holder  = None
-        self._outer_genc   = outer
+    def __init__(self, universe, outer, arguments, locals_vars):
+        self.holder = None
+        self._arguments = arguments
+        self._locals = locals_vars
+        self.outer_genc = outer
         self.is_block_method = outer is not None
-        self._signature    = None
-        self._primitive    = False  # to be changed
+        self._signature = None
+        self._primitive = False  # to be changed
 
         self.universe = universe
 
@@ -26,6 +27,9 @@ class MethodGenerationContextBase(object):
 
     def get_signature(self):
         return self._signature
+
+    def add_local(self, _):  # pylint: disable=no-self-use
+        raise Exception("Implemented in Subclasses")
 
     def add_local_if_absent(self, local):
         if local in self._locals:

@@ -5,18 +5,17 @@ from som.vmobjects.clazz import Class
 
 
 class ClassGenerationContext(object):
-
     def __init__(self, universe):
         self.universe = universe
 
-        self.name         = None
+        self.name = None
         self._super_class = None
         self._class_side = False  # to be overridden
-        self._instance_fields  = []
-        self._class_fields     = []
+        self._instance_fields = []
+        self._class_fields = []
 
         self._instance_methods = OrderedDict()
-        self._class_methods    = OrderedDict()
+        self._class_methods = OrderedDict()
 
         self._instance_has_primitives = False
         self._class_has_primitives = False
@@ -30,7 +29,8 @@ class ClassGenerationContext(object):
         self._super_class = super_class
         self._set_instance_fields_of_super(super_class.get_instance_fields())
         self._set_class_fields_of_super(
-            super_class.get_class(self.universe).get_instance_fields())
+            super_class.get_class(self.universe).get_instance_fields()
+        )
 
     def _set_instance_fields_of_super(self, field_names):
         for i in range(0, field_names.get_number_of_indexable_fields()):
@@ -60,14 +60,14 @@ class ClassGenerationContext(object):
         self._class_fields.append(field)
 
     def has_field(self, field):
-        return field in (self._class_fields if self.is_class_side()
-                         else self._instance_fields)
+        return field in (
+            self._class_fields if self.is_class_side() else self._instance_fields
+        )
 
     def get_field_index(self, field):
         if self.is_class_side():
             return self._class_fields.index(field)
-        else:
-            return self._instance_fields.index(field)
+        return self._instance_fields.index(field)
 
     def is_class_side(self):
         return self._class_side
@@ -78,14 +78,15 @@ class ClassGenerationContext(object):
 
         # Allocate the class of the resulting class
         result_class = Class(
-            self.universe.metaclassClass.get_number_of_instance_fields(),
-            self.universe.metaclassClass)
+            self.universe.metaclass_class.get_number_of_instance_fields(),
+            self.universe.metaclass_class,
+        )
 
         # Initialize the class of the resulting class
-        result_class.set_instance_fields(Array.from_objects(
-            self._class_fields[:]))
+        result_class.set_instance_fields(Array.from_objects(self._class_fields[:]))
         result_class.set_instance_invokables(
-            self._class_methods, self._class_has_primitives)
+            self._class_methods, self._class_has_primitives
+        )
         result_class.set_name(self.universe.symbol_for(cc_name))
 
         super_m_class = self._super_class.get_class(self.universe)
@@ -99,17 +100,20 @@ class ClassGenerationContext(object):
         result.set_super_class(self._super_class)
         result.set_instance_fields(Array.from_objects(self._instance_fields[:]))
         result.set_instance_invokables(
-            self._instance_methods, self._instance_has_primitives)
+            self._instance_methods, self._instance_has_primitives
+        )
 
         return result
 
     def assemble_system_class(self, system_class):
         system_class.set_instance_invokables(
-            self._instance_methods, self._instance_has_primitives)
+            self._instance_methods, self._instance_has_primitives
+        )
         system_class.set_instance_fields(Array.from_objects(self._instance_fields[:]))
 
         # class-bound == class-instance-bound
         super_m_class = system_class.get_class(self.universe)
         super_m_class.set_instance_invokables(
-            self._class_methods, self._class_has_primitives)
+            self._class_methods, self._class_has_primitives
+        )
         super_m_class.set_instance_fields(Array.from_objects(self._class_fields[:]))

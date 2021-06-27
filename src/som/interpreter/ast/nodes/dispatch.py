@@ -8,7 +8,7 @@ class _AbstractDispatchNode(Node):
 
     INLINE_CACHE_SIZE = 6
 
-    _immutable_fields_ = ['universe']
+    _immutable_fields_ = ["universe"]
 
     def __init__(self, universe):
         Node.__init__(self, None)
@@ -17,7 +17,7 @@ class _AbstractDispatchNode(Node):
 
 class _AbstractDispatchWithLookupNode(_AbstractDispatchNode):
 
-    _immutable_fields_ = ['_selector']
+    _immutable_fields_ = ["_selector"]
 
     def __init__(self, selector, universe):
         _AbstractDispatchNode.__init__(self, universe)
@@ -25,7 +25,6 @@ class _AbstractDispatchWithLookupNode(_AbstractDispatchNode):
 
 
 class UninitializedDispatchNode(_AbstractDispatchWithLookupNode):
-
     def _specialize(self, rcvr):
         assert rcvr is not None
 
@@ -43,34 +42,31 @@ class UninitializedDispatchNode(_AbstractDispatchWithLookupNode):
             rcvr_class = rcvr.get_class(self.universe)
             method = rcvr_class.lookup_invokable(self._selector)
 
-            new_chain_end = UninitializedDispatchNode(self._selector,
-                                                      self.universe)
+            new_chain_end = UninitializedDispatchNode(self._selector, self.universe)
 
             if method is not None:
-                node = _CachedDispatchObjectCheckNode(rcvr_class, method,
-                                                      new_chain_end,
-                                                      self.universe)
+                node = _CachedDispatchObjectCheckNode(
+                    rcvr_class, method, new_chain_end, self.universe
+                )
             else:
-                node = _CachedDnuObjectCheckNode(self._selector, rcvr_class,
-                                                 new_chain_end, self.universe)
+                node = _CachedDnuObjectCheckNode(
+                    self._selector, rcvr_class, new_chain_end, self.universe
+                )
 
             return self.replace(node)
-        else:
-            # the chain is longer than the maximum defined by INLINE_CACHE_SIZE
-            # and thus, this callsite is considered to be megaprophic, and we
-            # generalize it.
+        # the chain is longer than the maximum defined by INLINE_CACHE_SIZE
+        # and thus, this callsite is considered to be megaprophic, and we
+        # generalize it.
 
-            generic_replacement = GenericDispatchNode(self._selector,
-                                                      self.universe)
-            send_node.replace_dispatch_list_head(generic_replacement)
-            return generic_replacement
+        generic_replacement = GenericDispatchNode(self._selector, self.universe)
+        send_node.replace_dispatch_list_head(generic_replacement)
+        return generic_replacement
 
     def execute_dispatch(self, rcvr, args):
         return self._specialize(rcvr).execute_dispatch(rcvr, args)
 
 
 class GenericDispatchNode(_AbstractDispatchWithLookupNode):
-
     def _lookup_method(self, rcvr):
         return rcvr.get_class(self.universe).lookup_invokable(self._selector)
 
@@ -78,49 +74,51 @@ class GenericDispatchNode(_AbstractDispatchWithLookupNode):
         method = self._lookup_method(rcvr)
         if method is not None:
             return method.invoke(rcvr, args)
-        else:
-            # Won't use DNU caching here, because it's a megamorphic node
-            return send_does_not_understand(rcvr, self._selector, args, self.universe)
+        # Won't use DNU caching here, because it's a megamorphic node
+        return send_does_not_understand(rcvr, self._selector, args, self.universe)
 
 
 class _AbstractCachedDispatchNode(_AbstractDispatchNode):
 
-    _immutable_fields_ = ['_cached_method', '_next?', '_expected_class']
-    _child_nodes_      = ['_next']
+    _immutable_fields_ = ["_cached_method", "_next?", "_expected_class"]
+    _child_nodes_ = ["_next"]
 
     def __init__(self, rcvr_class, method, next_dispatch, universe):
         _AbstractDispatchNode.__init__(self, universe)
-        self._cached_method  = method
-        self._next           = self.adopt_child(next_dispatch)
+        self._cached_method = method
+        self._next = self.adopt_child(next_dispatch)
         self._expected_class = rcvr_class
 
 
 class _CachedDispatchObjectCheckNode(_AbstractCachedDispatchNode):
-
     def execute_dispatch(self, rcvr, args):
         if rcvr.get_class(self.universe) == self._expected_class:
             return self._cached_method.invoke(rcvr, args)
-        else:
-            return self._next.execute_dispatch(rcvr, args)
+        return self._next.execute_dispatch(rcvr, args)
 
 
 class _CachedDnuObjectCheckNode(_AbstractCachedDispatchNode):
 
-    _immutable_fields_ = ['_selector']
+    _immutable_fields_ = ["_selector"]
 
     def __init__(self, selector, rcvr_class, next_dispatch, universe):
         _AbstractCachedDispatchNode.__init__(
-            self, rcvr_class, rcvr_class.lookup_invokable(
-                universe.symbol_for("doesNotUnderstand:arguments:")),
-            next_dispatch, universe)
+            self,
+            rcvr_class,
+            rcvr_class.lookup_invokable(
+                universe.symbol_for("doesNotUnderstand:arguments:")
+            ),
+            next_dispatch,
+            universe,
+        )
         self._selector = selector
 
     def execute_dispatch(self, rcvr, args):
         if rcvr.get_class(self.universe) == self._expected_class:
             return self._cached_method.invoke(
-                rcvr, [self._selector, Array.from_values(args)])
-        else:
-            return self._next.execute_dispatch(rcvr, args)
+                rcvr, [self._selector, Array.from_values(args)]
+            )
+        return self._next.execute_dispatch(rcvr, args)
 
 
 # @jit.unroll_safe
@@ -128,7 +126,9 @@ def _prepare_dnu_arguments(arguments, selector, universe):
     # Compute the number of arguments
     selector = jit.promote(selector)
     universe = jit.promote(universe)
-    number_of_arguments = selector.get_number_of_signature_arguments() - 1  # without self
+    number_of_arguments = (
+        selector.get_number_of_signature_arguments() - 1
+    )  # without self
     assert number_of_arguments == len(arguments)
 
     # TODO: make sure this is still optimizing DNU properly
@@ -147,4 +147,3 @@ def lookup_and_send(receiver, selector_string, arguments, universe):
     selector = universe.symbol_for(selector_string)
     invokable = receiver.get_class(universe).lookup_invokable(selector)
     return invokable.invoke(receiver, arguments)
-

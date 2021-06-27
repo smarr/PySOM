@@ -10,37 +10,41 @@ from som.vmobjects.abstract_object import AbstractObject
 
 class BcMethod(AbstractObject):
 
-    _immutable_fields_ = ["_bytecodes[*]",
-                          "_literals[*]",
-                          "_inline_cache_class",
-                          "_inline_cache_invokable",
-                          "_receiver_class_table",
-                          "_number_of_locals",
-                          "_maximum_number_of_stack_elements",
-                          "_signature",
-                          "_number_of_arguments",
-                          "_initial_stack_pointer",
-                          "_number_of_frame_elements",
-                          "_holder"]
+    _immutable_fields_ = [
+        "_bytecodes[*]",
+        "_literals[*]",
+        "_inline_cache_class",
+        "_inline_cache_invokable",
+        "_receiver_class_table",
+        "_number_of_locals",
+        "_maximum_number_of_stack_elements",
+        "_signature",
+        "_number_of_arguments",
+        "_initial_stack_pointer",
+        "_number_of_frame_elements",
+        "_holder",
+    ]
 
-    def __init__(self, literals, num_locals, max_stack_elements,
-                 num_bytecodes, signature):
+    def __init__(
+        self, literals, num_locals, max_stack_elements, num_bytecodes, signature
+    ):
         AbstractObject.__init__(self)
 
         # Set the number of bytecodes in this method
-        self._bytecodes              = ["\x00"] * num_bytecodes
-        self._inline_cache_class     = [None]   * num_bytecodes
-        self._inline_cache_invokable = [None]   * num_bytecodes
+        self._bytecodes = ["\x00"] * num_bytecodes
+        self._inline_cache_class = [None] * num_bytecodes
+        self._inline_cache_invokable = [None] * num_bytecodes
 
-        self._literals               = literals
+        self._literals = literals
 
-        self._number_of_locals       = num_locals
+        self._number_of_locals = num_locals
         self._maximum_number_of_stack_elements = max_stack_elements
         self._signature = signature
         self._number_of_arguments = signature.get_number_of_signature_arguments()
         self._initial_stack_pointer = self._number_of_arguments + num_locals - 1
-        self._number_of_frame_elements = (self._number_of_arguments + num_locals
-                                          + max_stack_elements + 2)
+        self._number_of_frame_elements = (
+            self._number_of_arguments + num_locals + max_stack_elements + 2
+        )
 
         self._holder = None
 
@@ -50,7 +54,7 @@ class BcMethod(AbstractObject):
 
     @staticmethod
     def is_invokable():
-        """ We use this method to identify methods and primitives """
+        """We use this method to identify methods and primitives"""
         return True
 
     def get_initial_stack_pointer(self):
@@ -65,7 +69,7 @@ class BcMethod(AbstractObject):
         return self._maximum_number_of_stack_elements
 
     # XXX this means that the JIT doesn't see changes to the method object
-    @jit.elidable_promote('all')
+    @jit.elidable_promote("all")
     def get_signature(self):
         return self._signature
 
@@ -83,12 +87,12 @@ class BcMethod(AbstractObject):
                 obj.set_holder(value)
 
     # XXX this means that the JIT doesn't see changes to the constants
-    @jit.elidable_promote('all')
+    @jit.elidable_promote("all")
     def get_constant(self, bytecode_index):
         # Get the constant associated to a given bytecode index
         return self._literals[self.get_bytecode(bytecode_index + 1)]
 
-    @jit.elidable_promote('all')
+    @jit.elidable_promote("all")
     def get_number_of_arguments(self):
         return self._number_of_arguments
 
@@ -99,22 +103,22 @@ class BcMethod(AbstractObject):
         # Get the number of bytecodes in this method
         return len(self._bytecodes)
 
-    @jit.elidable_promote('all')
+    @jit.elidable_promote("all")
     def get_number_of_frame_elements(self):
         # Compute the maximum number of stack locations (including arguments,
         # locals and extra buffer to support doesNotUnderstand) and set the
         # number of indexable fields accordingly
         return self._number_of_frame_elements
 
-    @jit.elidable_promote('all')
+    @jit.elidable_promote("all")
     def get_bytecode(self, index):
         # Get the bytecode at the given index
-        assert 0 <= index and index < len(self._bytecodes)
+        assert 0 <= index < len(self._bytecodes)
         return ord(self._bytecodes[index])
 
     def set_bytecode(self, index, value):
         # Set the bytecode at the given index to the given value
-        assert 0 <= value and value <= 255
+        assert 0 <= value <= 255
         self._bytecodes[index] = chr(value)
 
     def invoke(self, frame):
@@ -131,32 +135,38 @@ class BcMethod(AbstractObject):
             if e.has_reached_target(new_frame):
                 frame.pop_old_arguments_and_push_result(self, e.get_result())
                 return
-            else:
-                new_frame.clear_previous_frame()
-                raise e
+            new_frame.clear_previous_frame()
+            raise e
 
     def __str__(self):
-        return ("Method(" + self.get_holder().get_name().get_embedded_string() + ">>" +
-                str(self.get_signature()) + ")")
+        return (
+            "Method("
+            + self.get_holder().get_name().get_embedded_string()
+            + ">>"
+            + str(self.get_signature())
+            + ")"
+        )
 
     def get_class(self, universe):
-        return universe.methodClass
+        return universe.method_class
 
     @jit.elidable
     def get_inline_cache_class(self, bytecode_index):
-        assert 0 <= bytecode_index and bytecode_index < len(self._inline_cache_class)
+        assert 0 <= bytecode_index < len(self._inline_cache_class)
         return self._inline_cache_class[bytecode_index]
 
     @jit.elidable
     def get_inline_cache_invokable(self, bytecode_index):
-        assert 0 <= bytecode_index and bytecode_index < len(self._inline_cache_invokable)
+        assert 0 <= bytecode_index < len(self._inline_cache_invokable)
         return self._inline_cache_invokable[bytecode_index]
 
     def set_inline_cache(self, bytecode_index, receiver_class, invokable):
-        self._inline_cache_class[bytecode_index]    = receiver_class
+        self._inline_cache_class[bytecode_index] = receiver_class
         self._inline_cache_invokable[bytecode_index] = invokable
 
     def merge_point_string(self):
-        """ debug info for the jit """
-        return "%s>>%s" % (self.get_holder().get_name().get_embedded_string(),
-                           self.get_signature().get_embedded_string())
+        """debug info for the jit"""
+        return "%s>>%s" % (
+            self.get_holder().get_name().get_embedded_string(),
+            self.get_signature().get_embedded_string(),
+        )

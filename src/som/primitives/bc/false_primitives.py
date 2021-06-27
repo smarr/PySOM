@@ -1,7 +1,7 @@
 from som.primitives.false_primitives import FalsePrimitivesBase as _Base
 
 
-def _or(ivkbl, frame):
+def _or(_ivkbl, frame):
     block = frame.pop()
     frame.pop()
     block_method = block.get_method()

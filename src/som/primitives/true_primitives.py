@@ -12,7 +12,6 @@ def _or(_rcvr, _arg):
 
 
 class TruePrimitivesBase(Primitives):
-
     def install_primitives(self):
         self._install_instance_primitive(UnaryPrimitive("not", self.universe, _not))
         self._install_instance_primitive(BinaryPrimitive("or:", self.universe, _or))
