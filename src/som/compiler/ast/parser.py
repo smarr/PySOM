@@ -1,20 +1,22 @@
 from rtruffle.source_section import SourceSection
 
-from .method_generation_context import MethodGenerationContext
-from ..parse_error import ParseError
-from ..parser import ParserBase
+from som.compiler.ast.method_generation_context import MethodGenerationContext
+from som.compiler.parse_error import ParseError
+from som.compiler.parser import ParserBase
+from som.compiler.symbol import Symbol
 
-from ...interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
-from ...interpreter.ast.nodes.global_read_node import create_global_node
-from ...interpreter.ast.nodes.literal_node import LiteralNode
-from ...interpreter.ast.nodes.message.super_node import SuperMessageNode
-from ...interpreter.ast.nodes.message.uninitialized_node import UninitializedMessageNode
-from ...interpreter.ast.nodes.return_non_local_node import ReturnNonLocalNode
-from ...interpreter.ast.nodes.sequence_node import SequenceNode
+from som.interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
+from som.interpreter.ast.nodes.global_read_node import create_global_node
+from som.interpreter.ast.nodes.literal_node import LiteralNode
+from som.interpreter.ast.nodes.message.super_node import SuperMessageNode
+from som.interpreter.ast.nodes.message.uninitialized_node import (
+    UninitializedMessageNode,
+)
+from som.interpreter.ast.nodes.return_non_local_node import ReturnNonLocalNode
+from som.interpreter.ast.nodes.sequence_node import SequenceNode
 
-from ..symbol import Symbol
-from ...vmobjects.array import Array
-from ...vmobjects.string import String
+from som.vmobjects.array import Array
+from som.vmobjects.string import String
 
 
 class Parser(ParserBase):

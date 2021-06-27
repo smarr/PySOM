@@ -1,8 +1,8 @@
-from .contextual_node import ContextualNode
-from .dispatch import lookup_and_send
-from .expression_node import ExpressionNode
+from som.interpreter.ast.nodes.contextual_node import ContextualNode
+from som.interpreter.ast.nodes.dispatch import lookup_and_send
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
-from ...control_flow import ReturnException
+from som.interpreter.control_flow import ReturnException
 
 
 class ReturnNonLocalNode(ContextualNode):

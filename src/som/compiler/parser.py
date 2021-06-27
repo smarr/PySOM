@@ -1,16 +1,16 @@
 from rlib.arithmetic import string_to_int, bigint_from_str, ParseStringOverflowError
 
-from .lexer import Lexer
-from .parse_error import ParseError, ParseErrorSymList
-from .symbol import Symbol
+from som.compiler.lexer import Lexer
+from som.compiler.parse_error import ParseError, ParseErrorSymList
+from som.compiler.symbol import Symbol
 
-from ..interp_type import is_ast_interpreter
-from ..vmobjects.double import Double
+from som.interp_type import is_ast_interpreter
+from som.vmobjects.double import Double
 
 if is_ast_interpreter():
-    from .ast.method_generation_context import MethodGenerationContext
+    from som.compiler.ast.method_generation_context import MethodGenerationContext
 else:
-    from .bc.method_generation_context import MethodGenerationContext
+    from som.compiler.bc.method_generation_context import MethodGenerationContext
 
 
 class ParserBase(object):

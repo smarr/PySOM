@@ -1,6 +1,6 @@
-from ..expression_node import ExpressionNode
-from .....vm.globals import nilObject, trueObject, falseObject
-from .....vmobjects.block_ast import AstBlock
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
+from som.vm.globals import nilObject, trueObject, falseObject
+from som.vmobjects.block_ast import AstBlock
 
 
 class IfTrueIfFalseNode(ExpressionNode):

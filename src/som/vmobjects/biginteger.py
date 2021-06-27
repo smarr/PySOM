@@ -22,12 +22,12 @@ class BigInteger(AbstractObject):
         return universe.integer_class
 
     def _to_double(self):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         return Double(self._embedded_biginteger.tofloat())
 
     def prim_less_than(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         # Check second parameter type:
         if isinstance(right, Double):
@@ -44,7 +44,7 @@ class BigInteger(AbstractObject):
         return falseObject
 
     def prim_less_than_or_equal(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         # Check second parameter type:
         if isinstance(right, Double):
@@ -61,7 +61,7 @@ class BigInteger(AbstractObject):
         return falseObject
 
     def prim_greater_than(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         # Check second parameter type:
         if isinstance(right, Double):
@@ -78,12 +78,12 @@ class BigInteger(AbstractObject):
         return falseObject
 
     def prim_as_string(self):
-        from .string import String
+        from som.vmobjects.string import String
 
         return String(self._embedded_biginteger.str())
 
     def prim_as_double(self):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         return Double(self._embedded_biginteger.tofloat())
 
@@ -91,7 +91,7 @@ class BigInteger(AbstractObject):
         return BigInteger(self._embedded_biginteger.abs())
 
     def prim_as_32_bit_signed_value(self):
-        from .integer import Integer
+        from som.vmobjects.integer import Integer
 
         return Integer(self._embedded_biginteger.digit(0))
 
@@ -100,7 +100,7 @@ class BigInteger(AbstractObject):
             if right.get_embedded_biginteger().gt(self._embedded_biginteger):
                 return right
             return self
-        from .integer import Integer
+        from som.vmobjects.integer import Integer
 
         assert isinstance(right, Integer)
 
@@ -116,7 +116,7 @@ class BigInteger(AbstractObject):
         return BigInteger(bigint_from_int(1).sub(self._embedded_biginteger))
 
     def prim_add(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         if isinstance(right, BigInteger):
             return BigInteger(
@@ -129,7 +129,7 @@ class BigInteger(AbstractObject):
         )
 
     def prim_subtract(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         if isinstance(right, BigInteger):
             r = self._embedded_biginteger.sub(right.get_embedded_biginteger())
@@ -142,7 +142,7 @@ class BigInteger(AbstractObject):
         return BigInteger(r)
 
     def prim_multiply(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         if isinstance(right, BigInteger):
             r = self._embedded_biginteger.mul(right.get_embedded_biginteger())
@@ -155,7 +155,7 @@ class BigInteger(AbstractObject):
         return BigInteger(r)
 
     def prim_double_div(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         if isinstance(right, BigInteger):
             r = self._embedded_biginteger.truediv(right.get_embedded_biginteger())
@@ -168,7 +168,7 @@ class BigInteger(AbstractObject):
         return Double(r)
 
     def prim_int_div(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         if isinstance(right, BigInteger):
             r = self._embedded_biginteger.floordiv(right.get_embedded_biginteger())
@@ -181,7 +181,7 @@ class BigInteger(AbstractObject):
         return BigInteger(r)
 
     def prim_modulo(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         if isinstance(right, BigInteger):
             r = self._embedded_biginteger.mod(right.get_embedded_biginteger())
@@ -194,7 +194,7 @@ class BigInteger(AbstractObject):
         return BigInteger(r)
 
     def prim_remainder(self, right):
-        from .integer import Integer
+        from som.vmobjects.integer import Integer
 
         if isinstance(right, BigInteger):
             right_val = self._embedded_biginteger
@@ -206,7 +206,7 @@ class BigInteger(AbstractObject):
         return BigInteger(r)
 
     def prim_and(self, right):
-        from .double import Double
+        from som.vmobjects.double import Double
 
         if isinstance(right, BigInteger):
             r = self._embedded_biginteger.and_(right.get_embedded_biginteger())
@@ -219,8 +219,8 @@ class BigInteger(AbstractObject):
         return BigInteger(r)
 
     def prim_equals(self, right):
-        from .double import Double
-        from .integer import Integer
+        from som.vmobjects.double import Double
+        from som.vmobjects.integer import Integer
 
         if isinstance(right, BigInteger):
             result = self._embedded_biginteger.eq(right.get_embedded_biginteger())
@@ -237,8 +237,8 @@ class BigInteger(AbstractObject):
         return falseObject
 
     def prim_unequals(self, right):
-        from .double import Double
-        from .integer import Integer
+        from som.vmobjects.double import Double
+        from som.vmobjects.integer import Integer
 
         if isinstance(right, BigInteger):
             result = self._embedded_biginteger.ne(right.get_embedded_biginteger())

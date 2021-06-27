@@ -1,4 +1,4 @@
-from .bytecode_generator import (
+from som.compiler.bc.bytecode_generator import (
     emit_inc,
     emit_dec,
     emit_dup,
@@ -19,11 +19,11 @@ from .bytecode_generator import (
     emit_push_constant_index,
     emit_return_non_local,
 )
-from .method_generation_context import MethodGenerationContext
-from ..parser import ParserBase
-from ..symbol import Symbol
-from ...vmobjects.integer import Integer
-from ...vmobjects.string import String
+from som.compiler.bc.method_generation_context import MethodGenerationContext
+from som.compiler.parser import ParserBase
+from som.compiler.symbol import Symbol
+from som.vmobjects.integer import Integer
+from som.vmobjects.string import String
 
 
 class Parser(ParserBase):

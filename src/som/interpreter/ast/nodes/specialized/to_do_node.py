@@ -1,11 +1,11 @@
 from rlib import jit
 
-from ..expression_node import ExpressionNode
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
-from .....vmobjects.block_ast import AstBlock
-from .....vmobjects.double import Double
-from .....vmobjects.integer import Integer
-from .....vmobjects.method_ast import AstMethod
+from som.vmobjects.block_ast import AstBlock
+from som.vmobjects.double import Double
+from som.vmobjects.integer import Integer
+from som.vmobjects.method_ast import AstMethod
 
 
 class AbstractToDoNode(ExpressionNode):

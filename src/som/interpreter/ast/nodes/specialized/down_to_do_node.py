@@ -1,10 +1,10 @@
 from rlib import jit
-from .to_do_node import AbstractToDoNode
+from som.interpreter.ast.nodes.specialized.to_do_node import AbstractToDoNode
 
-from .....vmobjects.block_ast import AstBlock
-from .....vmobjects.double import Double
-from .....vmobjects.integer import Integer
-from .....vmobjects.method_ast import AstMethod
+from som.vmobjects.block_ast import AstBlock
+from som.vmobjects.double import Double
+from som.vmobjects.integer import Integer
+from som.vmobjects.method_ast import AstMethod
 
 
 def get_printable_location(block_method):

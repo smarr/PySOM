@@ -24,8 +24,8 @@ class Double(AbstractObject):
 
     @staticmethod
     def _get_float(obj):
-        from .integer import Integer
-        from .biginteger import BigInteger
+        from som.vmobjects.integer import Integer
+        from som.vmobjects.biginteger import BigInteger
 
         if isinstance(obj, Double):
             return obj.get_embedded_double()
@@ -53,7 +53,7 @@ class Double(AbstractObject):
         raise NotImplementedError("bit operations on Double are not supported.")
 
     def prim_as_string(self):
-        from .string import String
+        from som.vmobjects.string import String
 
         s = float_to_str(self._embedded_double)
         return String(s)
@@ -67,7 +67,7 @@ class Double(AbstractObject):
         return Double(self._embedded_double / r)
 
     def prim_int_div(self, right):
-        from .integer import Integer
+        from som.vmobjects.integer import Integer
 
         r = self._get_float(right)
         return Integer(int(self._embedded_double / r))

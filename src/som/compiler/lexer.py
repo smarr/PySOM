@@ -1,5 +1,5 @@
 from rtruffle.source_section import SourceCoordinate
-from .symbol import Symbol
+from som.compiler.symbol import Symbol
 
 
 class Lexer(object):

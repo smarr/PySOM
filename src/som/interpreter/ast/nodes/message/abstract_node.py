@@ -1,9 +1,9 @@
 from rlib.debug import make_sure_not_resized
 from rlib.jit import unroll_safe
 
-from ..expression_node import ExpressionNode
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
-from .....vmobjects.abstract_object import AbstractObject
+from som.vmobjects.abstract_object import AbstractObject
 
 
 class AbstractMessageNode(ExpressionNode):

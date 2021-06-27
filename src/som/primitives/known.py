@@ -1,7 +1,7 @@
 from functools import reduce
 from rlib.unroll import unrolling_iterable
 
-from ..interp_type import is_ast_interpreter, is_bytecode_interpreter
+from som.interp_type import is_ast_interpreter, is_bytecode_interpreter
 
 """Captures the known primitives at load time of this module, i.e., at compile
    time with RPython.

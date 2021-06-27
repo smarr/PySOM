@@ -1,8 +1,11 @@
 from rlib.debug import make_sure_not_resized
 from rlib.jit import we_are_jitted
 
-from ..dispatch import UninitializedDispatchNode, send_does_not_understand
-from .abstract_node import AbstractMessageNode
+from som.interpreter.ast.nodes.dispatch import (
+    UninitializedDispatchNode,
+    send_does_not_understand,
+)
+from som.interpreter.ast.nodes.message.abstract_node import AbstractMessageNode
 
 
 class GenericMessageNode(AbstractMessageNode):

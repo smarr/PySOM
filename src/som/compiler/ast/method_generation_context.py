@@ -2,16 +2,16 @@ from collections import OrderedDict
 
 from rtruffle.source_section import SourceSection
 
-from .variable import Argument, Local
-from ..method_generation_context import MethodGenerationContextBase
+from som.compiler.ast.variable import Argument, Local
+from som.compiler.method_generation_context import MethodGenerationContextBase
 
-from ...interpreter.ast.nodes.field_node import create_write_node, create_read_node
-from ...interpreter.ast.nodes.global_read_node import create_global_node
-from ...interpreter.ast.nodes.return_non_local_node import CatchNonLocalReturnNode
-from ...interpreter.ast.invokable import Invokable
+from som.interpreter.ast.nodes.field_node import create_write_node, create_read_node
+from som.interpreter.ast.nodes.global_read_node import create_global_node
+from som.interpreter.ast.nodes.return_non_local_node import CatchNonLocalReturnNode
+from som.interpreter.ast.invokable import Invokable
 
-from ...vmobjects.primitive import empty_primitive
-from ...vmobjects.method_ast import AstMethod
+from som.vmobjects.primitive import empty_primitive
+from som.vmobjects.method_ast import AstMethod
 
 
 class MethodGenerationContext(MethodGenerationContextBase):

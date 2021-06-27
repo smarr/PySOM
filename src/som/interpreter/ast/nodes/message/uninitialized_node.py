@@ -1,11 +1,23 @@
-from .abstract_node import AbstractMessageNode
-from .generic_node import GenericMessageNode
+from som.interpreter.ast.nodes.message.abstract_node import AbstractMessageNode
+from som.interpreter.ast.nodes.message.generic_node import GenericMessageNode
 
-from ..specialized.down_to_do_node import IntDownToIntDoNode, IntDownToDoubleDoNode
-from ..specialized.if_true_false import IfTrueIfFalseNode, IfNode
-from ..specialized.to_by_do_node import IntToIntByDoNode, IntToDoubleByDoNode
-from ..specialized.to_do_node import IntToIntDoNode, IntToDoubleDoNode
-from ..specialized.while_node import WhileMessageNode
+from som.interpreter.ast.nodes.specialized.down_to_do_node import (
+    IntDownToIntDoNode,
+    IntDownToDoubleDoNode,
+)
+from som.interpreter.ast.nodes.specialized.if_true_false import (
+    IfTrueIfFalseNode,
+    IfNode,
+)
+from som.interpreter.ast.nodes.specialized.to_by_do_node import (
+    IntToIntByDoNode,
+    IntToDoubleByDoNode,
+)
+from som.interpreter.ast.nodes.specialized.to_do_node import (
+    IntToIntDoNode,
+    IntToDoubleDoNode,
+)
+from som.interpreter.ast.nodes.specialized.while_node import WhileMessageNode
 
 
 class UninitializedMessageNode(AbstractMessageNode):

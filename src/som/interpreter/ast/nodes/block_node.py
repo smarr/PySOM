@@ -1,5 +1,5 @@
 from som.vmobjects.block_ast import AstBlock
-from .literal_node import LiteralNode
+from som.interpreter.ast.nodes.literal_node import LiteralNode
 
 
 class BlockNode(LiteralNode):

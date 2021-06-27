@@ -1,4 +1,4 @@
-from .abstract_node import AbstractMessageNode
+from som.interpreter.ast.nodes.message.abstract_node import AbstractMessageNode
 
 
 class SuperMessageNode(AbstractMessageNode):

@@ -1,10 +1,10 @@
 from rlib import jit
 
-from ..expression_node import ExpressionNode
-from .....vm.globals import nilObject, falseObject, trueObject
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
+from som.vm.globals import nilObject, falseObject, trueObject
 
-from .....vmobjects.block_ast import AstBlock
-from .....vmobjects.method_ast import AstMethod
+from som.vmobjects.block_ast import AstBlock
+from som.vmobjects.method_ast import AstMethod
 
 
 class AbstractWhileMessageNode(ExpressionNode):

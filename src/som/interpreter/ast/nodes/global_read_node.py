@@ -1,7 +1,7 @@
 from som.vm.globals import nilObject, trueObject, falseObject
 
-from .dispatch import lookup_and_send
-from .expression_node import ExpressionNode
+from som.interpreter.ast.nodes.dispatch import lookup_and_send
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 def create_global_node(global_name, universe, source_section):

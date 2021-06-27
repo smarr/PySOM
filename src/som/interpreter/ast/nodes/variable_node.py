@@ -1,7 +1,7 @@
 from som.vmobjects.block_ast import AstBlock
 
-from .contextual_node import ContextualNode
-from .expression_node import ExpressionNode
+from som.interpreter.ast.nodes.contextual_node import ContextualNode
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 class UninitializedReadNode(ExpressionNode):

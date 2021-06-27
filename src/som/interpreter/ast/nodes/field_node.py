@@ -3,7 +3,7 @@ from som.interpreter.objectstorage.field_accessor_node import create_read, creat
 from som.vmobjects.abstract_object import AbstractObject
 from som.vmobjects.object_with_layout import ObjectWithLayout
 
-from .expression_node import ExpressionNode
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 class _AbstractFieldNode(ExpressionNode):

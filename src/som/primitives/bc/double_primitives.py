@@ -1,4 +1,4 @@
-from ..double_primitives import DoublePrimitives as _Base
+from som.primitives.double_primitives import DoublePrimitives as _Base
 
 
 DoublePrimitives = _Base

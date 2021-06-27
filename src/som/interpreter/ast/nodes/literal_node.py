@@ -1,4 +1,4 @@
-from .expression_node import ExpressionNode
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 class LiteralNode(ExpressionNode):

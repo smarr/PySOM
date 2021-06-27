@@ -1,6 +1,6 @@
 from rlib.jit import unroll_safe
 
-from .expression_node import ExpressionNode
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 class ContextualNode(ExpressionNode):

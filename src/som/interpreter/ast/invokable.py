@@ -2,7 +2,7 @@ from rlib import jit
 from rlib.debug import make_sure_not_resized
 from rtruffle.node import Node
 
-from .frame import Frame
+from som.interpreter.ast.frame import Frame
 
 
 def get_printable_location(invokable):
