@@ -14,11 +14,17 @@ from som.vm.globals import nilObject
 # | ...             |
 # +-----------------+
 #
+@jit.unroll_safe
+def copy_arguments_from(frame, num_args):
+    return [frame.get_stack_element(num_args - 1 - i) for i in range(0, num_args)]
+
+
 class Frame(object):
 
-    _immutable_fields_ = ["_method", "_context", "stack"]
+    _immutable_fields_ = ["_method", "arguments[*]", "_context", "stack"]
 
-    def __init__(self, num_elements, method, context, previous_frame):
+    def __init__(self, arguments, num_elements, method, context, previous_frame):
+        self.arguments = arguments
         self._method = method
         self._context = context
         self.stack = [nilObject] * num_elements
@@ -123,33 +129,18 @@ class Frame(object):
         self.get_context_at(context_level).stack[index] = value
 
     def get_argument(self, index, context_level):
-        # Get the context
-        context = self.get_context_at(context_level)
-
-        # Get the argument with the given index
-        return context.stack[index]
+        context = self.get_context_at(jit.promote(context_level))
+        return context.arguments[jit.promote(index)]
 
     def set_argument(self, index, context_level, value):
-        # Get the context
-        context = self.get_context_at(context_level)
-
-        # Set the argument with the given index to the given value
-        context.stack[index] = value
-
-    @jit.unroll_safe
-    def copy_arguments_from(self, frame, num_args):
-        # copy arguments from frame:
-        # - arguments are at the top of the stack of frame.
-        # - copy them into the argument area of the current frame
-        assert num_args == self._method.get_number_of_arguments()
-        for i in range(0, num_args):
-            self.stack[i] = frame.get_stack_element(num_args - 1 - i)
+        context = self.get_context_at(jit.promote(context_level))
+        context.arguments[jit.promote(index)] = value
 
     @jit.unroll_safe
     def pop_old_arguments_and_push_result(self, method, result):
         num_args = method.get_number_of_arguments()
-        jit.promote(self._stack_pointer)
-        for _ in range(self._stack_pointer - num_args, self._stack_pointer):
+        stack_ptr = jit.promote(self._stack_pointer)
+        for _ in range(stack_ptr - num_args, stack_ptr):
             self.pop()
         self.push(result)
 
@@ -167,13 +158,15 @@ class Frame(object):
             self.get_previous_frame().print_stack_trace(0)
 
 
-def create_frame(previous_frame, method, context):
-    return Frame(method.get_number_of_frame_elements(), method, context, previous_frame)
+def create_frame(previous_frame, args, method, context):
+    return Frame(
+        args, method.get_number_of_frame_elements(), method, context, previous_frame
+    )
 
 
 def create_bootstrap_frame(bootstrap_method, receiver, arguments=None):
     """Create a fake bootstrap frame with the system object on the stack"""
-    bootstrap_frame = create_frame(None, bootstrap_method, None)
+    bootstrap_frame = create_frame(None, [], bootstrap_method, None)
     bootstrap_frame.push(receiver)
 
     if arguments:

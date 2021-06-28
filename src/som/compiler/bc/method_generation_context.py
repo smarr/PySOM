@@ -107,7 +107,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
     def find_var(self, var, triplet):
         # triplet: index, context, isArgument
         if var in self._locals:
-            triplet[0] = self._locals.index(var) + len(self._arguments)
+            triplet[0] = self._locals.index(var)
             return True
 
         if var in self._arguments:

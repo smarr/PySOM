@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from rlib import jit
 
-from som.interpreter.bc.frame import create_frame
+from som.interpreter.bc.frame import create_frame, copy_arguments_from
 from som.interpreter.bc.interpreter import interpret
 from som.interpreter.control_flow import ReturnException
 from som.vmobjects.abstract_object import AbstractObject
@@ -41,10 +41,8 @@ class BcMethod(AbstractObject):
         self._maximum_number_of_stack_elements = max_stack_elements
         self._signature = signature
         self._number_of_arguments = signature.get_number_of_signature_arguments()
-        self._initial_stack_pointer = self._number_of_arguments + num_locals - 1
-        self._number_of_frame_elements = (
-            self._number_of_arguments + num_locals + max_stack_elements + 2
-        )
+        self._initial_stack_pointer = num_locals - 1
+        self._number_of_frame_elements = num_locals + max_stack_elements + 2
 
         self._holder = None
 
@@ -123,8 +121,9 @@ class BcMethod(AbstractObject):
 
     def invoke(self, frame):
         # Allocate and push a new frame on the interpreter stack
-        new_frame = create_frame(frame, self, None)
-        new_frame.copy_arguments_from(frame, self._number_of_arguments)
+        new_frame = create_frame(
+            frame, copy_arguments_from(frame, self._number_of_arguments), self, None
+        )
 
         try:
             result = interpret(self, new_frame)
