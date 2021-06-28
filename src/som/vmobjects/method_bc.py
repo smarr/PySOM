@@ -20,7 +20,6 @@ class BcMethod(AbstractObject):
         "_maximum_number_of_stack_elements",
         "_signature",
         "_number_of_arguments",
-        "_initial_stack_pointer",
         "_holder",
     ]
 
@@ -40,7 +39,6 @@ class BcMethod(AbstractObject):
         self._number_of_locals = num_locals
 
         self._signature = signature
-        self._initial_stack_pointer = -1
         self._maximum_number_of_stack_elements = max_stack_elements + 2
 
         self._holder = None
@@ -53,9 +51,6 @@ class BcMethod(AbstractObject):
     def is_invokable():
         """We use this method to identify methods and primitives"""
         return True
-
-    def get_initial_stack_pointer(self):
-        return self._initial_stack_pointer
 
     def get_number_of_locals(self):
         # Get the number of locals

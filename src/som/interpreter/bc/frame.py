@@ -21,12 +21,12 @@ def copy_arguments_from(frame, num_args):
 
 
 _EMPTY_LIST = []
+_INITIAL_STACK_PTR = -1
 
 
 class Frame(object):
 
     _immutable_fields_ = [
-        "_method",
         "arguments[*]",
         "_context",
         "stack",
@@ -36,10 +36,9 @@ class Frame(object):
 
     def __init__(self, arguments, method, context):
         self.arguments = arguments
-        self._method = method
         self._context = context
         self.stack = [nilObject] * method.get_maximum_number_of_stack_elements()
-        self._stack_pointer = method.get_initial_stack_pointer()
+        self._stack_pointer = _INITIAL_STACK_PTR
 
         num_locals = method.get_number_of_locals()
         if num_locals == 0:
@@ -110,7 +109,7 @@ class Frame(object):
         """Set the stack pointer to its initial value thereby clearing
         the stack"""
         # arguments are stored in front of local variables
-        self._stack_pointer = self._method.get_initial_stack_pointer()
+        self._stack_pointer = _INITIAL_STACK_PTR
 
     def get_stack_element(self, index):
         # Get the stack element with the given index
@@ -153,18 +152,18 @@ class Frame(object):
     def get_on_stack_marker(self):
         return self._on_stack
 
-    def print_stack_trace(self, bytecode_index):
-        # Print a stack trace starting in this frame
-        from som.vm.universe import std_print, std_println
-
-        std_print(self._method.get_holder().get_name().get_embedded_string())
-        std_println(
-            " %d @ %s"
-            % (bytecode_index, self._method.get_signature().get_embedded_string())
-        )
-
-        # if self.has_previous_frame():
-        #     self.get_previous_frame().print_stack_trace(0)
+    # def print_stack_trace(self, bytecode_index):
+    #     # Print a stack trace starting in this frame
+    #     from som.vm.universe import std_print, std_println
+    #
+    #     std_print(self._method.get_holder().get_name().get_embedded_string())
+    #     std_println(
+    #         " %d @ %s"
+    #         % (bytecode_index, self._method.get_signature().get_embedded_string())
+    #     )
+    #
+    #     if self.has_previous_frame():
+    #         self.get_previous_frame().print_stack_trace(0)
 
 
 def create_bootstrap_frame(bootstrap_method, receiver, arguments=None):
