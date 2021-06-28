@@ -1,4 +1,5 @@
 from rlib import jit
+from som.interpreter.ast.frame import _FrameOnStackMarker
 
 from som.vm.globals import nilObject
 
@@ -21,27 +22,15 @@ def copy_arguments_from(frame, num_args):
 
 class Frame(object):
 
-    _immutable_fields_ = ["_method", "arguments[*]", "_context", "stack"]
+    _immutable_fields_ = ["_method", "arguments[*]", "_context", "stack", "_on_stack"]
 
-    def __init__(self, arguments, num_elements, method, context, previous_frame):
+    def __init__(self, arguments, num_elements, method, context):
         self.arguments = arguments
         self._method = method
         self._context = context
         self.stack = [nilObject] * num_elements
         self._stack_pointer = method.get_initial_stack_pointer()
-        self._previous_frame = previous_frame
-
-    def get_previous_frame(self):
-        return self._previous_frame
-
-    def clear_previous_frame(self):
-        self._previous_frame = None
-
-    def has_previous_frame(self):
-        return self._previous_frame is not None
-
-    def is_bootstrap_frame(self):
-        return not self.has_previous_frame()
+        self._on_stack = _FrameOnStackMarker()
 
     def get_context(self):
         return self._context
@@ -144,6 +133,9 @@ class Frame(object):
             self.pop()
         self.push(result)
 
+    def get_on_stack_marker(self):
+        return self._on_stack
+
     def print_stack_trace(self, bytecode_index):
         # Print a stack trace starting in this frame
         from som.vm.universe import std_print, std_println
@@ -154,19 +146,17 @@ class Frame(object):
             % (bytecode_index, self._method.get_signature().get_embedded_string())
         )
 
-        if self.has_previous_frame():
-            self.get_previous_frame().print_stack_trace(0)
+        # if self.has_previous_frame():
+        #     self.get_previous_frame().print_stack_trace(0)
 
 
-def create_frame(previous_frame, args, method, context):
-    return Frame(
-        args, method.get_number_of_frame_elements(), method, context, previous_frame
-    )
+def create_frame(args, method, context):
+    return Frame(args, method.get_number_of_frame_elements(), method, context)
 
 
 def create_bootstrap_frame(bootstrap_method, receiver, arguments=None):
     """Create a fake bootstrap frame with the system object on the stack"""
-    bootstrap_frame = create_frame(None, [], bootstrap_method, None)
+    bootstrap_frame = create_frame([], bootstrap_method, None)
     bootstrap_frame.push(receiver)
 
     if arguments:

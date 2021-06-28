@@ -68,7 +68,7 @@ class BcShell(_Shell):
         _Shell.__init__(self, universe)
         self._bootstrap_method = bootstrap_method
         # Create a fake bootstrap frame
-        self._current_frame = create_frame(None, [], self._bootstrap_method, None)
+        self._current_frame = create_frame([], self._bootstrap_method, None)
 
     def _exec(self, shell_object, shell_method, it):
         self._current_frame.reset_stack_pointer()

@@ -122,19 +122,19 @@ class BcMethod(AbstractObject):
     def invoke(self, frame):
         # Allocate and push a new frame on the interpreter stack
         new_frame = create_frame(
-            frame, copy_arguments_from(frame, self._number_of_arguments), self, None
+            copy_arguments_from(frame, self._number_of_arguments), self, None
         )
 
         try:
             result = interpret(self, new_frame)
             frame.pop_old_arguments_and_push_result(self, result)
-            new_frame.clear_previous_frame()
+            new_frame.get_on_stack_marker().mark_as_no_longer_on_stack()
             return
         except ReturnException as e:
+            new_frame.get_on_stack_marker().mark_as_no_longer_on_stack()
             if e.has_reached_target(new_frame):
                 frame.pop_old_arguments_and_push_result(self, e.get_result())
                 return
-            new_frame.clear_previous_frame()
             raise e
 
     def __str__(self):

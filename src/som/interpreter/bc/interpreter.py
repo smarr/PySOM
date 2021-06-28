@@ -66,13 +66,13 @@ def _do_return_non_local(frame, ctx_level):
     context = frame.get_context_at(ctx_level)
 
     # Make sure the block context is still on the stack
-    if not context.has_previous_frame():
+    if not context.get_on_stack_marker().is_on_stack():
         # Try to recover by sending 'escapedBlock:' to the sending object
         # this can get a bit nasty when using nested blocks. In this case
         # the "sender" will be the surrounding block and not the object
         # that actually sent the 'value' message.
         block = frame.get_argument(0, 0)
-        sender = frame.get_previous_frame().get_outer_context().get_argument(0, 0)
+        sender = get_self_dynamically(frame)
 
         # ... and execute the escapedBlock message instead
         _send_escaped_block(sender, frame, block)

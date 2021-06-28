@@ -57,15 +57,16 @@ def block_evaluate(block, frame):
     context = block.get_context()
     method = block.get_method()
     new_frame = create_frame(
-        frame,
         copy_arguments_from(frame, method.get_number_of_arguments()),
         method,
         context,
     )
 
-    result = interpret(method, new_frame)
-    frame.pop_old_arguments_and_push_result(method, result)
-    new_frame.clear_previous_frame()
+    try:
+        result = interpret(method, new_frame)
+        frame.pop_old_arguments_and_push_result(method, result)
+    finally:
+        new_frame.get_on_stack_marker().mark_as_no_longer_on_stack()
 
 
 def _invoke(ivkbl, frame):
