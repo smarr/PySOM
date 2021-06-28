@@ -2,7 +2,7 @@ from rlib import jit
 
 from som.vmobjects.abstract_object import AbstractObject
 from som.vmobjects.primitive import Primitive
-from som.interpreter.bc.frame import create_frame, copy_arguments_from
+from som.interpreter.bc.frame import Frame, copy_arguments_from
 
 
 class BcBlock(AbstractObject):
@@ -56,10 +56,8 @@ def block_evaluate(block, frame):
 
     context = block.get_context()
     method = block.get_method()
-    new_frame = create_frame(
-        copy_arguments_from(frame, method.get_number_of_arguments()),
-        method,
-        context,
+    new_frame = Frame(
+        copy_arguments_from(frame, method.get_number_of_arguments()), method, context
     )
 
     try:

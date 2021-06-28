@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from rlib import jit
 
-from som.interpreter.bc.frame import create_frame, copy_arguments_from
+from som.interpreter.bc.frame import Frame, copy_arguments_from
 from som.interpreter.bc.interpreter import interpret
 from som.interpreter.control_flow import ReturnException
 from som.vmobjects.abstract_object import AbstractObject
@@ -21,7 +21,6 @@ class BcMethod(AbstractObject):
         "_signature",
         "_number_of_arguments",
         "_initial_stack_pointer",
-        "_number_of_frame_elements",
         "_holder",
     ]
 
@@ -36,13 +35,13 @@ class BcMethod(AbstractObject):
         self._inline_cache_invokable = [None] * num_bytecodes
 
         self._literals = literals
+        self._number_of_arguments = signature.get_number_of_signature_arguments()
 
         self._number_of_locals = num_locals
-        self._maximum_number_of_stack_elements = max_stack_elements
+
         self._signature = signature
-        self._number_of_arguments = signature.get_number_of_signature_arguments()
-        self._initial_stack_pointer = num_locals - 1
-        self._number_of_frame_elements = num_locals + max_stack_elements + 2
+        self._initial_stack_pointer = -1
+        self._maximum_number_of_stack_elements = max_stack_elements + 2
 
         self._holder = None
 
@@ -62,8 +61,11 @@ class BcMethod(AbstractObject):
         # Get the number of locals
         return self._number_of_locals
 
+    @jit.elidable_promote("all")
     def get_maximum_number_of_stack_elements(self):
-        # Get the maximum number of stack elements
+        # Compute the maximum number of stack locations (including
+        # extra buffer to support doesNotUnderstand) and set the
+        # number of indexable fields accordingly
         return self._maximum_number_of_stack_elements
 
     # XXX this means that the JIT doesn't see changes to the method object
@@ -102,13 +104,6 @@ class BcMethod(AbstractObject):
         return len(self._bytecodes)
 
     @jit.elidable_promote("all")
-    def get_number_of_frame_elements(self):
-        # Compute the maximum number of stack locations (including arguments,
-        # locals and extra buffer to support doesNotUnderstand) and set the
-        # number of indexable fields accordingly
-        return self._number_of_frame_elements
-
-    @jit.elidable_promote("all")
     def get_bytecode(self, index):
         # Get the bytecode at the given index
         assert 0 <= index < len(self._bytecodes)
@@ -121,7 +116,7 @@ class BcMethod(AbstractObject):
 
     def invoke(self, frame):
         # Allocate and push a new frame on the interpreter stack
-        new_frame = create_frame(
+        new_frame = Frame(
             copy_arguments_from(frame, self._number_of_arguments), self, None
         )
 

@@ -20,16 +20,33 @@ def copy_arguments_from(frame, num_args):
     return [frame.get_stack_element(num_args - 1 - i) for i in range(0, num_args)]
 
 
+_EMPTY_LIST = []
+
+
 class Frame(object):
 
-    _immutable_fields_ = ["_method", "arguments[*]", "_context", "stack", "_on_stack"]
+    _immutable_fields_ = [
+        "_method",
+        "arguments[*]",
+        "_context",
+        "stack",
+        "_on_stack",
+        "locals",
+    ]
 
-    def __init__(self, arguments, num_elements, method, context):
+    def __init__(self, arguments, method, context):
         self.arguments = arguments
         self._method = method
         self._context = context
-        self.stack = [nilObject] * num_elements
+        self.stack = [nilObject] * method.get_maximum_number_of_stack_elements()
         self._stack_pointer = method.get_initial_stack_pointer()
+
+        num_locals = method.get_number_of_locals()
+        if num_locals == 0:
+            self.locals = _EMPTY_LIST
+        else:
+            self.locals = [nilObject] * num_locals
+
         self._on_stack = _FrameOnStackMarker()
 
     def get_context(self):
@@ -109,13 +126,13 @@ class Frame(object):
 
     def get_local(self, index, context_level):
         # Get the local with the given index in the given context
-        return self.get_context_at(context_level).stack[index]
+        return self.get_context_at(context_level).locals[index]
 
     def set_local(self, index, context_level, value):
         # Set the local with the given index in the given context to the given
         # value
         assert value is not None
-        self.get_context_at(context_level).stack[index] = value
+        self.get_context_at(context_level).locals[index] = value
 
     def get_argument(self, index, context_level):
         context = self.get_context_at(jit.promote(context_level))
@@ -150,13 +167,9 @@ class Frame(object):
         #     self.get_previous_frame().print_stack_trace(0)
 
 
-def create_frame(args, method, context):
-    return Frame(args, method.get_number_of_frame_elements(), method, context)
-
-
 def create_bootstrap_frame(bootstrap_method, receiver, arguments=None):
     """Create a fake bootstrap frame with the system object on the stack"""
-    bootstrap_frame = create_frame([], bootstrap_method, None)
+    bootstrap_frame = Frame([], bootstrap_method, None)
     bootstrap_frame.push(receiver)
 
     if arguments:

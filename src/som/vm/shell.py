@@ -1,7 +1,7 @@
 from rlib.objectmodel import we_are_translated
 from rlib.osext import raw_input
 
-from som.interpreter.bc.frame import create_frame
+from som.interpreter.bc.frame import Frame
 from som.vm.globals import nilObject
 
 
@@ -68,7 +68,7 @@ class BcShell(_Shell):
         _Shell.__init__(self, universe)
         self._bootstrap_method = bootstrap_method
         # Create a fake bootstrap frame
-        self._current_frame = create_frame([], self._bootstrap_method, None)
+        self._current_frame = Frame([], self._bootstrap_method, None)
 
     def _exec(self, shell_object, shell_method, it):
         self._current_frame.reset_stack_pointer()
