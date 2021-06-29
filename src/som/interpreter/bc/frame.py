@@ -27,7 +27,7 @@ _INITIAL_STACK_PTR = -1
 class Frame(object):
 
     _immutable_fields_ = [
-        "arguments[*]",
+        "arguments",
         "_context",
         "stack",
         "_on_stack",

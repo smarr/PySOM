@@ -20,9 +20,8 @@ _EMPTY_LIST = []
 class Frame(object):
 
     _immutable_fields_ = [
-        "_receiver",
-        "_arguments[*]",
-        "_args_for_inner[*]",
+        "_arguments",
+        "_args_for_inner",
         "_temps",
         "_temps_for_inner",
         "_on_stack",
