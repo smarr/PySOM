@@ -6,7 +6,7 @@ from som.vmobjects.primitive import Primitive
 
 class AstBlock(AbstractObject):
 
-    _immutable_fields_ = ["_method", "_outer_rcvr", "_outer_args[*]", "_outer_tmps"]
+    _immutable_fields_ = ["_method", "_outer_args", "_outer_tmps"]
 
     def __init__(self, method, context_values):
         AbstractObject.__init__(self)
