@@ -1,4 +1,5 @@
 from rlib import jit
+from som.interpreter.ast.frame import is_on_stack, read, write
 
 from som.vmobjects.abstract_object import AbstractObject
 from som.vmobjects.primitive import Primitive
@@ -6,67 +7,35 @@ from som.vmobjects.primitive import Primitive
 
 class AstBlock(AbstractObject):
 
-    _immutable_fields_ = ["_method", "_outer_args", "_outer_tmps"]
+    _immutable_fields_ = ["_method", "_outer"]
 
     def __init__(self, method, context_values):
         AbstractObject.__init__(self)
         self._method = method
-        self._outer_rcvr = context_values[0]
-        self._outer_args = context_values[1]
-        self._outer_tmps = context_values[2]
-        self._outer_on_stack = context_values[3]
+        self._outer = context_values
 
     def is_same_context(self, other_block):
         assert isinstance(other_block, AstBlock)
-        return (
-            self._outer_rcvr
-            == other_block._outer_rcvr  # pylint: disable=protected-access
-            and self._outer_args
-            == other_block._outer_args  # pylint: disable=protected-access
-            and self._outer_tmps
-            == other_block._outer_tmps  # pylint: disable=protected-access
-            and self._outer_on_stack == other_block._outer_on_stack  # pylint: disable=W
-        )
+        return self._outer is other_block._outer  # pylint: disable=protected-access
 
     def get_method(self):
-        return jit.promote(self._method)
+        return self._method
 
-    def get_context_argument(self, index):
+    def get_from_outer(self, index):
         jit.promote(index)
-        args = self._outer_args
-        assert 0 <= index < len(args)
-        assert args is not None
-        return args[index]
+        assert 0 <= index < len(self._outer)
+        return read(self._outer, index)
 
-    def set_context_argument(self, index, value):
+    def set_outer(self, index, value):
         jit.promote(index)
-        args = self._outer_args
-        assert 0 <= index < len(args)
-        assert args is not None
-        args[index] = value
-
-    def get_context_temp(self, index):
-        jit.promote(index)
-        temps = self._outer_tmps
-        assert 0 <= index < len(temps)
-        assert temps is not None
-        return temps[index]
-
-    def set_context_temp(self, index, value):
-        jit.promote(index)
-        temps = self._outer_tmps
-        assert 0 <= index < len(temps)
-        assert temps is not None
-        temps[index] = value
+        assert 0 <= index < len(self._outer)
+        write(self._outer, index, value)
 
     def is_outer_on_stack(self):
-        return self._outer_on_stack.is_on_stack()
+        return is_on_stack(self._outer)
 
     def get_on_stack_marker(self):
-        return self._outer_on_stack
-
-    def get_outer_self(self):
-        return self._outer_rcvr
+        return self._outer
 
     def get_class(self, universe):
         return universe.block_classes[self._method.get_number_of_arguments()]

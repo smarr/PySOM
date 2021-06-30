@@ -1,109 +1,158 @@
 from rlib import jit
 from rlib.debug import make_sure_not_resized
-from som.vm.globals import nilObject
+from rlib.erased import new_erasing_pair
+from som.vm.globals import nilObject, trueObject, falseObject
+
+# Frame Design Notes
+#
+# The state for a method activation is constructed from one or two plain lists/arrays
+# that represent the Frame and Inner.
+#
+# The Frame holds the receiver, any additional arguments to the method,
+# and local variables;
+# except for, any arguments and local variables that are accessed
+# by an inner lexical scopes.
+#
+# The Inner holds a copy of the receiver, as well as the arguments and local variables
+# accessed by the inner lexical scopes.
+#
+# The goal of this design is that the frame is most likely going to be "virtualized"
+# by the compiler. This means, in the resulting native code after just-in-time compilation
+# the frame is not actually allocated.
+# Though, the Inner may need to be allocated when it escapes the compilation unit, which
+# is often the case when there are nested loops, in which an outer scope, perhaps a counter
+# is accessed.
+#
+# Note, while the Inner might not be allocated, for simplicity, the slot will always be
+# reserved. This also neatly aligns the indexes for receiver access in either
+# Frame or Inner.
+#
+#   Frame
+#
+#  +-----------+
+#  | Inner     | (Optional: for args/vars accessed from inner scopes, and non-local returns)
+#  +-----------+
+#  | Receiver  |
+#  +-----------+
+#  | Arg 1     |
+#  | ...       |
+#  | Arg n     |
+#  +-----------+
+#  | Local 1   |
+#  | ...       |
+#  | Local n   |
+#  +-----------+
+#
+#   Inner
+#
+#  +-----------------+
+#  | OnStack         |
+#  +-----------------+
+#  | Receiver        |
+#  +-----------------+
+#  | ArgForInner 1   |
+#  | ...             |
+#  | ArgForInner n   |
+#  +-----------------+
+#  | LocalForInner 1 |
+#  | ...             |
+#  | LocalForInner n |
+#  +-----------------+
+
+_FRAME_INNER_IDX = 0
+
+FRAME_AND_INNER_RCVR_IDX = 1
+_FRAME_AND_INNER_FIRST_ARG = 2
+
+_INNER_ON_STACK_IDX = 0
 
 
-class _FrameOnStackMarker(object):
-    def __init__(self):
-        self._on_stack = True
+ARG_OFFSET = _FRAME_AND_INNER_FIRST_ARG
 
-    def mark_as_no_longer_on_stack(self):
-        self._on_stack = False
-
-    def is_on_stack(self):
-        return self._on_stack
+_erase_list, _unerase_list = new_erasing_pair("frame_and_inner")
+_erase_obj, _unerase_obj = new_erasing_pair("abstract_obj")
 
 
-_EMPTY_LIST = []
+def create_frame(receiver, arguments, arg_inner_access, size_frame, size_inner):
+    frame = [_erase_obj(nilObject)] * size_frame
+    make_sure_not_resized(frame)
+
+    if size_inner > 0:
+        inner = [_erase_obj(nilObject)] * size_inner
+        make_sure_not_resized(inner)
+        # assert isinstance(receiver, AbstractObject)
+        # assert isinstance(inner, list)
+        frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+        frame[_FRAME_INNER_IDX] = _erase_list(inner)
+
+        inner[_INNER_ON_STACK_IDX] = _erase_obj(trueObject)
+        inner[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+        _set_arguments_with_inner(frame, inner, arguments, arg_inner_access)
+    else:
+        frame[0] = _erase_obj(None)
+        frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+        _set_arguments_without_inner(frame, arguments, arg_inner_access)
+
+    return frame
 
 
-class Frame(object):
+@jit.unroll_safe
+def _set_arguments_without_inner(frame, arguments, arg_inner_access):
+    arg_i = 0
+    frame_i = _FRAME_AND_INNER_FIRST_ARG
 
-    _immutable_fields_ = [
-        "_arguments",
-        "_args_for_inner",
-        "_temps",
-        "_temps_for_inner",
-        "_on_stack",
-    ]
-    _virtualizable_ = ["_temps[*]"]
+    assert len(arguments) == len(arg_inner_access)
 
-    def __init__(
-        self, receiver, arguments, arg_mapping, num_local_temps, num_context_temps
-    ):
-        make_sure_not_resized(arguments)
-        make_sure_not_resized(arg_mapping)
-        self = jit.hint(  # pylint: disable=self-cls-assignment
-            self, access_directly=True, fresh_virtualizable=True
-        )
-        self._receiver = receiver
-        self._arguments = arguments
-        self._on_stack = _FrameOnStackMarker()
-        if num_local_temps == 0:
-            self._temps = _EMPTY_LIST
+    while arg_i < len(arg_inner_access):
+        frame[frame_i] = _erase_obj(arguments[arg_i])
+        frame_i += 1
+        arg_i += 1
+
+
+@jit.unroll_safe
+def _set_arguments_with_inner(frame, inner, arguments, arg_inner_access):
+    arg_i = 0
+    frame_i = 2
+    inner_i = _FRAME_AND_INNER_FIRST_ARG
+
+    assert len(arguments) == len(arg_inner_access)
+
+    while arg_i < len(arg_inner_access):
+        if arg_inner_access[arg_i]:
+            inner[inner_i] = _erase_obj(arguments[arg_i])
+            inner_i += 1
         else:
-            self._temps = [nilObject] * num_local_temps
+            frame[frame_i] = _erase_obj(arguments[arg_i])
+            frame_i += 1
+        arg_i += 1
 
-        self._args_for_inner = self._collect_shared_args(arg_mapping)
-        if num_context_temps == 0:
-            self._temps_for_inner = _EMPTY_LIST
-        else:
-            self._temps_for_inner = [nilObject] * num_context_temps
 
-    @jit.unroll_safe
-    def _collect_shared_args(self, arg_mapping):
-        if len(arg_mapping) == 0:
-            return _EMPTY_LIST
-        return [self._arguments[i] for i in arg_mapping]
+def mark_as_no_longer_on_stack(inner):
+    assert _unerase_obj(inner[_INNER_ON_STACK_IDX]) is trueObject
+    inner[_INNER_ON_STACK_IDX] = _erase_obj(falseObject)
 
-    def get_context_values(self):
-        return (
-            self._receiver,
-            self._args_for_inner,
-            self._temps_for_inner,
-            self._on_stack,
-        )
 
-    def get_argument(self, index):
-        jit.promote(index)
-        return self._arguments[index]
+def is_on_stack(inner):
+    return _unerase_obj(inner[_INNER_ON_STACK_IDX]) is trueObject
 
-    def set_argument(self, index, value):
-        self._arguments[index] = value
 
-    def get_temp(self, index):
-        jit.promote(index)
-        temps = self._temps
-        assert 0 <= index < len(temps)
-        assert temps is not None
-        return temps[index]
+def read(frame_or_inner, idx):
+    return _unerase_obj(frame_or_inner[idx])
 
-    def set_temp(self, index, value):
-        jit.promote(index)
-        temps = self._temps
-        assert temps is not None
-        assert 0 <= index < len(temps)
-        temps[index] = value
 
-    def get_shared_temp(self, index):
-        jit.promote(index)
-        temps = self._temps_for_inner
-        assert 0 <= index < len(temps)
-        assert temps is not None
-        return temps[index]
+def write(frame_or_inner, idx, value):
+    frame_or_inner[idx] = _erase_obj(value)
 
-    def set_shared_temp(self, index, value):
-        jit.promote(index)
-        temps = self._temps_for_inner
-        assert temps is not None
-        assert 0 <= index < len(temps)
-        temps[index] = value
 
-    def get_self(self):
-        return self._receiver
+def read_inner(frame, idx):
+    inner = _unerase_list(frame[_FRAME_INNER_IDX])
+    return _unerase_obj(inner[idx])
 
-    def get_on_stack_marker(self):
-        return self._on_stack
 
-    def __str__(self):
-        return "Frame(%s, %s, %s)" % (self._receiver, self._arguments, self._temps)
+def write_inner(frame, idx, value):
+    inner = _unerase_list(frame[_FRAME_INNER_IDX])
+    inner[idx] = _erase_obj(value)
+
+
+def get_inner_as_context(frame):
+    return _unerase_list(frame[_FRAME_INNER_IDX])

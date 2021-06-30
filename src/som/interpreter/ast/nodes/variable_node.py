@@ -1,3 +1,4 @@
+from som.interpreter.ast.frame import read, read_inner, write_inner, write
 from som.vmobjects.block_ast import AstBlock
 
 from som.interpreter.ast.nodes.contextual_node import ContextualNode
@@ -55,36 +56,17 @@ class _NonLocalVariableNode(ContextualNode):
         self._frame_idx = frame_idx
 
 
-class _NonLocalVariableReadNode(_NonLocalVariableNode):
+class NonLocalVariableReadNode(_NonLocalVariableNode):
     def _do_var_read(self, _block):  # pylint: disable=W,R
         raise Exception("Implemented in subclass")
 
     def execute(self, frame):
         block = self.determine_block(frame)
-        return self._do_var_read(block)
-
-
-class NonLocalArgumentReadNode(_NonLocalVariableReadNode):
-    def _do_var_read(self, block):
         assert isinstance(block, AstBlock)
-        return block.get_context_argument(self._frame_idx)
+        return block.get_from_outer(self._frame_idx)
 
 
-class NonLocalTempReadNode(_NonLocalVariableReadNode):
-    def _do_var_read(self, block):
-        assert isinstance(block, AstBlock)
-        return block.get_context_temp(self._frame_idx)
-
-
-class NonLocalSelfReadNode(ContextualNode):
-    def __init__(self, context_level, source_section):
-        ContextualNode.__init__(self, context_level, source_section)
-
-    def execute(self, frame):
-        return self.determine_outer_self(frame)
-
-
-class NonLocalTempWriteNode(_NonLocalVariableNode):
+class NonLocalVariableWriteNode(_NonLocalVariableNode):
 
     _immutable_fields_ = ["_value_expr?"]
     _child_nodes_ = ["_value_expr"]
@@ -95,23 +77,7 @@ class NonLocalTempWriteNode(_NonLocalVariableNode):
 
     def execute(self, frame):
         value = self._value_expr.execute(frame)
-        self.determine_block(frame).set_context_temp(self._frame_idx, value)
-        return value
-
-
-class NonLocalArgumentWriteNode(_NonLocalVariableNode):
-
-    _immutable_fields_ = ["_value_expr?"]
-    _child_nodes_ = ["_value_expr"]
-
-    def __init__(self, access_idx, context_level, value_expr, source_section=None):
-        _NonLocalVariableNode.__init__(self, context_level, access_idx, source_section)
-        self._value_expr = self.adopt_child(value_expr)
-
-    def execute(self, frame):
-        value = self._value_expr.execute(frame)
-        block = self.determine_block(frame)
-        block.set_context_argument(self._frame_idx, value)
+        self.determine_block(frame).set_outer(self._frame_idx, value)
         return value
 
 
@@ -125,41 +91,6 @@ class _LocalVariableNode(ExpressionNode):
         self._frame_idx = frame_idx
 
 
-class LocalArgumentReadNode(_LocalVariableNode):
-    def execute(self, frame):
-        return frame.get_argument(self._frame_idx)
-
-
-class LocalUnsharedTempReadNode(_LocalVariableNode):
-    def execute(self, frame):
-        return frame.get_temp(self._frame_idx)
-
-
-class LocalSharedTempReadNode(_LocalVariableNode):
-    def execute(self, frame):
-        return frame.get_shared_temp(self._frame_idx)
-
-
-class LocalSelfReadNode(ExpressionNode):
-    def execute(self, frame):  # pylint: disable=no-self-use
-        return frame.get_self()
-
-
-class LocalArgumentWriteNode(_LocalVariableNode):
-
-    _immutable_fields_ = ["_expr?"]
-    _child_nodes_ = ["_expr"]
-
-    def __init__(self, arg_idx, expr, source_section=None):
-        _LocalVariableNode.__init__(self, arg_idx, source_section)
-        self._expr = self.adopt_child(expr)
-
-    def execute(self, frame):
-        val = self._expr.execute(frame)
-        frame.set_argument(self._frame_idx, val)
-        return val
-
-
 class _LocalVariableWriteNode(_LocalVariableNode):
 
     _immutable_fields_ = ["_expr?"]
@@ -170,15 +101,25 @@ class _LocalVariableWriteNode(_LocalVariableNode):
         self._expr = self.adopt_child(expr)
 
 
-class LocalSharedWriteNode(_LocalVariableWriteNode):
+class LocalInnerVarReadNode(_LocalVariableNode):
+    def execute(self, frame):
+        return read_inner(frame, self._frame_idx)
+
+
+class LocalInnerVarWriteNode(_LocalVariableWriteNode):
     def execute(self, frame):
         val = self._expr.execute(frame)
-        frame.set_shared_temp(self._frame_idx, val)
+        write_inner(frame, self._frame_idx, val)
         return val
 
 
-class LocalUnsharedWriteNode(_LocalVariableWriteNode):
+class LocalFrameVarReadNode(_LocalVariableNode):
+    def execute(self, frame):
+        return read(frame, self._frame_idx)
+
+
+class LocalFrameVarWriteNode(_LocalVariableWriteNode):
     def execute(self, frame):
         val = self._expr.execute(frame)
-        frame.set_temp(self._frame_idx, val)
+        write(frame, self._frame_idx, val)
         return val

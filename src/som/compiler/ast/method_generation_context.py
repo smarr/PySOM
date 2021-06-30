@@ -4,6 +4,7 @@ from rtruffle.source_section import SourceSection
 
 from som.compiler.ast.variable import Argument, Local
 from som.compiler.method_generation_context import MethodGenerationContextBase
+from som.interpreter.ast.frame import ARG_OFFSET
 
 from som.interpreter.ast.nodes.field_node import create_write_node, create_read_node
 from som.interpreter.ast.nodes.global_read_node import create_global_node
@@ -49,14 +50,22 @@ class MethodGenerationContext(MethodGenerationContextBase):
         return ctx
 
     @staticmethod
-    def _separate_variables(variables, only_local_access, non_local_access):
+    def _separate_variables(
+        variables, frame_offset, inner_offset, only_local_access, non_local_access
+    ):
+        inner_access = [False] * len(variables)
+        i = 0
         for var in variables:
             if var.is_accessed_out_of_context():
-                var.set_access_index(len(non_local_access))
+                var.set_access_index(len(non_local_access) + inner_offset)
                 non_local_access.append(var)
-            elif only_local_access is not None:
-                var.set_access_index(len(only_local_access))
+                inner_access[i] = True
+            else:
+                var.set_access_index(len(only_local_access) + frame_offset)
                 only_local_access.append(var)
+            i += 1
+
+        return inner_access
 
     @staticmethod
     def _add_argument_initialization(method_body):
@@ -74,31 +83,49 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if self._primitive:
             return empty_primitive(self._signature.get_embedded_string(), self.universe)
 
-        # local_args     = []
-        non_local_args = []
-        local_tmps = []
-        non_local_tmps = []
-        self._separate_variables(
-            [arg for arg in self._arguments.values() if not arg.is_self()],
-            None,
-            non_local_args,
-        )
-        self._separate_variables(self._locals.values(), local_tmps, non_local_tmps)
+        arg_list = list(self._arguments.values())
+        args = []
+        args_inner = []
+        local_vars = []
+        locals_vars_inner = []
 
-        arg_mapping = [arg.get_argument_index() for arg in non_local_args]
+        arg_inner_access = self._separate_variables(
+            arg_list[1:],  # skipping self
+            ARG_OFFSET,
+            ARG_OFFSET,
+            args,
+            args_inner,
+        )
+        self._separate_variables(
+            self._locals.values(),
+            ARG_OFFSET + len(args),
+            ARG_OFFSET + len(args_inner),
+            local_vars,
+            locals_vars_inner,
+        )
 
         if self.needs_to_catch_non_local_returns:
             method_body = CatchNonLocalReturnNode(
                 method_body, method_body.source_section
             )
 
+        size_frame = 1 + 1 + len(args) + len(local_vars)  # Inner and Receiver
+        size_inner = len(args_inner) + len(locals_vars_inner)
+        if (
+            self.requires_context()
+            or size_inner > 0
+            or self.needs_to_catch_non_local_returns
+            or arg_list[0].is_accessed_out_of_context()
+        ):
+            size_inner += 1 + 1  # OnStack marker and Receiver
+
         method_body = self._add_argument_initialization(method_body)
         method = Invokable(
             self._get_source_section_for_method(method_body),
             method_body,
-            arg_mapping,
-            len(local_tmps),
-            len(non_local_tmps),
+            arg_inner_access,
+            size_frame,
+            size_inner,
             self.universe,
         )
         return AstMethod(

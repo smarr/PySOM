@@ -2,7 +2,7 @@ from rlib import jit
 from rlib.debug import make_sure_not_resized
 from rtruffle.node import Node
 
-from som.interpreter.ast.frame import Frame
+from som.interpreter.ast.frame import create_frame
 
 
 def get_printable_location(invokable):
@@ -31,9 +31,9 @@ class Invokable(Node):
     _immutable_fields_ = [
         "_expr_or_sequence?",
         "universe",
-        "_arg_mapping[*]",
-        "_num_local_temps",
-        "_num_context_temps",
+        "_arg_inner_access[*]",
+        "_size_frame",
+        "_size_inner",
     ]
     _child_nodes_ = ["_expr_or_sequence"]
 
@@ -41,29 +41,31 @@ class Invokable(Node):
         self,
         source_section,
         expr_or_sequence,
-        arg_mapping,
-        number_of_local_temps,
-        number_of_context_temps,
+        arg_inner_access,
+        size_frame,
+        size_inner,
         universe,
     ):
         Node.__init__(self, source_section)
         self._expr_or_sequence = self.adopt_child(expr_or_sequence)
         self.universe = universe
-        assert isinstance(arg_mapping, list)
-        self._arg_mapping = arg_mapping
-        self._num_local_temps = number_of_local_temps
-        self._num_context_temps = number_of_context_temps
+        assert isinstance(arg_inner_access, list)
+        make_sure_not_resized(arg_inner_access)
+
+        self._arg_inner_access = arg_inner_access
+        self._size_frame = size_frame
+        self._size_inner = size_inner
 
     def invoke(self, receiver, arguments):
         assert arguments is not None
         make_sure_not_resized(arguments)
 
-        frame = Frame(
+        frame = create_frame(
             receiver,
             arguments,
-            self._arg_mapping,
-            self._num_local_temps,
-            self._num_context_temps,
+            self._arg_inner_access,
+            self._size_frame,
+            self._size_inner,
         )
         jitdriver.jit_merge_point(
             self=self, receiver=receiver, arguments=arguments, frame=frame
