@@ -20,6 +20,13 @@ class ClassGenerationContext(object):
         self._instance_has_primitives = False
         self._class_has_primitives = False
 
+    def __str__(self):
+        result = "CGenc("
+        if self.name:
+            result += self.name.get_embedded_string()
+        result += ")"
+        return result
+
     def get_super_class(self):
         if self._class_side:
             return self._super_class.get_class(self.universe)

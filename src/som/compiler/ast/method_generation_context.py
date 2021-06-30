@@ -221,9 +221,3 @@ class MethodGenerationContext(MethodGenerationContextBase):
         return create_write_node(
             self._get_self_read(), exp, self.get_field_index(field_name)
         )
-
-    def __str__(self):
-        return "MethodGenC(%s>>%s)" % (
-            self.holder.get_name().get_string,
-            self._signature,
-        )

@@ -10,6 +10,17 @@ class MethodGenerationContextBase(object):
 
         self.universe = universe
 
+    def __str__(self):
+        result = "MGenc("
+        if self.holder and self.holder.name:
+            result += self.holder.name.get_embedded_string()
+
+        if self._signature:
+            result += ">>#" + self._signature.get_embedded_string()
+
+        result += ")"
+        return result
+
     def set_primitive(self):
         self._primitive = True
 
