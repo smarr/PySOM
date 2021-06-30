@@ -11,7 +11,7 @@ def get_printable_location(invokable):
 
 jitdriver = jit.JitDriver(
     greens=["self"],
-    virtualizables=["frame"],
+    #virtualizables=["frame"],
     get_printable_location=get_printable_location,
     reds=["arguments", "receiver", "frame"],
     is_recursive=True,
