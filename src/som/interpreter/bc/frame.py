@@ -1,5 +1,4 @@
 from rlib import jit
-from som.interpreter.ast.frame import _FrameOnStackMarker
 
 from som.vm.globals import nilObject
 
@@ -46,7 +45,7 @@ class Frame(object):
         else:
             self.locals = [nilObject] * num_locals
 
-        self._on_stack = _FrameOnStackMarker()
+        # self._on_stack = _FrameOnStackMarker()
 
     def get_context(self):
         return self._context
