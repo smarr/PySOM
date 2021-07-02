@@ -80,8 +80,6 @@ def create_frame(receiver, arguments, arg_inner_access, size_frame, size_inner):
     if size_inner > 0:
         inner = [_erase_obj(nilObject)] * size_inner
         make_sure_not_resized(inner)
-        # assert isinstance(receiver, AbstractObject)
-        # assert isinstance(inner, list)
         frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
         frame[_FRAME_INNER_IDX] = _erase_list(inner)
 
@@ -118,11 +116,12 @@ def _set_arguments_with_inner(frame, inner, arguments, arg_inner_access):
     assert len(arguments) == len(arg_inner_access)
 
     while arg_i < len(arg_inner_access):
+        arg_val = _erase_obj(arguments[arg_i])
         if arg_inner_access[arg_i]:
-            inner[inner_i] = _erase_obj(arguments[arg_i])
+            inner[inner_i] = arg_val
             inner_i += 1
         else:
-            frame[frame_i] = _erase_obj(arguments[arg_i])
+            frame[frame_i] = arg_val
             frame_i += 1
         arg_i += 1
 
