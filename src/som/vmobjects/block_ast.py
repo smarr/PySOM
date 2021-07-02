@@ -1,5 +1,5 @@
 from rlib import jit
-from som.interpreter.ast.frame import is_on_stack, read, write
+from som.interpreter.ast.frame import is_on_stack
 
 from som.vmobjects.abstract_object import AbstractObject
 from som.vmobjects.primitive import Primitive
@@ -24,12 +24,12 @@ class AstBlock(AbstractObject):
     def get_from_outer(self, index):
         jit.promote(index)
         assert 0 <= index < len(self._outer)
-        return read(self._outer, index)
+        return self._outer[index]
 
     def set_outer(self, index, value):
         jit.promote(index)
         assert 0 <= index < len(self._outer)
-        write(self._outer, index, value)
+        self._outer[index] = value
 
     def is_outer_on_stack(self):
         return is_on_stack(self._outer)

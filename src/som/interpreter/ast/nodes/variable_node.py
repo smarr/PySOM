@@ -1,4 +1,4 @@
-from som.interpreter.ast.frame import read, read_inner, write_inner, write
+from som.interpreter.ast.frame import read_frame, read_inner, write_inner, write_frame
 from som.vmobjects.block_ast import AstBlock
 
 from som.interpreter.ast.nodes.contextual_node import ContextualNode
@@ -115,11 +115,11 @@ class LocalInnerVarWriteNode(_LocalVariableWriteNode):
 
 class LocalFrameVarReadNode(_LocalVariableNode):
     def execute(self, frame):
-        return read(frame, self._frame_idx)
+        return read_frame(frame, self._frame_idx)
 
 
 class LocalFrameVarWriteNode(_LocalVariableWriteNode):
     def execute(self, frame):
         val = self._expr.execute(frame)
-        write(frame, self._frame_idx, val)
+        write_frame(frame, self._frame_idx, val)
         return val

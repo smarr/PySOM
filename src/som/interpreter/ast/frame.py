@@ -78,13 +78,13 @@ def create_frame(receiver, arguments, arg_inner_access, size_frame, size_inner):
     make_sure_not_resized(frame)
 
     if size_inner > 0:
-        inner = [_erase_obj(nilObject)] * size_inner
+        inner = [nilObject] * size_inner
         make_sure_not_resized(inner)
         frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
         frame[_FRAME_INNER_IDX] = _erase_list(inner)
 
-        inner[_INNER_ON_STACK_IDX] = _erase_obj(trueObject)
-        inner[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+        inner[_INNER_ON_STACK_IDX] = trueObject
+        inner[FRAME_AND_INNER_RCVR_IDX] = receiver
         _set_arguments_with_inner(frame, inner, arguments, arg_inner_access)
     else:
         frame[0] = _erase_obj(None)
@@ -116,41 +116,40 @@ def _set_arguments_with_inner(frame, inner, arguments, arg_inner_access):
     assert len(arguments) == len(arg_inner_access)
 
     while arg_i < len(arg_inner_access):
-        arg_val = _erase_obj(arguments[arg_i])
         if arg_inner_access[arg_i]:
-            inner[inner_i] = arg_val
+            inner[inner_i] = arguments[arg_i]
             inner_i += 1
         else:
-            frame[frame_i] = arg_val
+            frame[frame_i] = _erase_obj(arguments[arg_i])
             frame_i += 1
         arg_i += 1
 
 
 def mark_as_no_longer_on_stack(inner):
-    assert _unerase_obj(inner[_INNER_ON_STACK_IDX]) is trueObject
-    inner[_INNER_ON_STACK_IDX] = _erase_obj(falseObject)
+    assert inner[_INNER_ON_STACK_IDX] is trueObject
+    inner[_INNER_ON_STACK_IDX] = falseObject
 
 
 def is_on_stack(inner):
-    return _unerase_obj(inner[_INNER_ON_STACK_IDX]) is trueObject
+    return inner[_INNER_ON_STACK_IDX] is trueObject
 
 
-def read(frame_or_inner, idx):
-    return _unerase_obj(frame_or_inner[idx])
+def read_frame(frame, idx):
+    return _unerase_obj(frame[idx])
 
 
-def write(frame_or_inner, idx, value):
-    frame_or_inner[idx] = _erase_obj(value)
+def write_frame(frame, idx, value):
+    frame[idx] = _erase_obj(value)
 
 
 def read_inner(frame, idx):
     inner = _unerase_list(frame[_FRAME_INNER_IDX])
-    return _unerase_obj(inner[idx])
+    return inner[idx]
 
 
 def write_inner(frame, idx, value):
     inner = _unerase_list(frame[_FRAME_INNER_IDX])
-    inner[idx] = _erase_obj(value)
+    inner[idx] = value
 
 
 def get_inner_as_context(frame):

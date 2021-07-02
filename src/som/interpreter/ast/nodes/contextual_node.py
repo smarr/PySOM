@@ -1,5 +1,5 @@
 from rlib.jit import unroll_safe
-from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX, read
+from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX, read_frame
 
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
@@ -23,14 +23,14 @@ class ContextualNode(ExpressionNode):
     def determine_block(self, frame):
         assert self._context_level > 0
 
-        block = read(frame, FRAME_AND_INNER_RCVR_IDX)
+        block = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
         for _ in range(0, self._context_level - 1):
             block = block.get_from_outer(FRAME_AND_INNER_RCVR_IDX)
         return block
 
     @unroll_safe
     def determine_outer_self(self, frame):
-        outer_self = read(frame, FRAME_AND_INNER_RCVR_IDX)
+        outer_self = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
         for _ in range(0, self._context_level):
             outer_self = outer_self.get_from_outer(FRAME_AND_INNER_RCVR_IDX)
         return outer_self
