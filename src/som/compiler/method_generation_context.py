@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from som.compiler.ast.variable import Local, Argument
+from som.compiler.lexical_scope import LexicalScope
 from som.interpreter.ast.frame import ARG_OFFSET, FRAME_AND_INNER_RCVR_IDX
 
 
@@ -21,7 +22,7 @@ class MethodGenerationContextBase(object):
 
         self.universe = universe
 
-        self._frame_details = None
+        self.lexical_scope = None
 
     def __str__(self):
         result = "MGenc("
@@ -53,9 +54,13 @@ class MethodGenerationContextBase(object):
         return self._signature
 
     def add_argument(self, arg):
-        if (arg == "self" or arg == "$blockSelf") and len(self._arguments) > 0:
+        if (
+            self.lexical_scope is None
+            and (arg == "self" or arg == "$blockSelf")
+            and len(self._arguments) > 0
+        ):
             raise RuntimeError(
-                "The self argument always has to be the first " "argument of a method"
+                "The self argument always has to be the first argument of a method."
             )
         argument = Argument(arg, len(self._arguments))
         self._arguments[arg] = argument
@@ -67,6 +72,9 @@ class MethodGenerationContextBase(object):
         self.add_argument(arg)
 
     def add_local(self, local):
+        assert (
+            self.lexical_scope is None
+        ), "The lexical scope object was already constructed. Can't add another local"
         result = Local(local, len(self._locals))
         self._locals[local] = result
         return result
@@ -76,6 +84,13 @@ class MethodGenerationContextBase(object):
             return False
         self.add_local(local)
         return True
+
+    def complete_lexical_scope(self):
+        self.lexical_scope = LexicalScope(
+            self.outer_genc.lexical_scope if self.outer_genc else None,
+            list(self._arguments.values()),
+            list(self._locals.values()),
+        )
 
     def make_catch_non_local_return(self):
         self.throws_non_local_return = True
@@ -113,12 +128,6 @@ class MethodGenerationContextBase(object):
         return inner_access
 
     def prepare_frame(self):
-        if self._frame_details:
-            return self._frame_details
-
-        if self.outer_genc:
-            self.outer_genc.prepare_frame()
-
         arg_list = list(self._arguments.values())
         args = []
         args_inner = []
@@ -152,12 +161,4 @@ class MethodGenerationContextBase(object):
         ):
             size_inner += 1 + 1  # OnStack marker and Receiver
 
-        self._frame_details = _FrameDetails(arg_inner_access, size_frame, size_inner)
-        return self._frame_details
-
-
-class _FrameDetails(object):
-    def __init__(self, arg_inner_access, size_frame, size_inner):
-        self.arg_inner_access = arg_inner_access
-        self.size_frame = size_frame
-        self.size_inner = size_inner
+        return arg_inner_access, size_frame, size_inner

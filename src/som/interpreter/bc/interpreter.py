@@ -228,6 +228,22 @@ def interpret(method, frame):
             stack_set_top(frame, result)
         elif bytecode == Bytecodes.q_super_send:
             _do_q_super_send(current_bc_idx, frame, method)
+        elif bytecode == Bytecodes.push_local:
+            method.patch_variable_access(current_bc_idx)
+            # retry bytecode after patching
+            next_bc_idx = current_bc_idx
+        elif bytecode == Bytecodes.push_argument:
+            method.patch_variable_access(current_bc_idx)
+            # retry bytecode after patching
+            next_bc_idx = current_bc_idx
+        elif bytecode == Bytecodes.pop_local:
+            method.patch_variable_access(current_bc_idx)
+            # retry bytecode after patching
+            next_bc_idx = current_bc_idx
+        elif bytecode == Bytecodes.pop_argument:
+            method.patch_variable_access(current_bc_idx)
+            # retry bytecode after patching
+            next_bc_idx = current_bc_idx
         else:
             _unknown_bytecode(bytecode, current_bc_idx, method)
 

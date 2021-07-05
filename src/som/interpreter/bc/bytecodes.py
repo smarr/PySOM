@@ -27,17 +27,13 @@ class Bytecodes(object):
 
     q_super_send = 19
 
-    # These are compiler-only bytecodes , i.e., outside of the set of bytecodes supported
-    # in the interpreter loop. They are used temporarily during parsing a method.
-    push_local = 252
-    push_argument = 253
-    pop_local = 254
-    pop_argument = 255
+    push_local = 20
+    push_argument = 21
+    pop_local = 22
+    pop_argument = 23
 
 
-_NUM_BYTECODES = 20
-
-_FIRST_COMPILER_BYTECODE = Bytecodes.push_local
+_NUM_BYTECODES = 24
 
 _BYTECODE_LENGTH = [
     1,  # halt
@@ -60,9 +56,7 @@ _BYTECODE_LENGTH = [
     1,  # inc
     1,  # dec
     2,  # q_super_send
-]
-
-_BYTECODE_LENGTH_COMPILER_ONLY = [
+    # rewritten on first use
     3,  # push_local
     3,  # push_argument
     3,  # pop_local
@@ -93,9 +87,6 @@ _BYTECODE_STACK_EFFECT = [
     0,  # inc
     0,  # dec
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send
-]
-
-_BYTECODE_STACK_EFFECT_COMPILER_ONLY = [
     1,  # push_argument
     1,  # push_field
     -1,  # pop_local
@@ -110,42 +101,15 @@ def bytecode_length(bytecode):
 
 
 @jit.elidable
-def bytecode_length_in_compiler(bytecode):
-    if bytecode < len(_BYTECODE_LENGTH):
-        return _BYTECODE_LENGTH[bytecode]
-    compiler_bc = bytecode - _FIRST_COMPILER_BYTECODE
-    assert 0 <= compiler_bc < len(_BYTECODE_LENGTH_COMPILER_ONLY)
-    return _BYTECODE_LENGTH_COMPILER_ONLY[compiler_bc]
-
-
-def is_compiler_only_bytecode(bytecode):
-    if bytecode < len(_BYTECODE_LENGTH):
-        return False
-    compiler_bc = bytecode - _FIRST_COMPILER_BYTECODE
-    return 0 <= compiler_bc < len(_BYTECODE_LENGTH_COMPILER_ONLY)
-
-
-@jit.elidable
 def bytecode_stack_effect(bytecode, number_of_arguments_of_message_send=0):
-    if bytecode < len(_BYTECODE_STACK_EFFECT):
-        if bytecode_stack_effect_depends_on_send(bytecode):
-            # +1 in order to account for the return value
-            return -number_of_arguments_of_message_send + 1
-        return _BYTECODE_STACK_EFFECT[bytecode]
-
-    compiler_bc = bytecode - _FIRST_COMPILER_BYTECODE
-    assert 0 <= compiler_bc < len(_BYTECODE_STACK_EFFECT_COMPILER_ONLY)
-
-    if bytecode_stack_effect_depends_on_send(compiler_bc):
+    assert 0 <= bytecode < len(_BYTECODE_STACK_EFFECT)
+    if bytecode_stack_effect_depends_on_send(bytecode):
         # +1 in order to account for the return value
         return -number_of_arguments_of_message_send + 1
-
-    return _BYTECODE_STACK_EFFECT_COMPILER_ONLY[compiler_bc]
+    return _BYTECODE_STACK_EFFECT[bytecode]
 
 
 def bytecode_stack_effect_depends_on_send(bytecode):
-    if bytecode >= _FIRST_COMPILER_BYTECODE:
-        return False
     assert 0 <= bytecode < len(_BYTECODE_STACK_EFFECT)
     return _BYTECODE_STACK_EFFECT[bytecode] == _STACK_EFFECT_DEPENDS_ON_MESSAGE
 

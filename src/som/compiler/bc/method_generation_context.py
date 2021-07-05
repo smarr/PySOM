@@ -3,9 +3,8 @@ from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.bc.bytecodes import (
     bytecode_stack_effect,
     bytecode_stack_effect_depends_on_send,
+    bytecode_length,
     Bytecodes,
-    is_compiler_only_bytecode,
-    bytecode_length_in_compiler,
 )
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import BcMethod, BcMethodNoNonLocalReturns
@@ -38,10 +37,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if self._primitive:
             return empty_primitive(self._signature.get_embedded_string(), self.universe)
 
-        frame_details = self.prepare_frame()
-        max_stack_size = self._compute_stack_depth_and_patch_frame_access()
-        before_stack_start = frame_details.size_frame - 1
-        size_frame = frame_details.size_frame + max_stack_size + 1  # +1 for the StackPtr
+        arg_inner_access, size_frame, size_inner = self.prepare_frame()
+        max_stack_size = self._compute_stack_depth()
+        before_stack_start = size_frame - 1
+        size_frame += max_stack_size + 1  # +1 for the StackPtr
 
         num_locals = len(self._locals)
 
@@ -52,10 +51,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 max_stack_size,
                 len(self._bytecode),
                 self._signature,
-                frame_details.arg_inner_access,
+                arg_inner_access,
                 size_frame,
-                frame_details.size_inner,
+                size_inner,
                 before_stack_start,
+                self.lexical_scope
             )
         else:
             meth = BcMethodNoNonLocalReturns(
@@ -64,10 +64,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 max_stack_size,
                 len(self._bytecode),
                 self._signature,
-                frame_details.arg_inner_access,
+                arg_inner_access,
                 size_frame,
-                frame_details.size_inner,
+                size_inner,
                 before_stack_start,
+                self.lexical_scope
             )
 
         # copy bytecodes into method
@@ -89,7 +90,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return self.outer_genc.get_local(index, context - 1)
         return self._local_list[index]
 
-    def _compute_stack_depth_and_patch_frame_access(self):
+    def _compute_stack_depth(self):
         depth = 0
         max_depth = 0
         i = 0
@@ -104,36 +105,8 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 )
             else:
                 depth += bytecode_stack_effect(bc)
-                if is_compiler_only_bytecode(bc):
-                    if bc == Bytecodes.push_argument:
-                        var = self.get_argument(
-                            self._bytecode[i + 1], self._bytecode[i + 2]
-                        )
-                        self._bytecode[i] = var.get_push_bytecode()
-                    elif bc == Bytecodes.pop_argument:
-                        var = self.get_argument(
-                            self._bytecode[i + 1], self._bytecode[i + 2]
-                        )
-                        self._bytecode[i] = var.get_pop_bytecode()
-                    elif bc == Bytecodes.push_local:
-                        var = self.get_local(
-                            self._bytecode[i + 1], self._bytecode[i + 2]
-                        )
-                        self._bytecode[i] = var.get_push_bytecode()
-                    elif bc == Bytecodes.pop_local:
-                        var = self.get_local(
-                            self._bytecode[i + 1], self._bytecode[i + 2]
-                        )
-                        self._bytecode[i] = var.get_pop_bytecode()
-                    else:
-                        raise Exception("Unsupported bytecode?")
-                    assert FRAME_AND_INNER_RCVR_IDX <= var.access_idx <= 255, (
-                        "Expected variable access index to be in valid range, but was "
-                        + str(var.access_idx)
-                    )
-                    self._bytecode[i + 1] = var.access_idx
 
-            i += bytecode_length_in_compiler(bc)
+            i += bytecode_length(bc)
 
             if depth > max_depth:
                 max_depth = depth
@@ -207,7 +180,7 @@ class FindVarResult(object):
 def create_bootstrap_method(universe):
     """Create a fake bootstrap method to simplify later frame traversal"""
     bootstrap_method = BcMethod(
-        [], 0, 2, 1, universe.symbol_for("bootstrap"), [], 4, 0, 0
+        [], 0, 2, 1, universe.symbol_for("bootstrap"), [], 4, 0, 0, None
     )
 
     bootstrap_method.set_bytecode(0, Bytecodes.halt)

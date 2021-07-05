@@ -41,15 +41,15 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 method_body, method_body.source_section
             )
 
-        frame_details = self.prepare_frame()
+        arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
         method_body = self._add_argument_initialization(method_body)
         method = Invokable(
             self._get_source_section_for_method(method_body),
             method_body,
-            frame_details.arg_inner_access,
-            frame_details.size_frame,
-            frame_details.size_inner,
+            arg_inner_access,
+            size_frame,
+            size_inner,
             self.universe,
         )
         return AstMethod(

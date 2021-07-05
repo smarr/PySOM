@@ -1,9 +1,17 @@
 from __future__ import absolute_import
 
 from rlib import jit
-from som.interpreter.ast.frame import get_inner_as_context, mark_as_no_longer_on_stack
+from som.interpreter.ast.frame import (
+    get_inner_as_context,
+    mark_as_no_longer_on_stack,
+    FRAME_AND_INNER_RCVR_IDX,
+)
+from som.interpreter.bc.bytecodes import Bytecodes
 
-from som.interpreter.bc.frame import create_frame, stack_pop_old_arguments_and_push_result
+from som.interpreter.bc.frame import (
+    create_frame,
+    stack_pop_old_arguments_and_push_result,
+)
 from som.interpreter.bc.interpreter import interpret
 from som.interpreter.control_flow import ReturnException
 from som.vmobjects.abstract_object import AbstractObject
@@ -26,6 +34,7 @@ class BcMethod(AbstractObject):
         "_size_frame",
         "_size_inner",
         "_before_stack_start",
+        "_lexical_scope",
     ]
 
     def __init__(
@@ -39,6 +48,7 @@ class BcMethod(AbstractObject):
         size_frame,
         size_inner,
         before_stack_start,
+        lexical_scope,
     ):
         AbstractObject.__init__(self)
 
@@ -61,6 +71,8 @@ class BcMethod(AbstractObject):
         self._size_inner = size_inner
         self._before_stack_start = before_stack_start
 
+        self._lexical_scope = lexical_scope
+
         self._holder = None
 
     @staticmethod
@@ -73,7 +85,6 @@ class BcMethod(AbstractObject):
         return True
 
     def get_number_of_locals(self):
-        # Get the number of locals
         return self._number_of_locals
 
     @jit.elidable_promote("all")
@@ -95,8 +106,7 @@ class BcMethod(AbstractObject):
         self._holder = value
 
         # Make sure all nested invokables have the same holder
-        for i in range(0, len(self._literals)):
-            obj = self._literals[i]
+        for obj in self._literals:
             assert isinstance(obj, AbstractObject)
             if obj.is_invokable():
                 obj.set_holder(value)
@@ -144,13 +154,17 @@ class BcMethod(AbstractObject):
 
         try:
             result = interpret(self, new_frame)
-            stack_pop_old_arguments_and_push_result(frame, self._number_of_arguments, result)
+            stack_pop_old_arguments_and_push_result(
+                frame, self._number_of_arguments, result
+            )
             mark_as_no_longer_on_stack(inner)
             return
         except ReturnException as e:
             mark_as_no_longer_on_stack(inner)
             if e.has_reached_target(inner):
-                stack_pop_old_arguments_and_push_result(frame, self._number_of_arguments, e.get_result())
+                stack_pop_old_arguments_and_push_result(
+                    frame, self._number_of_arguments, e.get_result()
+                )
                 return
             raise e
 
@@ -187,6 +201,32 @@ class BcMethod(AbstractObject):
             self.get_signature().get_embedded_string(),
         )
 
+    def patch_variable_access(self, bytecode_index):
+        bc = self.get_bytecode(bytecode_index)
+        idx = self.get_bytecode(bytecode_index + 1)
+        ctx_level = self.get_bytecode(bytecode_index + 2)
+
+        if bc == Bytecodes.push_argument:
+            var = self._lexical_scope.get_argument(idx, ctx_level)
+            self.set_bytecode(bytecode_index, var.get_push_bytecode())
+        elif bc == Bytecodes.pop_argument:
+            var = self._lexical_scope.get_argument(idx, ctx_level)
+            self.set_bytecode(bytecode_index, var.get_pop_bytecode())
+        elif bc == Bytecodes.push_local:
+            var = self._lexical_scope.get_local(idx, ctx_level)
+            self.set_bytecode(bytecode_index, var.get_push_bytecode())
+        elif bc == Bytecodes.pop_local:
+            var = self._lexical_scope.get_local(idx, ctx_level)
+            self.set_bytecode(bytecode_index, var.get_pop_bytecode())
+        else:
+            raise Exception("Unsupported bytecode?")
+        assert (
+            FRAME_AND_INNER_RCVR_IDX <= var.access_idx <= 255
+        ), "Expected variable access index to be in valid range, but was " + str(
+            var.access_idx
+        )
+        self.set_bytecode(bytecode_index + 1, var.access_idx)
+
 
 class BcMethodNoNonLocalReturns(BcMethod):
     def invoke(self, frame):
@@ -200,4 +240,6 @@ class BcMethodNoNonLocalReturns(BcMethod):
         )
 
         result = interpret(self, new_frame)
-        stack_pop_old_arguments_and_push_result(frame, self._number_of_arguments, result)
+        stack_pop_old_arguments_and_push_result(
+            frame, self._number_of_arguments, result
+        )
