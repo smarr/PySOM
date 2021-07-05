@@ -149,7 +149,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return FindVarResult(self._arguments[var], ctx_level, True)
 
         if self.outer_genc:
-            return self.outer_genc.find_var(var, ctx_level + 1)
+            result = self.outer_genc.find_var(var, ctx_level + 1)
+            if result:
+                self._accesses_variables_of_outer_context = True
+            return result
         return None
 
     def get_max_context_level(self):
