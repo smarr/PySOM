@@ -1,5 +1,6 @@
+from rlib.debug import make_sure_not_resized
+
 from som.compiler.method_generation_context import MethodGenerationContextBase
-from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.bc.bytecodes import (
     bytecode_stack_effect,
     bytecode_stack_effect_depends_on_send,
@@ -43,6 +44,14 @@ class MethodGenerationContext(MethodGenerationContextBase):
         size_frame += max_stack_size + 1  # +1 for the StackPtr
 
         num_locals = len(self._locals)
+
+        if len(arg_inner_access) > 1:
+            arg_inner_access.reverse()
+            # to make the access fast in create_frame
+            # reverse things here, if we have more than 1 item
+            # then we don't need to mess with the index to access
+            # this map
+            make_sure_not_resized(arg_inner_access)
 
         if self.needs_to_catch_non_local_returns:
             meth = BcMethod(
