@@ -40,39 +40,34 @@ class AstBlock(AbstractObject):
     def get_class(self, universe):
         return universe.block_classes[self._method.get_number_of_arguments()]
 
-    class Evaluation(Primitive):
 
-        _immutable_fields_ = ["_number_of_arguments"]
+class _Evaluation(Primitive):
 
-        def __init__(self, num_args, universe, invoke):
-            Primitive.__init__(
-                self, self._compute_signature_string(num_args), universe, invoke
-            )
-            self._number_of_arguments = num_args
+    _immutable_fields_ = ["_number_of_arguments"]
 
-        @staticmethod
-        def _compute_signature_string(num_args):
-            # Compute the signature string
-            signature_string = "value"
-            if num_args > 1:
-                signature_string += ":"
-                if num_args > 2:
-                    # Add extra with: selector elements if necessary
-                    signature_string += "with:" * (num_args - 2)
+    def __init__(self, num_args, universe, invoke):
+        Primitive.__init__(
+            self, self._compute_signature_string(num_args), universe, invoke
+        )
+        self._number_of_arguments = num_args
 
-            # Return the signature string
-            return signature_string
+    @staticmethod
+    def _compute_signature_string(num_args):
+        signature_string = "value"
+        if num_args > 1:
+            signature_string += ":"
+            if num_args > 2:
+                # Add extra with: selector elements if necessary
+                signature_string += "with:" * (num_args - 2)
+
+        return signature_string
 
 
 def block_evaluation_primitive(num_args, universe):
-    return AstBlock.Evaluation(num_args, universe, _invoke)
+    return _Evaluation(num_args, universe, _invoke)
 
 
-def block_evaluate(block, args):
+def _invoke(ivkbl, block, args):
+    assert isinstance(ivkbl, _Evaluation)
     method = block.get_method()
     return method.invoke(block, args)
-
-
-def _invoke(ivkbl, rcvr, args):
-    assert isinstance(ivkbl, AstBlock.Evaluation)
-    return block_evaluate(rcvr, args)
