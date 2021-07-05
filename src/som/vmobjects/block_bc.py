@@ -41,6 +41,9 @@ class BcBlock(AbstractObject):
             return True
         return is_on_stack(self._outer)
 
+    def get_context(self):
+        return self._outer
+
     def get_on_stack_marker(self):
         return self._outer
 
