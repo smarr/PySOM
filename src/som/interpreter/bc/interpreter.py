@@ -266,7 +266,7 @@ def _unknown_bytecode(bytecode, bytecode_idx, method):
 def get_self(frame, ctx_level):
     # Get the self object from the interpreter
     if ctx_level == 0:
-        return read_inner(frame, FRAME_AND_INNER_RCVR_IDX)
+        return read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
     return get_block_at(frame, ctx_level).get_from_outer(FRAME_AND_INNER_RCVR_IDX)
 
 
