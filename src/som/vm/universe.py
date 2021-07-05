@@ -19,7 +19,10 @@ from som.vmobjects.string import String
 
 from som.vm.globals import nilObject, trueObject, falseObject
 
-import som.compiler.sourcecode_compiler as sourcecode_compiler
+from som.compiler.sourcecode_compiler import (
+    compile_class_from_file,
+    compile_class_from_string,
+)
 
 if is_ast_interpreter():
     from som.vmobjects.object_with_layout import ObjectWithLayout as Object
@@ -461,7 +464,7 @@ class Universe(object):
         for cp_entry in self.classpath:
             try:
                 # Load the class from a file and return the loaded class
-                result = sourcecode_compiler.compile_class_from_file(
+                result = compile_class_from_file(
                     cp_entry, name.get_embedded_string(), system_class, self
                 )
                 if self._dump_bytecodes:
@@ -480,7 +483,7 @@ class Universe(object):
 
     def load_shell_class(self, stmt):
         # Load the class from a stream and return the loaded class
-        result = sourcecode_compiler.compile_class_from_string(stmt, None, self)
+        result = compile_class_from_string(stmt, None, self)
         if self._dump_bytecodes:
             from som.compiler.disassembler import dump
 

@@ -10,7 +10,7 @@ from rpython.jit.metainterp.test.test_ajit import LLJitMixin  # pylint: disable=
 from som.vm.current import current_universe
 from som.vm.universe import Exit
 
-import som.compiler.sourcecode_compiler as sourcecode_compiler
+from som.compiler.sourcecode_compiler import compile_class_from_string
 
 
 class Option:
@@ -32,7 +32,7 @@ class TestLLtype(LLJitMixin):
         universe = current_universe
         universe.setup_classpath(classpath)
         universe._initialize_object_system()  # pylint: disable=protected-access
-        cls = sourcecode_compiler.compile_class_from_string(source, None, universe)
+        cls = compile_class_from_string(source, None, universe)
         obj = universe.new_instance(cls)
         invokable = cls.lookup_invokable(universe.symbol_for(start))
         return universe, obj, invokable
