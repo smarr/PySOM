@@ -39,7 +39,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return empty_primitive(self._signature.get_embedded_string(), self.universe)
 
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
-        max_stack_size = self._compute_stack_depth()
+
+        # +2 for buffer for dnu, #escapedBlock, etc.
+        max_stack_size = self._compute_stack_depth() + 2
+
         before_stack_start = size_frame - 1
         size_frame += max_stack_size + 1  # +1 for the StackPtr
 
@@ -64,7 +67,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 size_frame,
                 size_inner,
                 before_stack_start,
-                self.lexical_scope
+                self.lexical_scope,
             )
         else:
             meth = BcMethodNoNonLocalReturns(
@@ -77,7 +80,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 size_frame,
                 size_inner,
                 before_stack_start,
-                self.lexical_scope
+                self.lexical_scope,
             )
 
         # copy bytecodes into method
