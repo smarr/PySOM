@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 
 from rlib import jit
+from som.interpreter.ast.frame import get_inner_as_context, mark_as_no_longer_on_stack
 
-from som.interpreter.bc.frame import Frame, copy_arguments_from
+from som.interpreter.bc.frame import create_frame, stack_pop_old_arguments_and_push_result
 from som.interpreter.bc.interpreter import interpret
 from som.interpreter.control_flow import ReturnException
 from som.vmobjects.abstract_object import AbstractObject
@@ -21,10 +22,23 @@ class BcMethod(AbstractObject):
         "_signature",
         "_number_of_arguments",
         "_holder",
+        "_arg_inner_access[*]",
+        "_size_frame",
+        "_size_inner",
+        "_before_stack_start",
     ]
 
     def __init__(
-        self, literals, num_locals, max_stack_elements, num_bytecodes, signature
+        self,
+        literals,
+        num_locals,
+        max_stack_elements,
+        num_bytecodes,
+        signature,
+        arg_inner_access,
+        size_frame,
+        size_inner,
+        before_stack_start,
     ):
         AbstractObject.__init__(self)
 
@@ -34,12 +48,18 @@ class BcMethod(AbstractObject):
         self._inline_cache_invokable = [None] * num_bytecodes
 
         self._literals = literals
+
         self._number_of_arguments = signature.get_number_of_signature_arguments()
 
         self._number_of_locals = num_locals
 
         self._signature = signature
         self._maximum_number_of_stack_elements = max_stack_elements + 2
+
+        self._arg_inner_access = arg_inner_access
+        self._size_frame = size_frame
+        self._size_inner = size_inner
+        self._before_stack_start = before_stack_start
 
         self._holder = None
 
@@ -106,24 +126,31 @@ class BcMethod(AbstractObject):
 
     def set_bytecode(self, index, value):
         # Set the bytecode at the given index to the given value
-        assert 0 <= value <= 255
+        assert (
+            0 <= value <= 255
+        ), "Expected bytecode in the range of [0..255], but was: " + str(value)
         self._bytecodes[index] = chr(value)
 
     def invoke(self, frame):
-        # Allocate and push a new frame on the interpreter stack
-        new_frame = Frame(
-            copy_arguments_from(frame, self._number_of_arguments), self, None
+        new_frame = create_frame(
+            self._arg_inner_access,
+            self._size_frame,
+            self._size_inner,
+            self._before_stack_start,
+            frame,
+            self._number_of_arguments,
         )
+        inner = get_inner_as_context(new_frame)
 
         try:
             result = interpret(self, new_frame)
-            frame.pop_old_arguments_and_push_result(self, result)
-            new_frame.get_on_stack_marker().mark_as_no_longer_on_stack()
+            stack_pop_old_arguments_and_push_result(frame, self._number_of_arguments, result)
+            mark_as_no_longer_on_stack(inner)
             return
         except ReturnException as e:
-            new_frame.get_on_stack_marker().mark_as_no_longer_on_stack()
-            if e.has_reached_target(new_frame):
-                frame.pop_old_arguments_and_push_result(self, e.get_result())
+            mark_as_no_longer_on_stack(inner)
+            if e.has_reached_target(inner):
+                stack_pop_old_arguments_and_push_result(frame, self._number_of_arguments, e.get_result())
                 return
             raise e
 
@@ -159,3 +186,18 @@ class BcMethod(AbstractObject):
             self.get_holder().get_name().get_embedded_string(),
             self.get_signature().get_embedded_string(),
         )
+
+
+class BcMethodNoNonLocalReturns(BcMethod):
+    def invoke(self, frame):
+        new_frame = create_frame(
+            self._arg_inner_access,
+            self._size_frame,
+            self._size_inner,
+            self._before_stack_start,
+            frame,
+            self._number_of_arguments,
+        )
+
+        result = interpret(self, new_frame)
+        stack_pop_old_arguments_and_push_result(frame, self._number_of_arguments, result)

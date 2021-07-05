@@ -1,11 +1,12 @@
+from som.interpreter.bc.frame import stack_pop, stack_top
 from som.primitives.array_primitives import ArrayPrimitivesBase as _Base
 from som.vmobjects.primitive import Primitive
 
 
 def _at_put(_ivkbl, frame):
-    value = frame.pop()
-    index = frame.pop()
-    rcvr = frame.top()
+    value = stack_pop(frame)
+    index = stack_pop(frame)
+    rcvr = stack_top(frame)
     rcvr.set_indexable_field(index.get_embedded_integer() - 1, value)
 
 

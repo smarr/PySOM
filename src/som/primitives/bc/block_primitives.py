@@ -1,6 +1,8 @@
+from som.interpreter.ast.frame import get_inner_as_context
+from som.interpreter.bc.frame import stack_push, stack_pop
 from som.primitives.primitives import Primitives
 from som.vmobjects.primitive import Primitive
-from som.vmobjects.block_bc import block_evaluate, BcBlock
+from som.vmobjects.block_bc import BcBlock
 from som.vm.globals import nilObject, trueObject, falseObject
 
 from rlib import jit
@@ -29,17 +31,17 @@ jitdriver = jit.JitDriver(
 )
 
 
-def _execute_block(frame, block, block_method):
-    b = BcBlock(block_method, block.get_context())
-    frame.push(b)
+def _execute_block(frame, block_method):
+    b = BcBlock(block_method, get_inner_as_context(frame))
+    stack_push(frame, b)
 
-    block_evaluate(b, frame)
-    return frame.pop()
+    block_method.invoke(frame)
+    return stack_pop(frame)
 
 
 def _while_loop(frame, while_type):
-    loop_body = frame.pop()
-    loop_condition = frame.pop()
+    loop_body = stack_pop(frame)
+    loop_condition = stack_pop(frame)
 
     method_body = loop_body.get_method()
     method_condition = loop_condition.get_method()
@@ -50,13 +52,13 @@ def _while_loop(frame, while_type):
             method_condition=method_condition,
             while_type=while_type,
         )
-        condition_result = _execute_block(frame, loop_condition, method_condition)
+        condition_result = _execute_block(frame, method_condition)
         if condition_result is while_type:
-            _execute_block(frame, loop_body, method_body)
+            _execute_block(frame, method_body)
         else:
             break
 
-    frame.push(nilObject)
+    stack_push(frame, nilObject)
 
 
 def _while_false(_ivkbl, frame):

@@ -7,7 +7,7 @@ from rlib.exit import Exit
 from rlib.osext import path_split
 
 from som.compiler.bc.method_generation_context import create_bootstrap_method
-from som.interpreter.bc.frame import create_bootstrap_frame
+from som.interpreter.bc.frame import create_bootstrap_frame, stack_pop
 
 from som.interp_type import is_ast_interpreter
 
@@ -509,19 +509,14 @@ class _BCUniverse(Universe):
         return shell.start()
 
     def _start_execution(self, system_object, initialize, arguments_array):
-        bootstrap_method = create_bootstrap_method(self)
-        bootstrap_frame = create_bootstrap_frame(
-            bootstrap_method, system_object, arguments_array
-        )
+        bootstrap_frame = create_bootstrap_frame(system_object, arguments_array)
         # Lookup the initialize invokable on the system class
         return initialize.invoke(bootstrap_frame)
 
     def _start_method_execution(self, clazz, invokable):
-        bootstrap_method = create_bootstrap_method(self)
-        bootstrap_frame = create_bootstrap_frame(bootstrap_method, clazz)
-
+        bootstrap_frame = create_bootstrap_frame(clazz)
         invokable.invoke(bootstrap_frame)
-        return bootstrap_frame.pop()
+        return stack_pop(bootstrap_frame)
 
     def _initialize_object_system(self):
         system_object = Universe._initialize_object_system(self)

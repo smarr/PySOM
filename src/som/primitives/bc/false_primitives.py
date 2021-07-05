@@ -1,9 +1,10 @@
+from som.interpreter.bc.frame import stack_pop
 from som.primitives.false_primitives import FalsePrimitivesBase as _Base
 
 
 def _or(_ivkbl, frame):
-    block = frame.pop()
-    frame.pop()
+    block = stack_pop(frame)
+    stack_pop(frame)
     block_method = block.get_method()
     block_method.invoke(frame)
 

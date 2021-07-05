@@ -1,4 +1,5 @@
 from som.interp_type import is_ast_interpreter
+from som.interpreter.bc.frame import stack_top, stack_set_top, stack_pop
 from som.vmobjects.abstract_object import AbstractObject
 
 
@@ -117,9 +118,9 @@ class _BcUnaryPrimitive(_AbstractPrimitive):
 
     def invoke(self, frame):
         prim_fn = self._prim_fn
-        rcvr = frame.top()
+        rcvr = stack_top(frame)
         result = prim_fn(rcvr)
-        frame.set_top(result)
+        stack_set_top(frame, result)
 
     def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 1
@@ -134,10 +135,10 @@ class _BcBinaryPrimitive(_AbstractPrimitive):
 
     def invoke(self, frame):
         prim_fn = self._prim_fn
-        arg = frame.pop()
-        rcvr = frame.top()
+        arg = stack_pop(frame)
+        rcvr = stack_top(frame)
         result = prim_fn(rcvr, arg)
-        frame.set_top(result)
+        stack_set_top(frame, result)
 
     def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 2
@@ -152,11 +153,11 @@ class _BcTernaryPrimitive(_AbstractPrimitive):
 
     def invoke(self, frame):
         prim_fn = self._prim_fn
-        arg2 = frame.pop()
-        arg1 = frame.pop()
-        rcvr = frame.top()
+        arg2 = stack_pop(frame)
+        arg1 = stack_pop(frame)
+        rcvr = stack_top(frame)
         result = prim_fn(rcvr, arg1, arg2)
-        frame.set_top(result)
+        stack_set_top(frame, result)
 
     def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 3

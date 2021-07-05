@@ -1,11 +1,12 @@
 from rlib import jit
+from som.interpreter.bc.frame import stack_push, stack_pop
 
 from som.primitives.integer_primitives import IntegerPrimitivesBase as _Base
 from som.vmobjects.double import Double
 from som.vmobjects.integer import Integer
 from som.vmobjects.primitive import Primitive
 
-from som.vmobjects.block_bc import block_evaluate, BcBlock
+from som.vmobjects.block_bc import BcBlock
 
 
 def get_printable_location(block_method):
@@ -44,10 +45,10 @@ def _to_do_int(i, by_increment, top, frame, context, block_method):
         jitdriver_int.jit_merge_point(block_method=block_method)
 
         b = BcBlock(block_method, context)
-        frame.push(b)
-        frame.push(Integer(i))
-        block_evaluate(b, frame)
-        frame.pop()
+        stack_push(frame, b)
+        stack_push(frame, Integer(i))
+        block_method.invoke(frame)
+        stack_pop(frame)
         i += by_increment
 
 
@@ -58,17 +59,17 @@ def _to_do_double(i, by_increment, top, frame, context, block_method):
         jitdriver_double.jit_merge_point(block_method=block_method)
 
         b = BcBlock(block_method, context)
-        frame.push(b)
-        frame.push(Integer(i))
-        block_evaluate(b, frame)
-        frame.pop()
+        stack_push(frame, b)
+        stack_push(frame, Integer(i))
+        block_method.invoke(frame)
+        stack_pop(frame)
         i += by_increment
 
 
 def _to_do(_ivkbl, frame):
-    block = frame.pop()
-    limit = frame.pop()
-    self = frame.pop()  # we do leave it on there
+    block = stack_pop(frame)
+    limit = stack_pop(frame)
+    self = stack_pop(frame)  # we do leave it on there
 
     block_method = block.get_method()
     context = block.get_context()
@@ -79,14 +80,14 @@ def _to_do(_ivkbl, frame):
     else:
         _to_do_int(i, 1, limit.get_embedded_integer(), frame, context, block_method)
 
-    frame.push(self)
+    stack_push(frame, self)
 
 
 def _to_by_do(_ivkbl, frame):
-    block = frame.pop()
-    by_increment = frame.pop()
-    limit = frame.pop()
-    self = frame.pop()  # we do leave it on there
+    block = stack_pop(frame)
+    by_increment = stack_pop(frame)
+    limit = stack_pop(frame)
+    self = stack_pop(frame)  # we do leave it on there
 
     block_method = block.get_method()
     context = block.get_context()
@@ -111,7 +112,7 @@ def _to_by_do(_ivkbl, frame):
             block_method,
         )
 
-    frame.push(self)
+    stack_push(frame, self)
 
 
 class IntegerPrimitives(_Base):

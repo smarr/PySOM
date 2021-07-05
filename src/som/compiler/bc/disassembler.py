@@ -100,6 +100,20 @@ def dump_method(m, indent):
                 + ") signature: "
                 + str(m.get_constant(b))
             )
+        elif bytecode == Bytecodes.push_inner or bytecode == Bytecodes.pop_inner:
+            error_println(
+                "inner idx: "
+                + str(m.get_bytecode(b + 1))
+                + ", context "
+                + str(m.get_bytecode(b + 2))
+            )
+        elif bytecode == Bytecodes.push_frame or bytecode == Bytecodes.pop_frame:
+            error_println(
+                "frame idx: "
+                + str(m.get_bytecode(b + 1))
+                + ", context "
+                + str(m.get_bytecode(b + 2))
+            )
         else:
             error_println("<incorrect bytecode>")
 
