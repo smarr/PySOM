@@ -364,6 +364,7 @@ class Parser(ParserBase):
                 field_name = identifier
                 mgenc.add_literal_if_absent(field_name)
                 emit_push_field(mgenc, field_name)
+                mgenc.mark_self_as_accessed_from_outer_context()
             else:
                 globe = identifier
                 mgenc.add_literal_if_absent(globe)
@@ -384,3 +385,4 @@ class Parser(ParserBase):
             result.mark_accessed()
         else:
             emit_pop_field(mgenc, self.universe.symbol_for(var))
+            mgenc.mark_self_as_accessed_from_outer_context()
