@@ -1,10 +1,15 @@
 from som.vmobjects.array import Array
-from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive
+from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 from som.primitives.primitives import Primitives
 
 
 def _at(rcvr, i):
     return rcvr.get_indexable_field(i.get_embedded_integer() - 1)
+
+
+def _at_put(rcvr, index, value):
+    rcvr.set_indexable_field(index.get_embedded_integer() - 1, value)
+    return rcvr
 
 
 def _length(rcvr):
@@ -24,6 +29,9 @@ def _new(_rcvr, length):
 class ArrayPrimitivesBase(Primitives):
     def install_primitives(self):
         self._install_instance_primitive(BinaryPrimitive("at:", self.universe, _at))
+        self._install_instance_primitive(
+            TernaryPrimitive("at:put:", self.universe, _at_put)
+        )
         self._install_instance_primitive(
             UnaryPrimitive("length", self.universe, _length)
         )

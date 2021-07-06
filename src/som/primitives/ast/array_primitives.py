@@ -5,14 +5,6 @@ from som.vmobjects.method_ast import AstMethod
 from som.vmobjects.primitive import Primitive
 
 
-def _at_put(_ivkbl, rcvr, args):
-    value = args[1]
-    index = args[0]
-
-    rcvr.set_indexable_field(index.get_embedded_integer() - 1, value)
-    return value
-
-
 def get_do_index_printable_location(block_method):
     assert isinstance(block_method, AstMethod)
     return "#doIndexes: %s" % block_method.merge_point_string()
@@ -80,8 +72,6 @@ def _put_all(_ivkbl, rcvr, args):
 class ArrayPrimitives(_Base):
     def install_primitives(self):
         _Base.install_primitives(self)
-        self._install_instance_primitive(Primitive("at:put:", self.universe, _at_put))
-
         self._install_instance_primitive(
             Primitive("doIndexes:", self.universe, _do_indexes)
         )
