@@ -35,7 +35,10 @@ def _do_push_global(bytecode_index, frame, method):
         # Push the global onto the stack
         stack_push(frame, glob)
     else:
-        _send_unknown_global(get_self_dynamically(frame), frame, global_name)
+        result = _lookup_and_send_2(
+            get_self_dynamically(frame), global_name, "unknownGlobal:"
+        )
+        stack_push(frame, result)
 
 
 def _do_pop_field(bytecode_index, frame, method):
@@ -54,22 +57,23 @@ def _do_super_send(bytecode_index, frame, method):
     invokable = receiver_class.lookup_invokable(signature)
     method.set_inline_cache(bytecode_index, receiver_class, invokable)
     method.set_bytecode(bytecode_index, Bytecodes.q_super_send)
+    num_args = invokable.get_number_of_signature_arguments()
+    receiver = get_stack_element(frame, num_args - 1)
 
     if invokable:
-        invokable.invoke(frame)
+        invoke_invokable(invokable, num_args, receiver, frame)
     else:
-        num_args = invokable.get_number_of_signature_arguments()
-        receiver = get_stack_element(frame, num_args - 1)
         _send_does_not_understand(receiver, frame, invokable.get_signature())
 
 
 def _do_q_super_send(bytecode_index, frame, method):
     invokable = method.get_inline_cache_invokable(bytecode_index)
+    num_args = invokable.get_number_of_signature_arguments()
+    receiver = get_stack_element(frame, num_args - 1)
+
     if invokable:
-        invokable.invoke(frame)
+        invoke_invokable(invokable, num_args, receiver, frame)
     else:
-        num_args = invokable.get_number_of_signature_arguments()
-        receiver = get_stack_element(frame, num_args - 1)
         _send_does_not_understand(receiver, frame, invokable.get_signature())
 
 
@@ -91,8 +95,7 @@ def _do_return_non_local(frame, ctx_level):
         sender = get_self_dynamically(frame)
 
         # ... and execute the escapedBlock message instead
-        _send_escaped_block(sender, frame, block)
-        return stack_top(frame)
+        return _lookup_and_send_2(sender, block, "escapedBlock:")
 
     raise ReturnException(result, block.get_on_stack_marker())
 
@@ -101,17 +104,32 @@ def _do_send(bytecode_index, frame, method):
     from som.vm.current import current_universe
 
     signature = method.get_constant(bytecode_index)
-
-    # Get the number of arguments from the signature
     num_args = signature.get_number_of_signature_arguments()
-
-    # Get the receiver from the stack
     receiver = get_stack_element(frame, num_args - 1)
 
-    # Send the message
-    _send(
-        method, frame, signature, receiver.get_class(current_universe), bytecode_index
+    invokable = _lookup(
+        receiver.get_class(current_universe), signature, method, bytecode_index
     )
+    if invokable:
+        invoke_invokable(invokable, num_args, receiver, frame)
+    else:
+        _send_does_not_understand(receiver, frame, signature)
+
+
+def invoke_invokable(invokable, num_args, receiver, frame):
+    if num_args == 1:
+        result = invokable.invoke_1(receiver)
+        stack_set_top(frame, result)
+    elif num_args == 2:
+        result = invokable.invoke_2(receiver, stack_pop(frame))
+        stack_set_top(frame, result)
+    elif num_args == 3:
+        arg2 = stack_pop(frame)
+        arg1 = stack_pop(frame)
+        result = invokable.invoke_3(receiver, arg1, arg2)
+        stack_set_top(frame, result)
+    else:
+        invokable.invoke_n(frame)
 
 
 @jit.unroll_safe
@@ -270,37 +288,28 @@ def get_self(frame, ctx_level):
     return get_block_at(frame, ctx_level).get_from_outer(FRAME_AND_INNER_RCVR_IDX)
 
 
-def _send(m, frame, selector, receiver_class, bytecode_index):
-    # selector.inc_send_count()
-
+def _lookup(receiver_class, selector, method, bytecode_index):
     # First try the inline cache
-    cached_class = m.get_inline_cache_class(bytecode_index)
+    cached_class = method.get_inline_cache_class(bytecode_index)
     if cached_class == receiver_class:
-        invokable = m.get_inline_cache_invokable(bytecode_index)
+        invokable = method.get_inline_cache_invokable(bytecode_index)
     else:
         if not cached_class:
-            # Lookup the invokable with the given signature
             invokable = receiver_class.lookup_invokable(selector)
-            m.set_inline_cache(bytecode_index, receiver_class, invokable)
+            method.set_inline_cache(bytecode_index, receiver_class, invokable)
         else:
             # the bytecode index after the send is used by the selector constant,
             # and can be used safely as another cache item
-            cached_class = m.get_inline_cache_class(bytecode_index + 1)
+            cached_class = method.get_inline_cache_class(bytecode_index + 1)
             if cached_class == receiver_class:
-                invokable = m.get_inline_cache_invokable(bytecode_index + 1)
+                invokable = method.get_inline_cache_invokable(bytecode_index + 1)
             else:
                 invokable = receiver_class.lookup_invokable(selector)
                 if not cached_class:
-                    m.set_inline_cache(bytecode_index + 1, receiver_class, invokable)
-
-    if invokable:
-        invokable.invoke(frame)
-    else:
-        num_args = selector.get_number_of_signature_arguments()
-
-        # Compute the receiver
-        receiver = get_stack_element(frame, num_args - 1)
-        _send_does_not_understand(receiver, frame, selector)
+                    method.set_inline_cache(
+                        bytecode_index + 1, receiver_class, invokable
+                    )
+    return invokable
 
 
 def _send_does_not_understand(receiver, frame, selector):
@@ -315,38 +324,34 @@ def _send_does_not_understand(receiver, frame, selector):
         i -= 1
 
     stack_pop(frame)  # pop self from stack
-    args = [selector, arguments_array]
-    _lookup_and_send(receiver, frame, "doesNotUnderstand:arguments:", args)
+    result = _lookup_and_send_3(
+        receiver, selector, arguments_array, "doesNotUnderstand:arguments:"
+    )
+    stack_push(frame, result)
 
 
-def _send_unknown_global(receiver, frame, global_name):
-    arguments = [global_name]
-    _lookup_and_send(receiver, frame, "unknownGlobal:", arguments)
-
-
-def _send_escaped_block(receiver, frame, block):
-    arguments = [block]
-    _lookup_and_send(receiver, frame, "escapedBlock:", arguments)
-
-
-def _lookup_and_send(receiver, frame, selector_string, arguments):
+def _lookup_and_send_2(receiver, arg, selector_string):
     from som.vm.current import current_universe
 
     selector = current_universe.symbol_for(selector_string)
     invokable = receiver.get_class(current_universe).lookup_invokable(selector)
 
-    stack_push(frame, receiver)
-    for arg in arguments:
-        stack_push(frame, arg)
+    return invokable.invoke_2(receiver, arg)
 
-    invokable.invoke(frame)
+
+def _lookup_and_send_3(receiver, arg1, arg2, selector_string):
+    from som.vm.current import current_universe
+
+    selector = current_universe.symbol_for(selector_string)
+    invokable = receiver.get_class(current_universe).lookup_invokable(selector)
+    return invokable.invoke_3(receiver, arg1, arg2)
 
 
 def get_printable_location(bytecode_index, method):
-    from som.vmobjects.method_bc import BcMethod
+    from som.vmobjects.method_bc import BcAbstractMethod
     from som.interpreter.bc.bytecodes import bytecode_as_str
 
-    assert isinstance(method, BcMethod)
+    assert isinstance(method, BcAbstractMethod)
     bc = method.get_bytecode(bytecode_index)
     return "%s @ %d in %s" % (
         bytecode_as_str(bc),

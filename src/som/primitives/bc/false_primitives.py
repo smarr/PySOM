@@ -6,7 +6,7 @@ def _or(_ivkbl, frame):
     block = stack_pop(frame)
     stack_pop(frame)
     block_method = block.get_method()
-    block_method.invoke(frame)
+    block_method.invoke_n(frame)
 
 
 FalsePrimitives = _Base

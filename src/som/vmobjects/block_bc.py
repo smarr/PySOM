@@ -2,8 +2,12 @@ from rlib import jit
 from som.interpreter.ast.frame import is_on_stack
 
 from som.vmobjects.abstract_object import AbstractObject
-from som.vmobjects.primitive import Primitive
-from som.interpreter.bc.frame import get_stack_element
+from som.vmobjects.block_ast import VALUE_SIGNATURE
+from som.vmobjects.primitive import (
+    UnaryPrimitive,
+    BinaryPrimitive,
+    TernaryPrimitive,
+)
 
 
 class BcBlock(AbstractObject):
@@ -51,36 +55,23 @@ class BcBlock(AbstractObject):
         return universe.block_classes[self._method.get_number_of_arguments()]
 
 
-class _Evaluation(Primitive):
-
-    _immutable_fields_ = ["_number_of_arguments"]
-
-    def __init__(self, num_args, universe, invoke):
-        Primitive.__init__(
-            self, self._compute_signature_string(num_args), universe, invoke
-        )
-        self._number_of_arguments = num_args
-
-    @staticmethod
-    def _compute_signature_string(num_args):
-        signature_string = "value"
-        if num_args > 1:
-            signature_string += ":"
-            if num_args > 2:
-                # Add extra with: selector elements if necessary
-                signature_string += "with:" * (num_args - 2)
-
-        return signature_string
-
-
 def block_evaluation_primitive(num_args, universe):
-    return _Evaluation(num_args, universe, _invoke)
+    if num_args == 1:
+        return UnaryPrimitive(VALUE_SIGNATURE[num_args], universe, _invoke_1)
+    if num_args == 2:
+        return BinaryPrimitive(VALUE_SIGNATURE[num_args], universe, _invoke_2)
+    if num_args == 3:
+        return TernaryPrimitive(VALUE_SIGNATURE[num_args], universe, _invoke_3)
+    raise Exception("Unsupported number of arguments for block: " + str(num_args))
 
 
-def _invoke(ivkbl, frame):
-    assert isinstance(ivkbl, _Evaluation)
-    block = get_stack_element(
-        frame, ivkbl._number_of_arguments - 1  # pylint: disable=W
-    )
-    method = block.get_method()
-    method.invoke(frame)
+def _invoke_1(rcvr):
+    return rcvr.get_method().invoke_1(rcvr)
+
+
+def _invoke_2(rcvr, arg):
+    return rcvr.get_method().invoke_2(rcvr, arg)
+
+
+def _invoke_3(rcvr, arg1, arg2):
+    return rcvr.get_method().invoke_3(rcvr, arg1, arg2)

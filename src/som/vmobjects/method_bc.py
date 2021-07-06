@@ -11,13 +11,16 @@ from som.interpreter.bc.bytecodes import Bytecodes
 from som.interpreter.bc.frame import (
     create_frame,
     stack_pop_old_arguments_and_push_result,
+    create_frame_1,
+    create_frame_2,
+    create_frame_3,
 )
 from som.interpreter.bc.interpreter import interpret
 from som.interpreter.control_flow import ReturnException
 from som.vmobjects.abstract_object import AbstractObject
 
 
-class BcMethod(AbstractObject):
+class BcAbstractMethod(AbstractObject):
 
     _immutable_fields_ = [
         "_bytecodes[*]",
@@ -141,33 +144,6 @@ class BcMethod(AbstractObject):
         ), "Expected bytecode in the range of [0..255], but was: " + str(value)
         self._bytecodes[index] = chr(value)
 
-    def invoke(self, frame):
-        new_frame = create_frame(
-            self._arg_inner_access,
-            self._size_frame,
-            self._size_inner,
-            self._before_stack_start,
-            frame,
-            self._number_of_arguments,
-        )
-        inner = get_inner_as_context(new_frame)
-
-        try:
-            result = interpret(self, new_frame)
-            stack_pop_old_arguments_and_push_result(
-                frame, self._number_of_arguments, result
-            )
-            mark_as_no_longer_on_stack(inner)
-            return
-        except ReturnException as e:
-            mark_as_no_longer_on_stack(inner)
-            if e.has_reached_target(inner):
-                stack_pop_old_arguments_and_push_result(
-                    frame, self._number_of_arguments, e.get_result()
-                )
-                return
-            raise e
-
     def __str__(self):
         return (
             "Method("
@@ -228,8 +204,92 @@ class BcMethod(AbstractObject):
         self.set_bytecode(bytecode_index + 1, var.access_idx)
 
 
-class BcMethodNoNonLocalReturns(BcMethod):
-    def invoke(self, frame):
+def _interp_with_nlr(method, new_frame):
+    inner = get_inner_as_context(new_frame)
+
+    try:
+        result = interpret(method, new_frame)
+        mark_as_no_longer_on_stack(inner)
+        return result
+    except ReturnException as e:
+        mark_as_no_longer_on_stack(inner)
+        if e.has_reached_target(inner):
+            return e.get_result()
+        raise e
+
+
+class BcUnaryMethod(BcAbstractMethod):
+    def invoke_1(self, rcvr):
+        new_frame = create_frame_1(
+            self._size_frame, self._size_inner, self._before_stack_start, rcvr
+        )
+        return interpret(self, new_frame)
+
+
+class BcUnaryMethodNLR(BcUnaryMethod):
+    def invoke_1(self, rcvr):
+        new_frame = create_frame_1(
+            self._size_frame, self._size_inner, self._before_stack_start, rcvr
+        )
+        return _interp_with_nlr(self, new_frame)
+
+
+class BcBinaryMethod(BcAbstractMethod):
+    def invoke_2(self, rcvr, arg1):
+        new_frame = create_frame_2(
+            self._arg_inner_access[0],
+            self._size_frame,
+            self._size_inner,
+            self._before_stack_start,
+            rcvr,
+            arg1,
+        )
+        return interpret(self, new_frame)
+
+
+class BcBinaryMethodNLR(BcBinaryMethod):
+    def invoke_2(self, rcvr, arg1):
+        new_frame = create_frame_2(
+            self._arg_inner_access[0],
+            self._size_frame,
+            self._size_inner,
+            self._before_stack_start,
+            rcvr,
+            arg1,
+        )
+        return _interp_with_nlr(self, new_frame)
+
+
+class BcTernaryMethod(BcAbstractMethod):
+    def invoke_3(self, rcvr, arg1, arg2):
+        new_frame = create_frame_3(
+            self._arg_inner_access,
+            self._size_frame,
+            self._size_inner,
+            self._before_stack_start,
+            rcvr,
+            arg1,
+            arg2,
+        )
+        return interpret(self, new_frame)
+
+
+class BcTernaryMethodNLR(BcTernaryMethod):
+    def invoke_3(self, rcvr, arg1, arg2):
+        new_frame = create_frame_3(
+            self._arg_inner_access,
+            self._size_frame,
+            self._size_inner,
+            self._before_stack_start,
+            rcvr,
+            arg1,
+            arg2,
+        )
+        return _interp_with_nlr(self, new_frame)
+
+
+class BcNAryMethod(BcAbstractMethod):
+    def invoke_n(self, frame):
         new_frame = create_frame(
             self._arg_inner_access,
             self._size_frame,
@@ -243,3 +303,32 @@ class BcMethodNoNonLocalReturns(BcMethod):
         stack_pop_old_arguments_and_push_result(
             frame, self._number_of_arguments, result
         )
+
+
+class BcNAryMethodNLR(BcNAryMethod):
+    def invoke_n(self, frame):
+        new_frame = create_frame(
+            self._arg_inner_access,
+            self._size_frame,
+            self._size_inner,
+            self._before_stack_start,
+            frame,
+            self._number_of_arguments,
+        )
+        inner = get_inner_as_context(new_frame)
+
+        try:
+            result = interpret(self, new_frame)
+            stack_pop_old_arguments_and_push_result(
+                frame, self._number_of_arguments, result
+            )
+            mark_as_no_longer_on_stack(inner)
+            return
+        except ReturnException as e:
+            mark_as_no_longer_on_stack(inner)
+            if e.has_reached_target(inner):
+                stack_pop_old_arguments_and_push_result(
+                    frame, self._number_of_arguments, e.get_result()
+                )
+                return
+            raise e

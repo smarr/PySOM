@@ -5,10 +5,18 @@ from som.interpreter.bc.bytecodes import (
     bytecode_stack_effect,
     bytecode_stack_effect_depends_on_send,
     bytecode_length,
-    Bytecodes,
 )
 from som.vmobjects.primitive import empty_primitive
-from som.vmobjects.method_bc import BcMethod, BcMethodNoNonLocalReturns
+from som.vmobjects.method_bc import (
+    BcUnaryMethodNLR,
+    BcBinaryMethodNLR,
+    BcNAryMethodNLR,
+    BcUnaryMethod,
+    BcBinaryMethod,
+    BcNAryMethod,
+    BcTernaryMethodNLR,
+    BcTernaryMethod,
+)
 
 
 class MethodGenerationContext(MethodGenerationContextBase):
@@ -56,32 +64,38 @@ class MethodGenerationContext(MethodGenerationContextBase):
             # this map
             make_sure_not_resized(arg_inner_access)
 
+        num_args = len(self._arguments)
         if self.needs_to_catch_non_local_returns:
-            meth = BcMethod(
-                list(self._literals),
-                num_locals,
-                max_stack_size,
-                len(self._bytecode),
-                self._signature,
-                arg_inner_access,
-                size_frame,
-                size_inner,
-                before_stack_start,
-                self.lexical_scope,
-            )
+            if num_args == 1:
+                bc_method_class = BcUnaryMethodNLR
+            elif num_args == 2:
+                bc_method_class = BcBinaryMethodNLR
+            elif num_args == 3:
+                bc_method_class = BcTernaryMethodNLR
+            else:
+                bc_method_class = BcNAryMethodNLR
         else:
-            meth = BcMethodNoNonLocalReturns(
-                list(self._literals),
-                num_locals,
-                max_stack_size,
-                len(self._bytecode),
-                self._signature,
-                arg_inner_access,
-                size_frame,
-                size_inner,
-                before_stack_start,
-                self.lexical_scope,
-            )
+            if num_args == 1:
+                bc_method_class = BcUnaryMethod
+            elif num_args == 2:
+                bc_method_class = BcBinaryMethod
+            elif num_args == 3:
+                bc_method_class = BcTernaryMethod
+            else:
+                bc_method_class = BcNAryMethod
+
+        meth = bc_method_class(
+            list(self._literals),
+            num_locals,
+            max_stack_size,
+            len(self._bytecode),
+            self._signature,
+            arg_inner_access,
+            size_frame,
+            size_inner,
+            before_stack_start,
+            self.lexical_scope,
+        )
 
         # copy bytecodes into method
         i = 0
@@ -195,14 +209,3 @@ class FindVarResult(object):
 
     def mark_accessed(self):
         self.var.mark_accessed(self.context)
-
-
-def create_bootstrap_method(universe):
-    """Create a fake bootstrap method to simplify later frame traversal"""
-    bootstrap_method = BcMethod(
-        [], 0, 2, 1, universe.symbol_for("bootstrap"), [], 4, 0, 0, None
-    )
-
-    bootstrap_method.set_bytecode(0, Bytecodes.halt)
-    bootstrap_method.set_holder(universe.system_class)
-    return bootstrap_method

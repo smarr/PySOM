@@ -6,13 +6,11 @@ from rlib.string_stream import encode_to_bytes
 from rlib.exit import Exit
 from rlib.osext import path_split
 
-from som.compiler.bc.method_generation_context import create_bootstrap_method
-from som.interpreter.bc.frame import create_bootstrap_frame, stack_pop
-
 from som.interp_type import is_ast_interpreter
 
 from som.vmobjects.array import Array
 from som.vmobjects.clazz import Class
+from som.vmobjects.method_bc import BcBinaryMethod, BcBinaryMethodNLR
 from som.vmobjects.object_without_fields import ObjectWithoutFields
 from som.vmobjects.symbol import Symbol
 from som.vmobjects.string import String
@@ -507,19 +505,17 @@ class _ASTUniverse(Universe):
 
 class _BCUniverse(Universe):
     def _start_shell(self):
-        bootstrap_method = create_bootstrap_method(self)
-        shell = BcShell(self, bootstrap_method)
+        shell = BcShell(self)
         return shell.start()
 
     def _start_execution(self, system_object, initialize, arguments_array):
-        bootstrap_frame = create_bootstrap_frame(system_object, arguments_array)
-        # Lookup the initialize invokable on the system class
-        return initialize.invoke(bootstrap_frame)
+        assert isinstance(initialize, BcBinaryMethod) or isinstance(
+            initialize, BcBinaryMethodNLR
+        )
+        return initialize.invoke_2(system_object, arguments_array)
 
     def _start_method_execution(self, clazz, invokable):
-        bootstrap_frame = create_bootstrap_frame(clazz)
-        invokable.invoke(bootstrap_frame)
-        return stack_pop(bootstrap_frame)
+        return invokable.invoke_1(clazz)
 
     def _initialize_object_system(self):
         system_object = Universe._initialize_object_system(self)

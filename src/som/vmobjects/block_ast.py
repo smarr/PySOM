@@ -5,6 +5,14 @@ from som.vmobjects.abstract_object import AbstractObject
 from som.vmobjects.primitive import Primitive
 
 
+VALUE_SIGNATURE = [
+    "UNUSED",  # there aren't any 0-arg methods/blocks
+    "value",
+    "value:",
+    "value:with:",
+]
+
+
 class AstBlock(AbstractObject):
 
     _immutable_fields_ = ["_method", "_outer"]
@@ -46,21 +54,8 @@ class _Evaluation(Primitive):
     _immutable_fields_ = ["_number_of_arguments"]
 
     def __init__(self, num_args, universe, invoke):
-        Primitive.__init__(
-            self, self._compute_signature_string(num_args), universe, invoke
-        )
+        Primitive.__init__(self, VALUE_SIGNATURE[num_args], universe, invoke)
         self._number_of_arguments = num_args
-
-    @staticmethod
-    def _compute_signature_string(num_args):
-        signature_string = "value"
-        if num_args > 1:
-            signature_string += ":"
-            if num_args > 2:
-                # Add extra with: selector elements if necessary
-                signature_string += "with:" * (num_args - 2)
-
-        return signature_string
 
 
 def block_evaluation_primitive(num_args, universe):

@@ -1,5 +1,4 @@
 from som.interp_type import is_ast_interpreter
-from som.interpreter.bc.frame import stack_top, stack_set_top, stack_pop
 from som.vmobjects.abstract_object import AbstractObject
 
 
@@ -101,7 +100,7 @@ class _BcPrimitive(_AbstractPrimitive):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, frame):
+    def invoke_n(self, frame):
         prim_fn = self._prim_fn
         prim_fn(self, frame)
 
@@ -116,11 +115,9 @@ class _BcUnaryPrimitive(_AbstractPrimitive):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, frame):
+    def invoke_1(self, rcvr):
         prim_fn = self._prim_fn
-        rcvr = stack_top(frame)
-        result = prim_fn(rcvr)
-        stack_set_top(frame, result)
+        return prim_fn(rcvr)
 
     def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 1
@@ -133,12 +130,9 @@ class _BcBinaryPrimitive(_AbstractPrimitive):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, frame):
+    def invoke_2(self, rcvr, arg):
         prim_fn = self._prim_fn
-        arg = stack_pop(frame)
-        rcvr = stack_top(frame)
-        result = prim_fn(rcvr, arg)
-        stack_set_top(frame, result)
+        return prim_fn(rcvr, arg)
 
     def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 2
@@ -151,13 +145,9 @@ class _BcTernaryPrimitive(_AbstractPrimitive):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, frame):
+    def invoke_3(self, rcvr, arg1, arg2):
         prim_fn = self._prim_fn
-        arg2 = stack_pop(frame)
-        arg1 = stack_pop(frame)
-        rcvr = stack_top(frame)
-        result = prim_fn(rcvr, arg1, arg2)
-        stack_set_top(frame, result)
+        return prim_fn(rcvr, arg1, arg2)
 
     def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 3

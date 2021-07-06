@@ -1,12 +1,5 @@
 from rlib.objectmodel import we_are_translated
 from rlib.osext import raw_input
-
-from som.interpreter.bc.frame import (
-    stack_pop,
-    create_bootstrap_frame,
-    stack_reset_stack_pointer,
-    stack_push,
-)
 from som.vm.globals import nilObject
 
 
@@ -69,19 +62,8 @@ class AstShell(_Shell):
 
 
 class BcShell(_Shell):
-    def __init__(self, universe, bootstrap_method):
-        _Shell.__init__(self, universe)
-        self._bootstrap_method = bootstrap_method
-        self._current_frame = create_bootstrap_frame(nilObject)
-
     def _exec(self, shell_object, shell_method, it):
-        stack_reset_stack_pointer(self._current_frame, 0)
-        stack_push(self._current_frame, shell_object)
+        from som.vmobjects.method_bc import BcBinaryMethod
 
-        # Push the old value of "it" on the stack
-        stack_push(self._current_frame, it)
-
-        # Invoke the run method
-        shell_method.invoke(self._current_frame)
-
-        return stack_pop(self._current_frame)
+        assert isinstance(shell_object, BcBinaryMethod)
+        return shell_method.invoke_2(shell_object, it)
