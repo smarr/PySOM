@@ -21,8 +21,8 @@ class Node(BaseNode):
         self.source_section = source_section
 
     def adopt_child(self, node):
-        assert isinstance(node, Node) or node is None
         if node:
+            assert isinstance(node, Node)
             node.parent = self
         return node
 
