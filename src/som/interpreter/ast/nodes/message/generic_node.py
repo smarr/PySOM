@@ -1,8 +1,7 @@
 from rlib.debug import make_sure_not_resized
-from rlib.jit import we_are_jitted, elidable_promote
+from rlib.jit import elidable_promote
 
 from som.interpreter.ast.nodes.dispatch import (
-    send_does_not_understand,
     INLINE_CACHE_SIZE,
     CachedDispatchNode,
     CachedDnuNode,
@@ -34,10 +33,6 @@ class GenericMessageNode(AbstractMessageNode):
 
         rcvr_class = rcvr.get_class(self.universe)
 
-        if we_are_jitted():
-            return self._direct_dispatch(rcvr, rcvr_class, args)
-
-        # TODO: remove we_are_jitted() special case
         dispatch_node = self._lookup(rcvr_class)
         return dispatch_node.execute_dispatch(rcvr, args)
 
@@ -88,12 +83,6 @@ class GenericMessageNode(AbstractMessageNode):
         generic_replacement.parent = self
         self._dispatch = generic_replacement
         return generic_replacement
-
-    def _direct_dispatch(self, rcvr, rcvr_class, args):
-        method = rcvr_class.lookup_invokable(self._selector)
-        if method:
-            return method.invoke(rcvr, args)
-        return send_does_not_understand(rcvr, self._selector, args, self.universe)
 
     def __str__(self):
         return "%s(%s, %s)" % (
