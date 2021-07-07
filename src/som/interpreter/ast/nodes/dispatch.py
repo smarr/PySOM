@@ -1,21 +1,19 @@
 from rlib import jit
 
-from rtruffle.node import Node
 from som.vmobjects.array import Array
 
 
 INLINE_CACHE_SIZE = 6
 
 
-class _AbstractDispatchNode(Node):
+class _AbstractDispatchNode(object):
 
     _immutable_fields_ = ["expected_class", "next_entry?"]
     _child_nodes_ = ["next_entry"]
 
     def __init__(self, expected_class, next_entry):
-        Node.__init__(self, None)
         self.expected_class = expected_class
-        self.next_entry = self.adopt_child(next_entry)
+        self.next_entry = next_entry
 
 
 class GenericDispatchNode(_AbstractDispatchNode):

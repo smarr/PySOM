@@ -77,14 +77,16 @@ class GenericMessageNode(AbstractMessageNode):
                     self._selector, rcvr_class, self._dispatch, self.universe
                 )
 
-            self._dispatch = self.adopt_child(node)
+            node.parent = self
+            self._dispatch = node
             return node
 
         # the chain is longer than the maximum defined by INLINE_CACHE_SIZE
         # and thus, this callsite is considered to be megaprophic, and we
         # generalize it.
         generic_replacement = GenericDispatchNode(self._selector, self.universe)
-        self._dispatch = self.adopt_child(generic_replacement)
+        generic_replacement.parent = self
+        self._dispatch = generic_replacement
         return generic_replacement
 
     def _direct_dispatch(self, rcvr, rcvr_class, args):
