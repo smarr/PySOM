@@ -6,8 +6,6 @@ from som.vmobjects.double import Double
 from som.vmobjects.integer import Integer
 from som.vmobjects.primitive import Primitive, TernaryPrimitive
 
-from som.vmobjects.block_bc import BcBlock
-
 
 def get_printable_location(block_method):
     from som.vmobjects.method_bc import BcAbstractMethod
@@ -38,37 +36,34 @@ jitdriver_double = jit.JitDriver(
 )
 
 
-def _to_do_int(i, by_increment, top, context, block_method):
+def _to_do_int(i, by_increment, top, block, block_method):
     assert isinstance(i, int)
     assert isinstance(top, int)
     while i <= top:
         jitdriver_int.jit_merge_point(block_method=block_method)
 
-        b = BcBlock(block_method, context)
-        block_method.invoke_2(b, Integer(i))
+        block_method.invoke_2(block, Integer(i))
         i += by_increment
 
 
-def _to_do_double(i, by_increment, top, context, block_method):
+def _to_do_double(i, by_increment, top, block, block_method):
     assert isinstance(i, int)
     assert isinstance(top, float)
     while i <= top:
         jitdriver_double.jit_merge_point(block_method=block_method)
 
-        b = BcBlock(block_method, context)
-        block_method.invoke_2(b, Integer(i))
+        block_method.invoke_2(block, Integer(i))
         i += by_increment
 
 
 def _to_do(rcvr, limit, block):
     block_method = block.get_method()
-    context = block.get_context()
 
     i = rcvr.get_embedded_integer()
     if isinstance(limit, Double):
-        _to_do_double(i, 1, limit.get_embedded_double(), context, block_method)
+        _to_do_double(i, 1, limit.get_embedded_double(), block, block_method)
     else:
-        _to_do_int(i, 1, limit.get_embedded_integer(), context, block_method)
+        _to_do_int(i, 1, limit.get_embedded_integer(), block, block_method)
 
     return rcvr
 
@@ -80,7 +75,6 @@ def _to_by_do(_ivkbl, frame):
     self = stack_pop(frame)  # we do leave it on there
 
     block_method = block.get_method()
-    context = block.get_context()
 
     i = self.get_embedded_integer()
     if isinstance(limit, Double):
@@ -88,7 +82,7 @@ def _to_by_do(_ivkbl, frame):
             i,
             by_increment.get_embedded_integer(),
             limit.get_embedded_double(),
-            context,
+            block,
             block_method,
         )
     else:
@@ -96,7 +90,7 @@ def _to_by_do(_ivkbl, frame):
             i,
             by_increment.get_embedded_integer(),
             limit.get_embedded_integer(),
-            context,
+            block,
             block_method,
         )
 
