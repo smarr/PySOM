@@ -55,24 +55,22 @@ def _do_super_send(bytecode_index, frame, method):
 
     receiver_class = method.get_holder().get_super_class()
     invokable = receiver_class.lookup_invokable(signature)
-    method.set_inline_cache(bytecode_index, receiver_class, invokable)
-    method.set_bytecode(bytecode_index, Bytecodes.q_super_send)
+
     num_args = invokable.get_number_of_signature_arguments()
     receiver = get_stack_element(frame, num_args - 1)
 
     if invokable:
-        invoke_invokable(invokable, num_args, receiver, frame)
-    else:
-        _send_does_not_understand(receiver, frame, invokable.get_signature())
-
-
-def _do_q_super_send(bytecode_index, frame, method):
-    invokable = method.get_inline_cache_invokable(bytecode_index)
-    num_args = invokable.get_number_of_signature_arguments()
-    receiver = get_stack_element(frame, num_args - 1)
-
-    if invokable:
-        invoke_invokable(invokable, num_args, receiver, frame)
+        method.set_inline_cache(bytecode_index, receiver_class, invokable)
+        if num_args == 1:
+            bc = Bytecodes.q_super_send_1
+        elif num_args == 2:
+            bc = Bytecodes.q_super_send_2
+        elif num_args == 3:
+            bc = Bytecodes.q_super_send_3
+        else:
+            bc = Bytecodes.q_super_send_n
+        method.set_bytecode(bytecode_index, bc)
+        invoke_invokable_slow_path(invokable, num_args, receiver, frame)
     else:
         _send_does_not_understand(receiver, frame, invokable.get_signature())
 
@@ -100,23 +98,7 @@ def _do_return_non_local(frame, ctx_level):
     raise ReturnException(result, block.get_on_stack_marker())
 
 
-def _do_send(bytecode_index, frame, method):
-    from som.vm.current import current_universe
-
-    signature = method.get_constant(bytecode_index)
-    num_args = signature.get_number_of_signature_arguments()
-    receiver = get_stack_element(frame, num_args - 1)
-
-    invokable = _lookup(
-        receiver.get_class(current_universe), signature, method, bytecode_index
-    )
-    if invokable:
-        invoke_invokable(invokable, num_args, receiver, frame)
-    else:
-        _send_does_not_understand(receiver, frame, signature)
-
-
-def invoke_invokable(invokable, num_args, receiver, frame):
+def invoke_invokable_slow_path(invokable, num_args, receiver, frame):
     if num_args == 1:
         result = invokable.invoke_1(receiver)
         stack_set_top(frame, result)
@@ -134,6 +116,8 @@ def invoke_invokable(invokable, num_args, receiver, frame):
 
 @jit.unroll_safe
 def interpret(method, frame):
+    from som.vm.current import current_universe
+
     current_bc_idx = 0
     while True:
         # since methods cannot contain loops (all loops are done via primitives)
@@ -204,8 +188,57 @@ def interpret(method, frame):
                 block.set_outer(idx, value)
         elif bytecode == Bytecodes.pop_field:
             _do_pop_field(current_bc_idx, frame, method)
-        elif bytecode == Bytecodes.send:
-            _do_send(current_bc_idx, frame, method)
+        elif bytecode == Bytecodes.send_1:
+            signature = method.get_constant(current_bc_idx)
+            receiver = get_stack_element(frame, 0)
+
+            invokable = _lookup(
+                receiver.get_class(current_universe), signature, method, current_bc_idx
+            )
+            if invokable:
+                result = invokable.invoke_1(receiver)
+                stack_set_top(frame, result)
+            else:
+                _send_does_not_understand(receiver, frame, signature)
+        elif bytecode == Bytecodes.send_2:
+            signature = method.get_constant(current_bc_idx)
+            receiver = get_stack_element(frame, 1)
+
+            invokable = _lookup(
+                receiver.get_class(current_universe), signature, method, current_bc_idx
+            )
+            if invokable:
+                result = invokable.invoke_2(receiver, stack_pop(frame))
+                stack_set_top(frame, result)
+            else:
+                _send_does_not_understand(receiver, frame, signature)
+        elif bytecode == Bytecodes.send_3:
+            signature = method.get_constant(current_bc_idx)
+            receiver = get_stack_element(frame, 2)
+
+            invokable = _lookup(
+                receiver.get_class(current_universe), signature, method, current_bc_idx
+            )
+            if invokable:
+                arg2 = stack_pop(frame)
+                arg1 = stack_pop(frame)
+                result = invokable.invoke_3(receiver, arg1, arg2)
+                stack_set_top(frame, result)
+            else:
+                _send_does_not_understand(receiver, frame, signature)
+        elif bytecode == Bytecodes.send_n:
+            signature = method.get_constant(current_bc_idx)
+            receiver = get_stack_element(
+                frame, signature.get_number_of_signature_arguments() - 1
+            )
+
+            invokable = _lookup(
+                receiver.get_class(current_universe), signature, method, current_bc_idx
+            )
+            if invokable:
+                result = invokable.invoke_n(frame)
+            else:
+                _send_does_not_understand(receiver, frame, signature)
         elif bytecode == Bytecodes.super_send:
             _do_super_send(current_bc_idx, frame, method)
         elif bytecode == Bytecodes.return_local:
@@ -244,8 +277,26 @@ def interpret(method, frame):
             else:
                 return _not_yet_implemented()
             stack_set_top(frame, result)
-        elif bytecode == Bytecodes.q_super_send:
-            _do_q_super_send(current_bc_idx, frame, method)
+        elif bytecode == Bytecodes.q_super_send_1:
+            invokable = method.get_inline_cache_invokable(current_bc_idx)
+            receiver = get_stack_element(frame, 0)
+            result = invokable.invoke_1(receiver)
+            stack_set_top(frame, result)
+        elif bytecode == Bytecodes.q_super_send_2:
+            invokable = method.get_inline_cache_invokable(current_bc_idx)
+            receiver = get_stack_element(frame, 1)
+            result = invokable.invoke_2(receiver, stack_pop(frame))
+            stack_set_top(frame, result)
+        elif bytecode == Bytecodes.q_super_send_3:
+            invokable = method.get_inline_cache_invokable(current_bc_idx)
+            receiver = get_stack_element(frame, 2)
+            arg2 = stack_pop(frame)
+            arg1 = stack_pop(frame)
+            result = invokable.invoke_3(receiver, arg1, arg2)
+            stack_set_top(frame, result)
+        elif bytecode == Bytecodes.q_super_send_3:
+            invokable = method.get_inline_cache_invokable(current_bc_idx)
+            invokable.invoke_n(frame)
         elif bytecode == Bytecodes.push_local:
             method.patch_variable_access(current_bc_idx)
             # retry bytecode after patching

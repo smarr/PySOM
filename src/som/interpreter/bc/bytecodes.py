@@ -16,24 +16,30 @@ class Bytecodes(object):
     pop_frame = 9
     pop_inner = 10
     pop_field = 11
-    send = 12
-    super_send = 13
-    return_local = 14
-    return_non_local = 15
-    return_self = 16
+    send_1 = 12
+    send_2 = 13
+    send_3 = 14
+    send_n = 15
+    super_send = 16
+    return_local = 17
+    return_non_local = 18
+    return_self = 19
 
-    inc = 17
-    dec = 18
+    inc = 20
+    dec = 21
 
-    q_super_send = 19
+    q_super_send_1 = 22
+    q_super_send_2 = 23
+    q_super_send_3 = 24
+    q_super_send_n = 25
 
-    push_local = 20
-    push_argument = 21
-    pop_local = 22
-    pop_argument = 23
+    push_local = 26
+    push_argument = 27
+    pop_local = 28
+    pop_argument = 29
 
 
-_NUM_BYTECODES = 24
+_NUM_BYTECODES = 30
 
 _BYTECODE_LENGTH = [
     1,  # halt
@@ -48,14 +54,20 @@ _BYTECODE_LENGTH = [
     3,  # pop_local
     3,  # pop_frame
     3,  # pop_inner
-    2,  # send
-    2,  # super_send
+    2,  # send_1
+    2,  # send_2
+    2,  # send_3
+    2,  # send_n
+    2,  # super_send_1
     1,  # return_local
     2,  # return_non_local
     1,  # return_self
     1,  # inc
     1,  # dec
-    2,  # q_super_send
+    2,  # q_super_send_1
+    2,  # q_super_send_2
+    2,  # q_super_send_3
+    2,  # q_super_send_n
     # rewritten on first use
     3,  # push_local
     3,  # push_argument
@@ -79,14 +91,20 @@ _BYTECODE_STACK_EFFECT = [
     -1,  # pop_frame
     -1,  # pop_inner
     -1,  # pop_field
-    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # send
+    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # send_1
+    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # send_2
+    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # send_3
+    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # send_n
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # super_send
     0,  # return_local
     0,  # return_non_local
     0,  # return_self
     0,  # inc
     0,  # dec
-    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send
+    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_1
+    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_2
+    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_3
+    _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_n
     1,  # push_argument
     1,  # push_field
     -1,  # pop_local

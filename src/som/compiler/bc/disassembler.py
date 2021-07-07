@@ -93,7 +93,17 @@ def dump_method(m, indent):
                 + ") value: "
                 + str(m.get_constant(b))
             )
-        elif bytecode == Bytecodes.send or bytecode == Bytecodes.super_send:
+        elif bytecode in (
+            Bytecodes.send_1,
+            Bytecodes.send_2,
+            Bytecodes.send_3,
+            Bytecodes.send_n,
+            Bytecodes.super_send,
+            Bytecodes.q_super_send_1,
+            Bytecodes.q_super_send_2,
+            Bytecodes.q_super_send_3,
+            Bytecodes.q_super_send_n,
+        ):
             error_println(
                 "(index: "
                 + str(m.get_bytecode(b + 1))
