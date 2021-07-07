@@ -30,7 +30,6 @@ class Invokable(Node):
 
     _immutable_fields_ = [
         "_expr_or_sequence?",
-        "universe",
         "_arg_inner_access[*]",
         "_size_frame",
         "_size_inner",
@@ -44,11 +43,9 @@ class Invokable(Node):
         arg_inner_access,
         size_frame,
         size_inner,
-        universe,
     ):
         Node.__init__(self, source_section)
         self._expr_or_sequence = self.adopt_child(expr_or_sequence)
-        self.universe = universe
         assert isinstance(arg_inner_access, list)
         make_sure_not_resized(arg_inner_access)
 

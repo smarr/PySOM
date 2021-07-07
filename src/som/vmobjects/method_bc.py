@@ -18,9 +18,10 @@ from som.interpreter.bc.frame import (
 from som.interpreter.bc.interpreter import interpret
 from som.interpreter.control_flow import ReturnException
 from som.vmobjects.abstract_object import AbstractObject
+from som.vmobjects.method import AbstractMethod
 
 
-class BcAbstractMethod(AbstractObject):
+class BcAbstractMethod(AbstractMethod):
 
     _immutable_fields_ = [
         "_bytecodes[*]",
@@ -30,9 +31,7 @@ class BcAbstractMethod(AbstractObject):
         "_receiver_class_table",
         "_number_of_locals",
         "_maximum_number_of_stack_elements",
-        "_signature",
         "_number_of_arguments",
-        "_holder",
         "_arg_inner_access[*]",
         "_size_frame",
         "_size_inner",
@@ -53,7 +52,7 @@ class BcAbstractMethod(AbstractObject):
         before_stack_start,
         lexical_scope,
     ):
-        AbstractObject.__init__(self)
+        AbstractMethod.__init__(self, signature)
 
         # Set the number of bytecodes in this method
         self._bytecodes = ["\x00"] * num_bytecodes
@@ -66,7 +65,6 @@ class BcAbstractMethod(AbstractObject):
 
         self._number_of_locals = num_locals
 
-        self._signature = signature
         self._maximum_number_of_stack_elements = max_stack_elements + 2
 
         self._arg_inner_access = arg_inner_access
@@ -75,17 +73,6 @@ class BcAbstractMethod(AbstractObject):
         self._before_stack_start = before_stack_start
 
         self._lexical_scope = lexical_scope
-
-        self._holder = None
-
-    @staticmethod
-    def is_primitive():
-        return False
-
-    @staticmethod
-    def is_invokable():
-        """We use this method to identify methods and primitives"""
-        return True
 
     def get_number_of_locals(self):
         return self._number_of_locals
@@ -96,14 +83,6 @@ class BcAbstractMethod(AbstractObject):
         # extra buffer to support doesNotUnderstand) and set the
         # number of indexable fields accordingly
         return self._maximum_number_of_stack_elements
-
-    # XXX this means that the JIT doesn't see changes to the method object
-    @jit.elidable_promote("all")
-    def get_signature(self):
-        return self._signature
-
-    def get_holder(self):
-        return self._holder
 
     def set_holder(self, value):
         self._holder = value
@@ -144,18 +123,6 @@ class BcAbstractMethod(AbstractObject):
         ), "Expected bytecode in the range of [0..255], but was: " + str(value)
         self._bytecodes[index] = chr(value)
 
-    def __str__(self):
-        return (
-            "Method("
-            + self.get_holder().get_name().get_embedded_string()
-            + ">>"
-            + str(self.get_signature())
-            + ")"
-        )
-
-    def get_class(self, universe):
-        return universe.method_class
-
     @jit.elidable
     def get_inline_cache_class(self, bytecode_index):
         assert 0 <= bytecode_index < len(self._inline_cache_class)
@@ -169,13 +136,6 @@ class BcAbstractMethod(AbstractObject):
     def set_inline_cache(self, bytecode_index, receiver_class, invokable):
         self._inline_cache_class[bytecode_index] = receiver_class
         self._inline_cache_invokable[bytecode_index] = invokable
-
-    def merge_point_string(self):
-        """debug info for the jit"""
-        return "%s>>%s" % (
-            self.get_holder().get_name().get_embedded_string(),
-            self.get_signature().get_embedded_string(),
-        )
 
     def patch_variable_access(self, bytecode_index):
         bc = self.get_bytecode(bytecode_index)

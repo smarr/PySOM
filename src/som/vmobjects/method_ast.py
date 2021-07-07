@@ -2,44 +2,20 @@ from __future__ import absolute_import
 
 from rlib import jit
 
-from som.vmobjects.abstract_object import AbstractObject
+from som.vmobjects.method import AbstractMethod
 
 
-class AstMethod(AbstractObject):
+class AstMethod(AbstractMethod):
 
     _immutable_fields_ = [
-        "_signature",
         "_invokable",
         "_embedded_block_methods",
-        "universe",
-        "_holder",
     ]
 
-    def __init__(self, signature, invokable, embedded_block_methods, universe):
-        AbstractObject.__init__(self)
-
-        self._signature = signature
+    def __init__(self, signature, invokable, embedded_block_methods):
+        AbstractMethod.__init__(self, signature)
         self._invokable = invokable
-
         self._embedded_block_methods = embedded_block_methods
-        self.universe = universe
-
-        self._holder = None
-
-    @staticmethod
-    def is_primitive():
-        return False
-
-    @staticmethod
-    def is_invokable():
-        """We use this method to identify methods and primitives"""
-        return True
-
-    def get_signature(self):
-        return self._signature
-
-    def get_holder(self):
-        return self._holder
 
     def set_holder(self, value):
         self._holder = value
@@ -52,20 +28,3 @@ class AstMethod(AbstractObject):
 
     def invoke(self, receiver, args):
         return self._invokable.invoke(receiver, args)
-
-    def __str__(self):
-        if self._holder:
-            holder = self._holder.get_name().get_embedded_string()
-        else:
-            holder = "nil"
-        return "Method(" + holder + ">>" + str(self.get_signature()) + ")"
-
-    def get_class(self, universe):
-        return universe.method_class
-
-    def merge_point_string(self):
-        """debug info for the jit"""
-        return "%s>>%s" % (
-            self.get_holder().get_name().get_embedded_string(),
-            self.get_signature().get_embedded_string(),
-        )

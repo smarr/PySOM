@@ -50,14 +50,12 @@ class MethodGenerationContext(MethodGenerationContextBase):
             arg_inner_access,
             size_frame,
             size_inner,
-            self.universe,
         )
         return AstMethod(
             self._signature,
             method,
             # copy list to make it immutable for RPython
             self._embedded_block_methods[:],
-            self.universe,
         )
 
     def _get_source_section_for_method(self, expr):
