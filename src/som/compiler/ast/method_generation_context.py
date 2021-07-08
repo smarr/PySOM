@@ -9,7 +9,6 @@ from som.interpreter.ast.invokable import Invokable
 
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_ast import (
-    AstAbstractMethod,
     AstUnaryMethod,
     AstBinaryMethod,
     AstTernaryMethod,

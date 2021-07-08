@@ -6,13 +6,29 @@ from rlib.debug import make_sure_not_resized
 from som.vmobjects.method import AbstractMethod
 
 
-def get_printable_location(self):
+def get_printable_location_1(self):
+    assert isinstance(self, AstUnaryMethod)
+    return self._invokable.source_section.identifier  # pylint: disable=protected-access
+
+
+def get_printable_location_2(self):
+    assert isinstance(self, AstBinaryMethod)
+    return self._invokable.source_section.identifier  # pylint: disable=protected-access
+
+
+def get_printable_location_3(self):
+    assert isinstance(self, AstTernaryMethod)
+    return self._invokable.source_section.identifier  # pylint: disable=protected-access
+
+
+def get_printable_location_args(self):
+    assert isinstance(self, AstNAryMethod)
     return self._invokable.source_section.identifier  # pylint: disable=protected-access
 
 
 jitdriver_1 = jit.JitDriver(
     greens=["self"],
-    get_printable_location=get_printable_location,
+    get_printable_location=get_printable_location_1,
     reds=["rcvr"],
     is_recursive=True,
     # the next line is a workaround around a likely bug in RPython
@@ -27,7 +43,7 @@ jitdriver_1 = jit.JitDriver(
 
 jitdriver_2 = jit.JitDriver(
     greens=["self"],
-    get_printable_location=get_printable_location,
+    get_printable_location=get_printable_location_2,
     reds=["rcvr", "arg"],
     is_recursive=True,
     should_unroll_one_iteration=lambda self: True,
@@ -35,7 +51,7 @@ jitdriver_2 = jit.JitDriver(
 
 jitdriver_3 = jit.JitDriver(
     greens=["self"],
-    get_printable_location=get_printable_location,
+    get_printable_location=get_printable_location_3,
     reds=["rcvr", "arg1", "arg2"],
     is_recursive=True,
     should_unroll_one_iteration=lambda self: True,
@@ -43,7 +59,7 @@ jitdriver_3 = jit.JitDriver(
 
 jitdriver_args = jit.JitDriver(
     greens=["self"],
-    get_printable_location=get_printable_location,
+    get_printable_location=get_printable_location_args,
     reds=["rcvr", "args"],
     is_recursive=True,
     should_unroll_one_iteration=lambda self: True,
