@@ -2,7 +2,6 @@ from rlib import jit
 from som.interpreter.ast.frame import is_on_stack
 
 from som.vmobjects.abstract_object import AbstractObject
-from som.vmobjects.primitive import Primitive
 
 
 VALUE_SIGNATURE = [
@@ -47,22 +46,3 @@ class AstBlock(AbstractObject):
 
     def get_class(self, universe):
         return universe.block_classes[self._method.get_number_of_arguments()]
-
-
-class _Evaluation(Primitive):
-
-    _immutable_fields_ = ["_number_of_arguments"]
-
-    def __init__(self, num_args, universe, invoke):
-        Primitive.__init__(self, VALUE_SIGNATURE[num_args], universe, invoke)
-        self._number_of_arguments = num_args
-
-
-def block_evaluation_primitive(num_args, universe):
-    return _Evaluation(num_args, universe, _invoke)
-
-
-def _invoke(ivkbl, block, args):
-    assert isinstance(ivkbl, _Evaluation)
-    method = block.get_method()
-    return method.invoke(block, args)

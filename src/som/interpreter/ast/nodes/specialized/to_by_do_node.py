@@ -5,7 +5,7 @@ from som.interpreter.ast.nodes.specialized.to_do_node import AbstractToDoNode
 from som.vmobjects.block_ast import AstBlock
 from som.vmobjects.double import Double
 from som.vmobjects.integer import Integer
-from som.vmobjects.method_ast import AstMethod
+from som.vmobjects.method_ast import AstAbstractMethod
 
 
 class AbstractToByDoNode(AbstractToDoNode):
@@ -39,7 +39,7 @@ class AbstractToByDoNode(AbstractToDoNode):
 
 
 def get_printable_location(block_method):
-    assert isinstance(block_method, AstMethod)
+    assert isinstance(block_method, AstAbstractMethod)
     return "#to:do: %s" % block_method.merge_point_string()
 
 
@@ -62,7 +62,7 @@ class IntToIntByDoNode(AbstractToByDoNode):
         by = step.get_embedded_integer()
         while i <= top:
             int_driver.jit_merge_point(block_method=block_method)
-            block_method.invoke(body_block, [Integer(i)])
+            block_method.invoke_2(body_block, Integer(i))
             i += by
 
     @staticmethod
@@ -109,7 +109,7 @@ class IntToDoubleByDoNode(AbstractToByDoNode):
         by = step.get_embedded_integer()
         while i <= top:
             double_driver.jit_merge_point(block_method=block_method)
-            block_method.invoke(body_block, [Integer(i)])
+            block_method.invoke_2(body_block, Integer(i))
             i += by
 
     @staticmethod

@@ -7,31 +7,31 @@ from som.vmobjects.abstract_object import AbstractObject
 from som.vm.globals import nilObject, falseObject, trueObject
 from som.vmobjects.double import Double
 from som.vmobjects.integer import Integer
-from som.vmobjects.method_ast import AstMethod
+from som.vmobjects.method_ast import AstAbstractMethod
 
 
 def put_all_obj_pl(block_method):
-    assert isinstance(block_method, AstMethod)
+    assert isinstance(block_method, AstAbstractMethod)
     return "#putAll: (obj_strategy) %s" % block_method.merge_point_string()
 
 
 def put_all_nil_pl(block_method):
-    assert isinstance(block_method, AstMethod)
+    assert isinstance(block_method, AstAbstractMethod)
     return "#putAll: (empty_strategy) %s" % block_method.merge_point_string()
 
 
 def put_all_double_pl(block_method):
-    assert isinstance(block_method, AstMethod)
+    assert isinstance(block_method, AstAbstractMethod)
     return "#putAll: (double_strategy) %s" % block_method.merge_point_string()
 
 
 def put_all_long_pl(block_method):
-    assert isinstance(block_method, AstMethod)
+    assert isinstance(block_method, AstAbstractMethod)
     return "#putAll: (long_strategy) %s" % block_method.merge_point_string()
 
 
 def put_all_bool_pl(block_method):
-    assert isinstance(block_method, AstMethod)
+    assert isinstance(block_method, AstAbstractMethod)
     return "#putAll: (bool_strategy) %s" % block_method.merge_point_string()
 
 
@@ -105,7 +105,7 @@ class _ArrayStrategy(object):
 
         # we do the first iteration separately to determine our strategy
         assert i < size
-        first = block_method.invoke(block, [])
+        first = block_method.invoke_1(block)
         if first is nilObject:
             _ArrayStrategy._set_remaining_with_block_as_nil(array, block, size, 1)
         elif isinstance(first, Integer):
@@ -137,7 +137,7 @@ class _ArrayStrategy(object):
         block_method = block.get_method()
         while next_i < size:
             put_all_nil_driver.jit_merge_point(block_method=block_method)
-            result = block_method.invoke(block, [])
+            result = block_method.invoke_1(block)
             if result is not nilObject:
                 # ok, fall back, let's go straight to obj strategy
                 # todo: perhaps, partially empty would be better?
@@ -156,7 +156,7 @@ class _ArrayStrategy(object):
         block_method = block.get_method()
         while next_i < size:
             put_all_long_driver.jit_merge_point(block_method=block_method)
-            result = block_method.invoke(block, [])
+            result = block_method.invoke_1(block)
             if isinstance(result, Integer):
                 storage[next_i] = result.get_embedded_integer()
             else:
@@ -177,7 +177,7 @@ class _ArrayStrategy(object):
         block_method = block.get_method()
         while next_i < size:
             put_all_double_driver.jit_merge_point(block_method=block_method)
-            result = block_method.invoke(block, [])
+            result = block_method.invoke_1(block)
             if isinstance(result, Double):
                 storage[next_i] = result.get_embedded_double()
             else:
@@ -198,7 +198,7 @@ class _ArrayStrategy(object):
         block_method = block.get_method()
         while next_i < size:
             put_all_bool_driver.jit_merge_point(block_method=block_method)
-            result = block_method.invoke(block, [])
+            result = block_method.invoke_1(block)
             if result is trueObject or result is falseObject:
                 storage[next_i] = result is trueObject
             else:
@@ -220,7 +220,7 @@ class _ArrayStrategy(object):
 
         while next_i < size:
             put_all_obj_driver.jit_merge_point(block_method=block_method)
-            storage[next_i] = block_method.invoke(block, [])
+            storage[next_i] = block_method.invoke_1(block)
             next_i += 1
 
         array.strategy = _obj_strategy

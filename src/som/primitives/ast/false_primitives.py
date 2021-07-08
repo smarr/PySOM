@@ -4,7 +4,7 @@ from som.primitives.false_primitives import FalsePrimitivesBase as _Base
 def _or(_ivkbl, _rcvr, args):
     block = args[0]
     block_method = block.get_method()
-    return block_method.invoke(block, [])
+    return block_method.invoke_1(block)
 
 
 FalsePrimitives = _Base

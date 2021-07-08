@@ -8,7 +8,13 @@ from som.interpreter.ast.nodes.return_non_local_node import CatchNonLocalReturnN
 from som.interpreter.ast.invokable import Invokable
 
 from som.vmobjects.primitive import empty_primitive
-from som.vmobjects.method_ast import AstMethod
+from som.vmobjects.method_ast import (
+    AstAbstractMethod,
+    AstUnaryMethod,
+    AstBinaryMethod,
+    AstTernaryMethod,
+    AstNAryMethod,
+)
 
 
 class MethodGenerationContext(MethodGenerationContextBase):
@@ -51,7 +57,18 @@ class MethodGenerationContext(MethodGenerationContextBase):
             size_frame,
             size_inner,
         )
-        return AstMethod(
+
+        num_args = len(self._arguments)
+        if num_args == 1:
+            bc_method_class = AstUnaryMethod
+        elif num_args == 2:
+            bc_method_class = AstBinaryMethod
+        elif num_args == 3:
+            bc_method_class = AstTernaryMethod
+        else:
+            bc_method_class = AstNAryMethod
+
+        return bc_method_class(
             self._signature,
             method,
             # copy list to make it immutable for RPython

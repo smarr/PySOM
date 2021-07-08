@@ -4,7 +4,7 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 from som.vm.globals import nilObject, falseObject, trueObject
 
 from som.vmobjects.block_ast import AstBlock
-from som.vmobjects.method_ast import AstMethod
+from som.vmobjects.method_ast import AstAbstractMethod
 
 
 class AbstractWhileMessageNode(ExpressionNode):
@@ -51,12 +51,12 @@ class AbstractWhileMessageNode(ExpressionNode):
 #         while True:
 #             while_value_driver.jit_merge_point(body_method = body_method,
 #                                                node        = self)
-#             body_method.invoke(body_block, None)
+#             body_method.invoke_1(body_block)
 
 
 def get_printable_location_while(body_method, condition_method, while_type):
-    assert isinstance(condition_method, AstMethod)
-    assert isinstance(body_method, AstMethod)
+    assert isinstance(condition_method, AstAbstractMethod)
+    assert isinstance(body_method, AstAbstractMethod)
 
     return "%s while %s: %s" % (
         condition_method.merge_point_string(),
@@ -94,10 +94,10 @@ class WhileMessageNode(AbstractWhileMessageNode):
             if rcvr_block is body_block:
                 rcvr_block = body_block
 
-            condition_value = condition_method.invoke(rcvr_block, [])
+            condition_value = condition_method.invoke_1(rcvr_block)
             if condition_value is not self._predicate_bool:
                 break
-            body_method.invoke(body_block, [])
+            body_method.invoke_1(body_block)
 
     @staticmethod
     def can_specialize(selector, _rcvr, args, _node):

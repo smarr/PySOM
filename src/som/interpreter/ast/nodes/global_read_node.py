@@ -1,7 +1,7 @@
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX, read_frame
+from som.interpreter.send import lookup_and_send_2
 from som.vm.globals import nilObject, trueObject, falseObject
 
-from som.interpreter.ast.nodes.dispatch import lookup_and_send
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
@@ -33,16 +33,11 @@ class _UninitializedGlobalReadNode(ExpressionNode):
     def execute(self, frame):
         if self.universe.has_global(self._global_name):
             return self._specialize().execute(frame)
-        return self.send_unknown_global(
+        return lookup_and_send_2(
             read_frame(frame, FRAME_AND_INNER_RCVR_IDX),
             self._global_name,
-            self.universe,
+            "unknownGlobal:",
         )
-
-    @staticmethod
-    def send_unknown_global(receiver, global_name, universe):
-        arguments = [global_name]
-        return lookup_and_send(receiver, "unknownGlobal:", arguments, universe)
 
     def _specialize(self):
         assoc = self.universe.get_globals_association(self._global_name)

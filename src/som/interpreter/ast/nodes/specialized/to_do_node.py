@@ -5,7 +5,7 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 from som.vmobjects.block_ast import AstBlock
 from som.vmobjects.double import Double
 from som.vmobjects.integer import Integer
-from som.vmobjects.method_ast import AstMethod
+from som.vmobjects.method_ast import AstAbstractMethod
 
 
 class AbstractToDoNode(ExpressionNode):
@@ -37,7 +37,7 @@ class AbstractToDoNode(ExpressionNode):
 
 
 def get_printable_location(block_method):
-    assert isinstance(block_method, AstMethod)
+    assert isinstance(block_method, AstAbstractMethod)
     return "#to:do: %s" % block_method.merge_point_string()
 
 
@@ -59,7 +59,7 @@ class IntToIntDoNode(AbstractToDoNode):
         top = limit.get_embedded_integer()
         while i <= top:
             int_driver.jit_merge_point(block_method=block_method)
-            block_method.invoke(body_block, [Integer(i)])
+            block_method.invoke_2(body_block, Integer(i))
             i += 1
 
     @staticmethod
@@ -103,7 +103,7 @@ class IntToDoubleDoNode(AbstractToDoNode):
         top = limit.get_embedded_double()
         while i <= top:
             double_driver.jit_merge_point(block_method=block_method)
-            block_method.invoke(body_block, [Integer(i)])
+            block_method.invoke_2(body_block, Integer(i))
             i += 1
 
     @staticmethod

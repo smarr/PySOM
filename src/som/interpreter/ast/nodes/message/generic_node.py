@@ -7,34 +7,20 @@ from som.interpreter.ast.nodes.dispatch import (
     CachedDnuNode,
     GenericDispatchNode,
 )
-from som.interpreter.ast.nodes.message.abstract_node import AbstractMessageNode
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
-class GenericMessageNode(AbstractMessageNode):
+class _AbstractGenericMessageNode(ExpressionNode):
 
-    _immutable_fields_ = ["_dispatch?"]
-    _child_nodes_ = ["_dispatch"]
+    _immutable_fields_ = ["_selector", "_dispatch?", "_rcvr_expr?", "universe"]
+    _child_nodes_ = ["_dispatch", "_rcvr_expr"]
 
-    def __init__(self, selector, universe, rcvr_expr, arg_exprs, source_section=None):
-        AbstractMessageNode.__init__(
-            self, selector, universe, rcvr_expr, arg_exprs, source_section
-        )
+    def __init__(self, selector, universe, rcvr_expr, source_section=None):
+        ExpressionNode.__init__(self, source_section)
+        self._selector = selector
+        self.universe = universe
+        self._rcvr_expr = self.adopt_child(rcvr_expr)
         self._dispatch = None
-
-    def execute(self, frame):
-        rcvr, args = self._evaluate_rcvr_and_args(frame)
-        return self.execute_evaluated(frame, rcvr, args)
-
-    def execute_evaluated(self, frame, rcvr, args):
-        assert frame is not None
-        assert rcvr is not None
-        assert args is not None
-        make_sure_not_resized(args)
-
-        rcvr_class = rcvr.get_class(self.universe)
-
-        dispatch_node = self._lookup(rcvr_class)
-        return dispatch_node.execute_dispatch(rcvr, args)
 
     @elidable_promote("all")
     def _lookup(self, rcvr_class):
@@ -90,3 +76,98 @@ class GenericMessageNode(AbstractMessageNode):
             self._selector,
             self.source_section,
         )
+
+
+class UnarySend(_AbstractGenericMessageNode):
+    def __init__(self, selector, universe, rcvr_expr, source_section=None):
+        _AbstractGenericMessageNode.__init__(
+            self, selector, universe, rcvr_expr, source_section
+        )
+
+    def execute(self, frame):
+        rcvr = self._rcvr_expr.execute(frame)
+        rcvr_class = rcvr.get_class(self.universe)
+        dispatch_node = self._lookup(rcvr_class)
+        return dispatch_node.dispatch_1(rcvr)
+
+    def execute_evaluated(self, _frame, rcvr, _args):
+        rcvr_class = rcvr.get_class(self.universe)
+        dispatch_node = self._lookup(rcvr_class)
+        return dispatch_node.dispatch_1(rcvr)
+
+
+class BinarySend(_AbstractGenericMessageNode):
+
+    _immutable_fields_ = ["_arg_expr?"]
+    _child_nodes_ = ["_arg_expr"]
+
+    def __init__(self, selector, universe, rcvr_expr, arg_expr, source_section=None):
+        _AbstractGenericMessageNode.__init__(
+            self, selector, universe, rcvr_expr, source_section
+        )
+        self._arg_expr = self.adopt_child(arg_expr)
+
+    def execute(self, frame):
+        rcvr = self._rcvr_expr.execute(frame)
+        arg = self._arg_expr.execute(frame)
+        return self.exec_evaluated_2(rcvr, arg)
+
+    def execute_evaluated(self, _frame, rcvr, args):
+        return self.exec_evaluated_2(rcvr, args[0])
+
+    def exec_evaluated_2(self, rcvr, arg):
+        rcvr_class = rcvr.get_class(self.universe)
+        dispatch_node = self._lookup(rcvr_class)
+        return dispatch_node.dispatch_2(rcvr, arg)
+
+
+class TernarySend(_AbstractGenericMessageNode):
+
+    _immutable_fields_ = ["_arg1_expr?", "_arg2_expr?"]
+    _child_nodes_ = ["_arg1_expr", "_arg2_expr"]
+
+    def __init__(
+        self, selector, universe, rcvr_expr, arg1_expr, arg2_expr, source_section=None
+    ):
+        _AbstractGenericMessageNode.__init__(
+            self, selector, universe, rcvr_expr, source_section
+        )
+        self._arg1_expr = self.adopt_child(arg1_expr)
+        self._arg2_expr = self.adopt_child(arg2_expr)
+
+    def execute(self, frame):
+        rcvr = self._rcvr_expr.execute(frame)
+        arg1 = self._arg1_expr.execute(frame)
+        arg2 = self._arg2_expr.execute(frame)
+        return self.exec_evaluated_3(rcvr, arg1, arg2)
+
+    def execute_evaluated(self, _frame, rcvr, args):
+        return self.exec_evaluated_3(rcvr, args[0], args[1])
+
+    def exec_evaluated_3(self, rcvr, arg1, arg2):
+        rcvr_class = rcvr.get_class(self.universe)
+        dispatch_node = self._lookup(rcvr_class)
+        return dispatch_node.dispatch_3(rcvr, arg1, arg2)
+
+
+class NArySend(_AbstractGenericMessageNode):
+
+    _immutable_fields_ = ["_arg_exprs?[*]"]
+    _child_nodes_ = ["_arg_exprs[*]"]
+
+    def __init__(self, selector, universe, rcvr_expr, arg_exprs, source_section=None):
+        _AbstractGenericMessageNode.__init__(
+            self, selector, universe, rcvr_expr, source_section
+        )
+        self._arg_exprs = self.adopt_children(arg_exprs)
+        make_sure_not_resized(self._arg_exprs)
+
+    def execute(self, frame):
+        rcvr = self._rcvr_expr.execute(frame)
+        args = [arg_exp.execute(frame) for arg_exp in self._arg_exprs]
+        return self.execute_evaluated(None, rcvr, args)
+
+    def execute_evaluated(self, _frame, rcvr, args):
+        rcvr_class = rcvr.get_class(self.universe)
+        dispatch_node = self._lookup(rcvr_class)
+        return dispatch_node.dispatch_args(rcvr, args)

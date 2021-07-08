@@ -9,13 +9,14 @@ from rlib.osext import path_split
 from som.interp_type import is_ast_interpreter
 
 from som.vmobjects.array import Array
+from som.vmobjects.block_bc import block_evaluation_primitive
 from som.vmobjects.clazz import Class
-from som.vmobjects.method_bc import BcBinaryMethod, BcBinaryMethodNLR
 from som.vmobjects.object_without_fields import ObjectWithoutFields
 from som.vmobjects.symbol import Symbol
 from som.vmobjects.string import String
 
 from som.vm.globals import nilObject, trueObject, falseObject
+from som.vm.shell import Shell
 
 from som.compiler.sourcecode_compiler import (
     compile_class_from_file,
@@ -24,12 +25,8 @@ from som.compiler.sourcecode_compiler import (
 
 if is_ast_interpreter():
     from som.vmobjects.object_with_layout import ObjectWithLayout as Object
-    from som.vmobjects.block_ast import block_evaluation_primitive
-    from som.vm.shell import AstShell
 else:
     from som.vmobjects.object import Object
-    from som.vmobjects.block_bc import block_evaluation_primitive
-    from som.vm.shell import BcShell
 
 
 class Assoc(object):
@@ -121,10 +118,7 @@ class Universe(object):
         if invokable is None:
             raise Exception("Lookup of " + selector + " failed in class " + class_name)
 
-        return self._start_method_execution(clazz, invokable)
-
-    def _start_method_execution(self, _c, _i):  # pylint: disable=no-self-use
-        raise Exception("Implemented by Subclass")
+        return invokable.invoke_1(clazz)
 
     def interpret(self, arguments):
         # Check for command line switches
@@ -135,16 +129,11 @@ class Universe(object):
 
         # Start the shell if no filename is given
         if len(arguments) == 0:
-            return self._start_shell()
+            shell = Shell(self)
+            return shell.start()
         arguments_array = self.new_array_with_strings(arguments)
         initialize = self.system_class.lookup_invokable(self.symbol_for("initialize:"))
-        return self._start_execution(system_object, initialize, arguments_array)
-
-    def _start_execution(self, _s, _i, _a):  # pylint: disable=no-self-use
-        raise Exception("Implemented by Subclass")
-
-    def _start_shell(self):  # pylint: disable=no-self-use
-        raise Exception("Implemented by Subclass")
+        return initialize.invoke_2(system_object, arguments_array)
 
     def handle_arguments(self, arguments):
         got_classpath = False
@@ -490,33 +479,10 @@ class Universe(object):
 
 
 class _ASTUniverse(Universe):
-    def _start_shell(self):
-        shell = AstShell(self)
-        return shell.start()
-
-    def _start_execution(
-        self, system_object, initialize, arguments_array
-    ):  # pylint: disable=no-self-use
-        return initialize.invoke(system_object, [arguments_array])
-
-    def _start_method_execution(self, clazz, invokable):  # pylint: disable=no-self-use
-        return invokable.invoke(clazz, [])
+    pass
 
 
 class _BCUniverse(Universe):
-    def _start_shell(self):
-        shell = BcShell(self)
-        return shell.start()
-
-    def _start_execution(self, system_object, initialize, arguments_array):
-        assert isinstance(initialize, BcBinaryMethod) or isinstance(
-            initialize, BcBinaryMethodNLR
-        )
-        return initialize.invoke_2(system_object, arguments_array)
-
-    def _start_method_execution(self, clazz, invokable):
-        return invokable.invoke_1(clazz)
-
     def _initialize_object_system(self):
         system_object = Universe._initialize_object_system(self)
         return system_object

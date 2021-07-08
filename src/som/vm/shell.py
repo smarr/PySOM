@@ -3,12 +3,9 @@ from rlib.osext import raw_input
 from som.vm.globals import nilObject
 
 
-class _Shell(object):
+class Shell(object):
     def __init__(self, universe):
         self.universe = universe
-
-    def _exec(self, shell_object, shell_method, it):  # pylint: disable=W,R
-        raise Exception("Implemented by Subclass")
 
     def start(self):
         from som.vm.universe import std_println, error_println
@@ -47,23 +44,10 @@ class _Shell(object):
                         self.universe.symbol_for("run:")
                     )
 
-                    it = self._exec(shell_object, shell_method, it)
+                    it = shell_method.invoke_2(shell_object, it)
             except Exception as ex:  # pylint: disable=broad-except
                 if not we_are_translated():  # this cannot be done in rpython
                     import traceback
 
                     traceback.print_exc()
                 error_println("Caught exception: %s" % ex)
-
-
-class AstShell(_Shell):
-    def _exec(self, shell_object, shell_method, it):
-        return shell_method.invoke(shell_object, [it])
-
-
-class BcShell(_Shell):
-    def _exec(self, shell_object, shell_method, it):
-        from som.vmobjects.method_bc import BcBinaryMethod
-
-        assert isinstance(shell_object, BcBinaryMethod)
-        return shell_method.invoke_2(shell_object, it)

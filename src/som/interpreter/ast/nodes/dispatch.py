@@ -1,4 +1,4 @@
-from rlib import jit
+from som.interpreter.send import lookup_and_send_3
 
 from som.vmobjects.array import Array
 
@@ -32,8 +32,40 @@ class GenericDispatchNode(_AbstractDispatchNode):
         method = rcvr.get_class(self.universe).lookup_invokable(self._selector)
         if method is not None:
             return method.invoke(rcvr, args)
+        return self._send_dnu(rcvr, args)
+
+    def _send_dnu(self, rcvr, args):
         # Won't use DNU caching here, because it's a megamorphic node
-        return send_does_not_understand(rcvr, self._selector, args, self.universe)
+        return lookup_and_send_3(
+            rcvr,
+            self._selector,
+            Array.from_values(args),
+            "doesNotUnderstand:arguments:",
+        )
+
+    def dispatch_1(self, rcvr):
+        method = rcvr.get_class(self.universe).lookup_invokable(self._selector)
+        if method is not None:
+            return method.invoke_1(rcvr)
+        return self._send_dnu(rcvr, [])
+
+    def dispatch_2(self, rcvr, arg):
+        method = rcvr.get_class(self.universe).lookup_invokable(self._selector)
+        if method is not None:
+            return method.invoke_2(rcvr, arg)
+        return self._send_dnu(rcvr, [arg])
+
+    def dispatch_3(self, rcvr, arg1, arg2):
+        method = rcvr.get_class(self.universe).lookup_invokable(self._selector)
+        if method is not None:
+            return method.invoke_3(rcvr, arg1, arg2)
+        return self._send_dnu(rcvr, [arg1, arg2])
+
+    def dispatch_args(self, rcvr, args):
+        method = rcvr.get_class(self.universe).lookup_invokable(self._selector)
+        if method is not None:
+            return method.invoke_args(rcvr, args)
+        return self._send_dnu(rcvr, args)
 
 
 class CachedDispatchNode(_AbstractDispatchNode):
@@ -44,8 +76,17 @@ class CachedDispatchNode(_AbstractDispatchNode):
         _AbstractDispatchNode.__init__(self, rcvr_class, next_entry)
         self._cached_method = method
 
-    def execute_dispatch(self, rcvr, args):
-        return self._cached_method.invoke(rcvr, args)
+    def dispatch_1(self, rcvr):
+        return self._cached_method.invoke_1(rcvr)
+
+    def dispatch_2(self, rcvr, arg):
+        return self._cached_method.invoke_2(rcvr, arg)
+
+    def dispatch_3(self, rcvr, arg1, arg2):
+        return self._cached_method.invoke_3(rcvr, arg1, arg2)
+
+    def dispatch_args(self, rcvr, args):
+        return self._cached_method.invoke_args(rcvr, args)
 
 
 class CachedDnuNode(_AbstractDispatchNode):
@@ -63,35 +104,20 @@ class CachedDnuNode(_AbstractDispatchNode):
             universe.symbol_for("doesNotUnderstand:arguments:")
         )
 
-    def execute_dispatch(self, rcvr, args):
-        return self._cached_method.invoke(
-            rcvr, [self._selector, Array.from_values(args)]
+    def dispatch_1(self, rcvr):
+        return self._cached_method.invoke_3(rcvr, self._selector, Array.from_size(0))
+
+    def dispatch_2(self, rcvr, arg):
+        return self._cached_method.invoke_3(
+            rcvr, self._selector, Array.from_values([arg])
         )
 
+    def dispatch_3(self, rcvr, arg1, arg2):
+        return self._cached_method.invoke_3(
+            rcvr, self._selector, Array.from_values([arg1, arg2])
+        )
 
-# @jit.unroll_safe
-def _prepare_dnu_arguments(arguments, selector, universe):
-    # Compute the number of arguments
-    selector = jit.promote(selector)
-    universe = jit.promote(universe)
-    number_of_arguments = (
-        selector.get_number_of_signature_arguments() - 1
-    )  # without self
-    assert number_of_arguments == len(arguments)
-
-    # TODO: make sure this is still optimizing DNU properly
-    # don't want to see any overhead just for using strategies
-    arguments_array = Array.from_values(arguments)
-    args = [selector, arguments_array]
-    return args
-
-
-def send_does_not_understand(receiver, selector, arguments, universe):
-    args = _prepare_dnu_arguments(arguments, selector, universe)
-    return lookup_and_send(receiver, "doesNotUnderstand:arguments:", args, universe)
-
-
-def lookup_and_send(receiver, selector_string, arguments, universe):
-    selector = universe.symbol_for(selector_string)
-    invokable = receiver.get_class(universe).lookup_invokable(selector)
-    return invokable.invoke(receiver, arguments)
+    def dispatch_args(self, rcvr, args):
+        return self._cached_method.invoke_3(
+            rcvr, self._selector, Array.from_values(args)
+        )

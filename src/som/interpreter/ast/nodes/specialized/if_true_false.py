@@ -29,12 +29,12 @@ class IfTrueIfFalseNode(ExpressionNode):
     def _do_iftrue_iffalse(rcvr, true, false):
         if rcvr is trueObject:
             if isinstance(true, AstBlock):
-                return true.get_method().invoke(true, [])
+                return true.get_method().invoke_1(true)
             return true
 
         assert rcvr is falseObject
         if isinstance(false, AstBlock):
-            return false.get_method().invoke(false, [])
+            return false.get_method().invoke_1(false)
         return false
 
     @staticmethod
@@ -81,7 +81,7 @@ class IfNode(ExpressionNode):
     def _do_if(self, rcvr, branch):
         if rcvr is self._condition:
             if isinstance(branch, AstBlock):
-                return branch.get_method().invoke(branch, [])
+                return branch.get_method().invoke_1(branch)
             return branch
         assert rcvr is falseObject or rcvr is trueObject
         return nilObject

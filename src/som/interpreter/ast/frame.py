@@ -73,7 +73,85 @@ _erase_list, _unerase_list = new_erasing_pair("frame_and_inner")
 _erase_obj, _unerase_obj = new_erasing_pair("abstract_obj")
 
 
-def create_frame(receiver, arguments, arg_inner_access, size_frame, size_inner):
+def create_frame_1(receiver, size_frame, size_inner):
+    frame = [_erase_obj(nilObject)] * size_frame
+    make_sure_not_resized(frame)
+
+    if size_inner > 0:
+        inner = [nilObject] * size_inner
+        make_sure_not_resized(inner)
+        frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+        frame[_FRAME_INNER_IDX] = _erase_list(inner)
+
+        inner[_INNER_ON_STACK_IDX] = trueObject
+        inner[FRAME_AND_INNER_RCVR_IDX] = receiver
+    else:
+        frame[0] = _erase_obj(None)
+        frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+
+    return frame
+
+
+def create_frame_2(receiver, arg, arg_inner, size_frame, size_inner):
+    frame = [_erase_obj(nilObject)] * size_frame
+    make_sure_not_resized(frame)
+
+    if size_inner > 0:
+        inner = [nilObject] * size_inner
+        make_sure_not_resized(inner)
+        frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+        frame[_FRAME_INNER_IDX] = _erase_list(inner)
+
+        inner[_INNER_ON_STACK_IDX] = trueObject
+        inner[FRAME_AND_INNER_RCVR_IDX] = receiver
+
+        if arg_inner:
+            inner[FRAME_AND_INNER_RCVR_IDX + 1] = arg
+        else:
+            frame[FRAME_AND_INNER_RCVR_IDX + 1] = _erase_obj(arg)
+    else:
+        frame[0] = _erase_obj(None)
+        frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+        frame[FRAME_AND_INNER_RCVR_IDX + 1] = _erase_obj(arg)
+
+    return frame
+
+
+def create_frame_3(receiver, arg1, arg2, arg_inner_access, size_frame, size_inner):
+    frame = [_erase_obj(nilObject)] * size_frame
+    make_sure_not_resized(frame)
+
+    if size_inner > 0:
+        inner = [nilObject] * size_inner
+        make_sure_not_resized(inner)
+        frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+        frame[_FRAME_INNER_IDX] = _erase_list(inner)
+
+        inner[_INNER_ON_STACK_IDX] = trueObject
+        inner[FRAME_AND_INNER_RCVR_IDX] = receiver
+
+        if arg_inner_access[0]:
+            inner[FRAME_AND_INNER_RCVR_IDX + 1] = arg1
+            if arg_inner_access[1]:
+                inner[FRAME_AND_INNER_RCVR_IDX + 2] = arg2
+            else:
+                frame[FRAME_AND_INNER_RCVR_IDX + 1] = _erase_obj(arg2)
+        else:
+            frame[FRAME_AND_INNER_RCVR_IDX + 1] = _erase_obj(arg1)
+            if arg_inner_access[1]:
+                inner[FRAME_AND_INNER_RCVR_IDX + 1] = arg2
+            else:
+                frame[FRAME_AND_INNER_RCVR_IDX + 2] = _erase_obj(arg2)
+    else:
+        frame[0] = _erase_obj(None)
+        frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
+        frame[FRAME_AND_INNER_RCVR_IDX + 1] = _erase_obj(arg1)
+        frame[FRAME_AND_INNER_RCVR_IDX + 2] = _erase_obj(arg2)
+
+    return frame
+
+
+def create_frame_args(receiver, arguments, arg_inner_access, size_frame, size_inner):
     frame = [_erase_obj(nilObject)] * size_frame
     make_sure_not_resized(frame)
 

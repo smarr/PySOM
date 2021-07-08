@@ -17,6 +17,7 @@ from som.interpreter.bc.frame import (
     get_self_dynamically,
 )
 from som.interpreter.control_flow import ReturnException
+from som.interpreter.send import lookup_and_send_2, lookup_and_send_3
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import BcBlock
 
@@ -35,7 +36,7 @@ def _do_push_global(bytecode_index, frame, method):
         # Push the global onto the stack
         stack_push(frame, glob)
     else:
-        result = _lookup_and_send_2(
+        result = lookup_and_send_2(
             get_self_dynamically(frame), global_name, "unknownGlobal:"
         )
         stack_push(frame, result)
@@ -93,7 +94,7 @@ def _do_return_non_local(frame, ctx_level):
         sender = get_self_dynamically(frame)
 
         # ... and execute the escapedBlock message instead
-        return _lookup_and_send_2(sender, block, "escapedBlock:")
+        return lookup_and_send_2(sender, block, "escapedBlock:")
 
     raise ReturnException(result, block.get_on_stack_marker())
 
@@ -375,27 +376,10 @@ def _send_does_not_understand(receiver, frame, selector):
         i -= 1
 
     stack_pop(frame)  # pop self from stack
-    result = _lookup_and_send_3(
+    result = lookup_and_send_3(
         receiver, selector, arguments_array, "doesNotUnderstand:arguments:"
     )
     stack_push(frame, result)
-
-
-def _lookup_and_send_2(receiver, arg, selector_string):
-    from som.vm.current import current_universe
-
-    selector = current_universe.symbol_for(selector_string)
-    invokable = receiver.get_class(current_universe).lookup_invokable(selector)
-
-    return invokable.invoke_2(receiver, arg)
-
-
-def _lookup_and_send_3(receiver, arg1, arg2, selector_string):
-    from som.vm.current import current_universe
-
-    selector = current_universe.symbol_for(selector_string)
-    invokable = receiver.get_class(current_universe).lookup_invokable(selector)
-    return invokable.invoke_3(receiver, arg1, arg2)
 
 
 def get_printable_location(bytecode_index, method):

@@ -1,5 +1,10 @@
 from som.interpreter.ast.nodes.message.abstract_node import AbstractMessageNode
-from som.interpreter.ast.nodes.message.generic_node import GenericMessageNode
+from som.interpreter.ast.nodes.message.generic_node import (
+    UnarySend,
+    BinarySend,
+    TernarySend,
+    NArySend,
+)
 
 from som.interpreter.ast.nodes.specialized.down_to_do_node import (
     IntDownToIntDoNode,
@@ -42,12 +47,34 @@ class UninitializedMessageNode(AbstractMessageNode):
                     return specialization.specialize_node(
                         self._selector, rcvr, args, self
                     )
-        return self.replace(
-            GenericMessageNode(
+        num_args = len(args) + 1
+        if num_args == 1:
+            node = UnarySend(
+                self._selector, self.universe, self._rcvr_expr, self.source_section
+            )
+        elif num_args == 2:
+            node = BinarySend(
+                self._selector,
+                self.universe,
+                self._rcvr_expr,
+                self._arg_exprs[0],
+                self.source_section,
+            )
+        elif num_args == 3:
+            node = TernarySend(
+                self._selector,
+                self.universe,
+                self._rcvr_expr,
+                self._arg_exprs[0],
+                self._arg_exprs[1],
+                self.source_section,
+            )
+        else:
+            node = NArySend(
                 self._selector,
                 self.universe,
                 self._rcvr_expr,
                 self._arg_exprs,
                 self.source_section,
             )
-        )
+        return self.replace(node)

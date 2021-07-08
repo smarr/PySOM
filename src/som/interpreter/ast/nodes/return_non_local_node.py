@@ -5,10 +5,10 @@ from som.interpreter.ast.frame import (
     get_inner_as_context,
 )
 from som.interpreter.ast.nodes.contextual_node import ContextualNode
-from som.interpreter.ast.nodes.dispatch import lookup_and_send
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 from som.interpreter.control_flow import ReturnException
+from som.interpreter.send import lookup_and_send_2
 
 
 class ReturnNonLocalNode(ContextualNode):
@@ -29,12 +29,7 @@ class ReturnNonLocalNode(ContextualNode):
             raise ReturnException(result, block.get_on_stack_marker())
         block = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
         outer_self = block.get_from_outer(FRAME_AND_INNER_RCVR_IDX)
-        return self.send_escaped_block(outer_self, block, self.universe)
-
-    @staticmethod
-    def send_escaped_block(receiver, block, universe):
-        arguments = [block]
-        return lookup_and_send(receiver, "escapedBlock:", arguments, universe)
+        return lookup_and_send_2(outer_self, block, "escapedBlock:")
 
 
 class CatchNonLocalReturnNode(ExpressionNode):
