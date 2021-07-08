@@ -178,23 +178,13 @@ def _interp_with_nlr(method, new_frame):
         raise e
 
 
-class BcUnaryMethod(BcAbstractMethod):
+class BcMethod(BcAbstractMethod):
     def invoke_1(self, rcvr):
         new_frame = create_frame_1(
             self._size_frame, self._size_inner, self._before_stack_start, rcvr
         )
         return interpret(self, new_frame)
 
-
-class BcUnaryMethodNLR(BcUnaryMethod):
-    def invoke_1(self, rcvr):
-        new_frame = create_frame_1(
-            self._size_frame, self._size_inner, self._before_stack_start, rcvr
-        )
-        return _interp_with_nlr(self, new_frame)
-
-
-class BcBinaryMethod(BcAbstractMethod):
     def invoke_2(self, rcvr, arg1):
         new_frame = create_frame_2(
             self._arg_inner_access[0],
@@ -206,21 +196,6 @@ class BcBinaryMethod(BcAbstractMethod):
         )
         return interpret(self, new_frame)
 
-
-class BcBinaryMethodNLR(BcBinaryMethod):
-    def invoke_2(self, rcvr, arg1):
-        new_frame = create_frame_2(
-            self._arg_inner_access[0],
-            self._size_frame,
-            self._size_inner,
-            self._before_stack_start,
-            rcvr,
-            arg1,
-        )
-        return _interp_with_nlr(self, new_frame)
-
-
-class BcTernaryMethod(BcAbstractMethod):
     def invoke_3(self, rcvr, arg1, arg2):
         new_frame = create_frame_3(
             self._arg_inner_access,
@@ -233,22 +208,6 @@ class BcTernaryMethod(BcAbstractMethod):
         )
         return interpret(self, new_frame)
 
-
-class BcTernaryMethodNLR(BcTernaryMethod):
-    def invoke_3(self, rcvr, arg1, arg2):
-        new_frame = create_frame_3(
-            self._arg_inner_access,
-            self._size_frame,
-            self._size_inner,
-            self._before_stack_start,
-            rcvr,
-            arg1,
-            arg2,
-        )
-        return _interp_with_nlr(self, new_frame)
-
-
-class BcNAryMethod(BcAbstractMethod):
     def invoke_n(self, frame):
         new_frame = create_frame(
             self._arg_inner_access,
@@ -265,7 +224,36 @@ class BcNAryMethod(BcAbstractMethod):
         )
 
 
-class BcNAryMethodNLR(BcNAryMethod):
+class BcMethodNLR(BcMethod):
+    def invoke_1(self, rcvr):
+        new_frame = create_frame_1(
+            self._size_frame, self._size_inner, self._before_stack_start, rcvr
+        )
+        return _interp_with_nlr(self, new_frame)
+
+    def invoke_2(self, rcvr, arg1):
+        new_frame = create_frame_2(
+            self._arg_inner_access[0],
+            self._size_frame,
+            self._size_inner,
+            self._before_stack_start,
+            rcvr,
+            arg1,
+        )
+        return _interp_with_nlr(self, new_frame)
+
+    def invoke_3(self, rcvr, arg1, arg2):
+        new_frame = create_frame_3(
+            self._arg_inner_access,
+            self._size_frame,
+            self._size_inner,
+            self._before_stack_start,
+            rcvr,
+            arg1,
+            arg2,
+        )
+        return _interp_with_nlr(self, new_frame)
+
     def invoke_n(self, frame):
         new_frame = create_frame(
             self._arg_inner_access,

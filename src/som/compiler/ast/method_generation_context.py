@@ -9,10 +9,7 @@ from som.interpreter.ast.invokable import Invokable
 
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_ast import (
-    AstUnaryMethod,
-    AstBinaryMethod,
-    AstTernaryMethod,
-    AstNAryMethod,
+    AstMethod,
 )
 
 
@@ -57,17 +54,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
             size_inner,
         )
 
-        num_args = len(self._arguments)
-        if num_args == 1:
-            bc_method_class = AstUnaryMethod
-        elif num_args == 2:
-            bc_method_class = AstBinaryMethod
-        elif num_args == 3:
-            bc_method_class = AstTernaryMethod
-        else:
-            bc_method_class = AstNAryMethod
-
-        return bc_method_class(
+        return AstMethod(
             self._signature,
             method,
             # copy list to make it immutable for RPython

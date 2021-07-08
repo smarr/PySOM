@@ -4,7 +4,7 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 from som.vm.globals import nilObject, falseObject, trueObject
 
 from som.vmobjects.block_ast import AstBlock
-from som.vmobjects.method_ast import AstAbstractMethod
+from som.vmobjects.method_ast import AstMethod
 
 
 class AbstractWhileMessageNode(ExpressionNode):
@@ -55,8 +55,8 @@ class AbstractWhileMessageNode(ExpressionNode):
 
 
 def get_printable_location_while(body_method, condition_method, while_type):
-    assert isinstance(condition_method, AstAbstractMethod)
-    assert isinstance(body_method, AstAbstractMethod)
+    assert isinstance(condition_method, AstMethod)
+    assert isinstance(body_method, AstMethod)
 
     return "%s while %s: %s" % (
         condition_method.merge_point_string(),

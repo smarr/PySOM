@@ -8,14 +8,8 @@ from som.interpreter.bc.bytecodes import (
 )
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import (
-    BcUnaryMethodNLR,
-    BcBinaryMethodNLR,
-    BcNAryMethodNLR,
-    BcUnaryMethod,
-    BcBinaryMethod,
-    BcNAryMethod,
-    BcTernaryMethodNLR,
-    BcTernaryMethod,
+    BcMethodNLR,
+    BcMethod,
 )
 
 
@@ -64,25 +58,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
             # this map
             make_sure_not_resized(arg_inner_access)
 
-        num_args = len(self._arguments)
         if self.needs_to_catch_non_local_returns:
-            if num_args == 1:
-                bc_method_class = BcUnaryMethodNLR
-            elif num_args == 2:
-                bc_method_class = BcBinaryMethodNLR
-            elif num_args == 3:
-                bc_method_class = BcTernaryMethodNLR
-            else:
-                bc_method_class = BcNAryMethodNLR
+            bc_method_class = BcMethodNLR
         else:
-            if num_args == 1:
-                bc_method_class = BcUnaryMethod
-            elif num_args == 2:
-                bc_method_class = BcBinaryMethod
-            elif num_args == 3:
-                bc_method_class = BcTernaryMethod
-            else:
-                bc_method_class = BcNAryMethod
+            bc_method_class = BcMethod
 
         meth = bc_method_class(
             list(self._literals),

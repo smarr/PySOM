@@ -5,7 +5,7 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 from som.vmobjects.block_ast import AstBlock
 from som.vmobjects.double import Double
 from som.vmobjects.integer import Integer
-from som.vmobjects.method_ast import AstAbstractMethod
+from som.vmobjects.method_ast import AstMethod
 
 
 class AbstractToDoNode(ExpressionNode):
@@ -37,7 +37,7 @@ class AbstractToDoNode(ExpressionNode):
 
 
 def get_printable_location(block_method):
-    assert isinstance(block_method, AstAbstractMethod)
+    assert isinstance(block_method, AstMethod)
     return "#to:do: %s" % block_method.merge_point_string()
 
 

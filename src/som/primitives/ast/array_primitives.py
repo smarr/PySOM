@@ -1,12 +1,12 @@
 from rlib import jit
 from som.primitives.array_primitives import ArrayPrimitivesBase as _Base
 from som.vmobjects.block_ast import AstBlock
-from som.vmobjects.method_ast import AstAbstractMethod
+from som.vmobjects.method_ast import AstMethod
 from som.vmobjects.primitive import BinaryPrimitive
 
 
 def get_do_index_printable_location(block_method):
-    assert isinstance(block_method, AstAbstractMethod)
+    assert isinstance(block_method, AstMethod)
     return "#doIndexes: %s" % block_method.merge_point_string()
 
 
@@ -32,7 +32,7 @@ def _do_indexes(rcvr, block):
 
 
 def get_do_printable_location(block_method):
-    assert isinstance(block_method, AstAbstractMethod)
+    assert isinstance(block_method, AstMethod)
     return "#doIndexes: %s" % block_method.merge_point_string()
 
 

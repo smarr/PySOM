@@ -7,22 +7,22 @@ from som.vmobjects.method import AbstractMethod
 
 
 def get_printable_location_1(self):
-    assert isinstance(self, AstUnaryMethod)
+    assert isinstance(self, AstMethod)
     return self._invokable.source_section.identifier  # pylint: disable=protected-access
 
 
 def get_printable_location_2(self):
-    assert isinstance(self, AstBinaryMethod)
+    assert isinstance(self, AstMethod)
     return self._invokable.source_section.identifier  # pylint: disable=protected-access
 
 
 def get_printable_location_3(self):
-    assert isinstance(self, AstTernaryMethod)
+    assert isinstance(self, AstMethod)
     return self._invokable.source_section.identifier  # pylint: disable=protected-access
 
 
 def get_printable_location_args(self):
-    assert isinstance(self, AstNAryMethod)
+    assert isinstance(self, AstMethod)
     return self._invokable.source_section.identifier  # pylint: disable=protected-access
 
 
@@ -66,7 +66,7 @@ jitdriver_args = jit.JitDriver(
 )
 
 
-class AstAbstractMethod(AbstractMethod):
+class AstMethod(AbstractMethod):
 
     _immutable_fields_ = [
         "_invokable",
@@ -87,26 +87,18 @@ class AstAbstractMethod(AbstractMethod):
     def get_number_of_arguments(self):
         return self.get_signature().get_number_of_signature_arguments()
 
-
-class AstUnaryMethod(AstAbstractMethod):
     def invoke_1(self, rcvr):
         jitdriver_1.jit_merge_point(self=self, rcvr=rcvr)
         return self._invokable.invoke_1(rcvr)
 
-
-class AstBinaryMethod(AstAbstractMethod):
     def invoke_2(self, rcvr, arg):
         jitdriver_2.jit_merge_point(self=self, rcvr=rcvr, arg=arg)
         return self._invokable.invoke_2(rcvr, arg)
 
-
-class AstTernaryMethod(AstAbstractMethod):
     def invoke_3(self, rcvr, arg1, arg2):
         jitdriver_3.jit_merge_point(self=self, rcvr=rcvr, arg1=arg1, arg2=arg2)
         return self._invokable.invoke_3(rcvr, arg1, arg2)
 
-
-class AstNAryMethod(AstAbstractMethod):
     def invoke_args(self, rcvr, args):
         assert args is not None
         make_sure_not_resized(args)
