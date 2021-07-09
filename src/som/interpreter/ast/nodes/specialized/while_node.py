@@ -25,11 +25,8 @@ class AbstractWhileMessageNode(ExpressionNode):
         rcvr_value = self._rcvr_expr.execute(frame)
         body_block = self._body_expr.execute(frame)
 
-        self._do_while(rcvr_value, body_block)
+        _do_while(self, rcvr_value, body_block)
         return nilObject
-
-    def _do_while(self, _rcvr, _body):  # pylint: disable=W,R
-        raise Exception("Implemented in Subclass")
 
 
 # def get_printable_location_while_value(body_method, node):
@@ -73,31 +70,32 @@ while_driver = jit.JitDriver(
 )
 
 
-class WhileMessageNode(AbstractWhileMessageNode):
-    def execute_evaluated(self, _frame, rcvr, args):
-        self._do_while(rcvr, args[0])
-        return nilObject
+def _do_while(node, rcvr_block, body_block):
+    condition_method = rcvr_block.get_method()
+    body_method = body_block.get_method()
 
-    def _do_while(self, rcvr_block, body_block):
-        condition_method = rcvr_block.get_method()
-        body_method = body_block.get_method()
+    if rcvr_block.is_same_context(body_block):
+        rcvr_block = body_block
 
-        if rcvr_block.is_same_context(body_block):
+    while True:
+        while_driver.jit_merge_point(
+            body_method=body_method, condition_method=condition_method, node=node
+        )
+
+        # STEFAN: looks stupid but might help the jit
+        if rcvr_block is body_block:
             rcvr_block = body_block
 
-        while True:
-            while_driver.jit_merge_point(
-                body_method=body_method, condition_method=condition_method, node=self
-            )
+        condition_value = condition_method.invoke_1(rcvr_block)
+        if condition_value is not node._predicate_bool:  # pylint: disable=W
+            break
+        body_method.invoke_1(body_block)
 
-            # STEFAN: looks stupid but might help the jit
-            if rcvr_block is body_block:
-                rcvr_block = body_block
 
-            condition_value = condition_method.invoke_1(rcvr_block)
-            if condition_value is not self._predicate_bool:
-                break
-            body_method.invoke_1(body_block)
+class WhileMessageNode(AbstractWhileMessageNode):
+    def execute_evaluated(self, _frame, rcvr, args):
+        _do_while(self, rcvr, args[0])
+        return nilObject
 
     @staticmethod
     def can_specialize(selector, _rcvr, args, _node):
