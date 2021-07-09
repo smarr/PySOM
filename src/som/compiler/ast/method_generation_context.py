@@ -8,9 +8,7 @@ from som.interpreter.ast.nodes.return_non_local_node import CatchNonLocalReturnN
 from som.interpreter.ast.invokable import Invokable
 
 from som.vmobjects.primitive import empty_primitive
-from som.vmobjects.method_ast import (
-    AstMethod,
-)
+from som.vmobjects.method_ast import AstMethod
 
 
 class MethodGenerationContext(MethodGenerationContextBase):
@@ -53,7 +51,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
             size_frame,
             size_inner,
         )
-
         return AstMethod(
             self._signature,
             method,
