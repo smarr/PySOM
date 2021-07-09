@@ -5,7 +5,6 @@ from som.compiler.method_generation_context import MethodGenerationContextBase
 from som.interpreter.ast.nodes.field_node import create_write_node, create_read_node
 from som.interpreter.ast.nodes.global_read_node import create_global_node
 from som.interpreter.ast.nodes.return_non_local_node import CatchNonLocalReturnNode
-from som.interpreter.ast.invokable import Invokable
 
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_ast import AstMethod
@@ -44,18 +43,15 @@ class MethodGenerationContext(MethodGenerationContextBase):
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
         method_body = self._add_argument_initialization(method_body)
-        method = Invokable(
-            self._get_source_section_for_method(method_body),
+        return AstMethod(
+            self._signature,
             method_body,
             arg_inner_access,
             size_frame,
             size_inner,
-        )
-        return AstMethod(
-            self._signature,
-            method,
             # copy list to make it immutable for RPython
             self._embedded_block_methods[:],
+            self._get_source_section_for_method(method_body),
         )
 
     def _get_source_section_for_method(self, expr):
