@@ -79,7 +79,7 @@ class _Invokable(Node):
     Otherwise the parent field would point to a non-Node type (AstMethod)
     """
 
-    _immutable_fields_ = ["_expr_or_sequence?"]
+    _immutable_fields_ = ["expr_or_sequence?"]
     _child_nodes_ = ["expr_or_sequence"]
 
     def __init__(self, expr_or_sequence):
