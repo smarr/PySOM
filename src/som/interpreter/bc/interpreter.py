@@ -295,7 +295,7 @@ def interpret(method, frame):
             arg1 = stack_pop(frame)
             result = invokable.invoke_3(receiver, arg1, arg2)
             stack_set_top(frame, result)
-        elif bytecode == Bytecodes.q_super_send_3:
+        elif bytecode == Bytecodes.q_super_send_n:
             invokable = method.get_inline_cache_invokable(current_bc_idx)
             invokable.invoke_n(frame)
         elif bytecode == Bytecodes.push_local:
