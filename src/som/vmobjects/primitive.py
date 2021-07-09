@@ -64,9 +64,9 @@ class _BcPrimitive(_AbstractPrimitive):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke_n(self, frame):
+    def invoke_n(self, stack, stack_ptr):
         prim_fn = self._prim_fn
-        prim_fn(self, frame)
+        return prim_fn(self, stack, stack_ptr)
 
     def get_number_of_signature_arguments(self):
         return self._signature.get_number_of_signature_arguments()
@@ -117,7 +117,7 @@ class TernaryPrimitive(_AbstractPrimitive):
         return 3
 
 
-def _empty_invoke(ivkbl, _a=None, _b=None):
+def _empty_invoke_ast(ivkbl, _rcvr, _args):
     """Write a warning to the screen"""
     print(
         "Warning: undefined primitive #%s called"
@@ -125,10 +125,21 @@ def _empty_invoke(ivkbl, _a=None, _b=None):
     )
 
 
+def _empty_invoke_bc(ivkbl, _stack, stack_ptr):
+    """Write a warning to the screen"""
+    print(
+        "Warning: undefined primitive #%s called"
+        % ivkbl.get_signature().get_embedded_string()
+    )
+    return stack_ptr
+
+
 if is_ast_interpreter():
     Primitive = _AstPrimitive
+    _empty_invoke = _empty_invoke_ast
 else:
     Primitive = _BcPrimitive
+    _empty_invoke = _empty_invoke_bc
 
 
 def empty_primitive(signature_string, universe):

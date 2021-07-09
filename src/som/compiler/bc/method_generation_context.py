@@ -44,10 +44,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         # +2 for buffer for dnu, #escapedBlock, etc.
         max_stack_size = self._compute_stack_depth() + 2
-
-        before_stack_start = size_frame - 1
-        size_frame += max_stack_size + 1  # +1 for the StackPtr
-
         num_locals = len(self._locals)
 
         if len(arg_inner_access) > 1:
@@ -72,7 +68,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
             arg_inner_access,
             size_frame,
             size_inner,
-            before_stack_start,
             self.lexical_scope,
         )
 
