@@ -1,6 +1,12 @@
 import unittest
 
-from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX, read_frame, read_inner
+from som.interpreter.ast.frame import (
+    FRAME_AND_INNER_RCVR_IDX,
+    read_frame,
+    read_inner,
+    create_frame_1,
+    create_frame_2,
+)
 from som.interpreter.bc.frame import (
     create_frame,
 )
@@ -128,4 +134,47 @@ class FrameTest(unittest.TestCase):
             read_inner(
                 callee_frame, FRAME_AND_INNER_RCVR_IDX + 2
             ).get_embedded_integer(),
+        )
+
+    def test_create_frame_1(self):
+        rcvr = Integer(1)
+        frame = create_frame_1(rcvr, _MIN_FRAME_SIZE, _MIN_FRAME_SIZE)
+
+        self.assertEqual(
+            1, read_inner(frame, FRAME_AND_INNER_RCVR_IDX).get_embedded_integer()
+        )
+        self.assertEqual(
+            1, read_frame(frame, FRAME_AND_INNER_RCVR_IDX).get_embedded_integer()
+        )
+
+    def test_create_frame_2_inner(self):
+        rcvr = Integer(1)
+        arg = Integer(2)
+        frame = create_frame_2(rcvr, arg, True, _MIN_FRAME_SIZE, _MIN_FRAME_SIZE + 1)
+
+        self.assertEqual(
+            1, read_inner(frame, FRAME_AND_INNER_RCVR_IDX).get_embedded_integer()
+        )
+        self.assertEqual(
+            1, read_frame(frame, FRAME_AND_INNER_RCVR_IDX).get_embedded_integer()
+        )
+
+        self.assertEqual(
+            2, read_inner(frame, FRAME_AND_INNER_RCVR_IDX + 1).get_embedded_integer()
+        )
+
+    def test_create_frame_2_frame(self):
+        rcvr = Integer(1)
+        arg = Integer(2)
+        frame = create_frame_2(rcvr, arg, False, _MIN_FRAME_SIZE + 1, _MIN_FRAME_SIZE)
+
+        self.assertEqual(
+            1, read_inner(frame, FRAME_AND_INNER_RCVR_IDX).get_embedded_integer()
+        )
+        self.assertEqual(
+            1, read_frame(frame, FRAME_AND_INNER_RCVR_IDX).get_embedded_integer()
+        )
+
+        self.assertEqual(
+            2, read_frame(frame, FRAME_AND_INNER_RCVR_IDX + 1).get_embedded_integer()
         )

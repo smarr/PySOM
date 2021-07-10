@@ -86,7 +86,7 @@ def create_frame_1(receiver, size_frame, size_inner):
         inner[_INNER_ON_STACK_IDX] = trueObject
         inner[FRAME_AND_INNER_RCVR_IDX] = receiver
     else:
-        frame[0] = _erase_obj(None)
+        frame[0] = _erase_list(None)
         frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
 
     return frame
@@ -110,7 +110,7 @@ def create_frame_2(receiver, arg, arg_inner, size_frame, size_inner):
         else:
             frame[FRAME_AND_INNER_RCVR_IDX + 1] = _erase_obj(arg)
     else:
-        frame[0] = _erase_obj(None)
+        frame[0] = _erase_list(None)
         frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
         frame[FRAME_AND_INNER_RCVR_IDX + 1] = _erase_obj(arg)
 
@@ -143,7 +143,7 @@ def create_frame_3(receiver, arg1, arg2, arg_inner_access, size_frame, size_inne
             else:
                 frame[FRAME_AND_INNER_RCVR_IDX + 2] = _erase_obj(arg2)
     else:
-        frame[0] = _erase_obj(None)
+        frame[0] = _erase_list(None)
         frame[FRAME_AND_INNER_RCVR_IDX] = _erase_obj(receiver)
         frame[FRAME_AND_INNER_RCVR_IDX + 1] = _erase_obj(arg1)
         frame[FRAME_AND_INNER_RCVR_IDX + 2] = _erase_obj(arg2)

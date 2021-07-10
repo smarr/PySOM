@@ -5,14 +5,14 @@ from som.interpreter.ast.frame import (
     get_inner_as_context,
     mark_as_no_longer_on_stack,
     FRAME_AND_INNER_RCVR_IDX,
+    create_frame_1,
+    create_frame_2,
 )
 from som.interpreter.bc.bytecodes import Bytecodes
 
 from som.interpreter.bc.frame import (
     create_frame,
     stack_pop_old_arguments_and_push_result,
-    create_frame_1,
-    create_frame_2,
     create_frame_3,
 )
 from som.interpreter.bc.interpreter import interpret
@@ -177,16 +177,16 @@ def _interp_with_nlr(method, new_frame, max_stack_size):
 
 class BcMethod(BcAbstractMethod):
     def invoke_1(self, rcvr):
-        new_frame = create_frame_1(self._size_frame, self._size_inner, rcvr)
+        new_frame = create_frame_1(rcvr, self._size_frame, self._size_inner)
         return interpret(self, new_frame, self._maximum_number_of_stack_elements)
 
     def invoke_2(self, rcvr, arg1):
         new_frame = create_frame_2(
+            rcvr,
+            arg1,
             self._arg_inner_access[0],
             self._size_frame,
             self._size_inner,
-            rcvr,
-            arg1,
         )
         return interpret(self, new_frame, self._maximum_number_of_stack_elements)
 
@@ -219,16 +219,16 @@ class BcMethod(BcAbstractMethod):
 
 class BcMethodNLR(BcMethod):
     def invoke_1(self, rcvr):
-        new_frame = create_frame_1(self._size_frame, self._size_inner, rcvr)
+        new_frame = create_frame_1(rcvr, self._size_frame, self._size_inner)
         return _interp_with_nlr(self, new_frame, self._maximum_number_of_stack_elements)
 
     def invoke_2(self, rcvr, arg1):
         new_frame = create_frame_2(
+            rcvr,
+            arg1,
             self._arg_inner_access[0],
             self._size_frame,
             self._size_inner,
-            rcvr,
-            arg1,
         )
         return _interp_with_nlr(self, new_frame, self._maximum_number_of_stack_elements)
 
