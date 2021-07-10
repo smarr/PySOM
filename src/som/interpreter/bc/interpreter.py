@@ -17,6 +17,7 @@ from som.vmobjects.array import Array
 from som.vmobjects.block_bc import BcBlock
 
 from rlib import jit
+from rlib.jit import promote
 
 
 def _do_super_send(bytecode_index, method, stack, stack_ptr):
@@ -137,12 +138,12 @@ def interpret(method, frame, max_stack_size):
         if bytecode == Bytecodes.dup:
             val = stack[stack_ptr]
             stack_ptr += 1
-            stack[stack_ptr] = val
+            stack[promote(stack_ptr)] = val
 
         elif bytecode == Bytecodes.push_frame:
             assert method.get_bytecode(current_bc_idx + 2) == 0
             stack_ptr += 1
-            stack[stack_ptr] = read_frame(
+            stack[promote(stack_ptr)] = read_frame(
                 frame, method.get_bytecode(current_bc_idx + 1)
             )
 
@@ -151,6 +152,7 @@ def interpret(method, frame, max_stack_size):
             ctx_level = method.get_bytecode(current_bc_idx + 2)
 
             stack_ptr += 1
+            promote(stack_ptr)
             if ctx_level == 0:
                 stack[stack_ptr] = read_inner(frame, idx)
             else:
@@ -162,22 +164,23 @@ def interpret(method, frame, max_stack_size):
             ctx_level = method.get_bytecode(current_bc_idx + 2)
 
             stack_ptr += 1
-            stack[stack_ptr] = get_self(frame, ctx_level).get_field(field_index)
+            stack[promote(stack_ptr)] = get_self(frame, ctx_level).get_field(field_index)
 
         elif bytecode == Bytecodes.push_block:
             block_method = method.get_constant(current_bc_idx)
             stack_ptr += 1
-            stack[stack_ptr] = BcBlock(block_method, get_inner_as_context(frame))
+            stack[promote(stack_ptr)] = BcBlock(block_method, get_inner_as_context(frame))
 
         elif bytecode == Bytecodes.push_constant:
             stack_ptr += 1
-            stack[stack_ptr] = method.get_constant(current_bc_idx)
+            stack[promote(stack_ptr)] = method.get_constant(current_bc_idx)
 
         elif bytecode == Bytecodes.push_global:
             global_name = method.get_constant(current_bc_idx)
             glob = current_universe.get_global(global_name)
 
             stack_ptr += 1
+            promote(stack_ptr)
             if glob:
                 stack[stack_ptr] = glob
             else:
@@ -188,12 +191,14 @@ def interpret(method, frame, max_stack_size):
         elif bytecode == Bytecodes.pop:
             stack[stack_ptr] = None
             stack_ptr -= 1
+            promote(stack_ptr)
 
         elif bytecode == Bytecodes.pop_frame:
             assert method.get_bytecode(current_bc_idx + 2) == 0
             value = stack[stack_ptr]
             stack[stack_ptr] = None
             stack_ptr -= 1
+            promote(stack_ptr)
             write_frame(frame, method.get_bytecode(current_bc_idx + 1), value)
 
         elif bytecode == Bytecodes.pop_inner:
@@ -202,6 +207,7 @@ def interpret(method, frame, max_stack_size):
             value = stack[stack_ptr]
             stack[stack_ptr] = None
             stack_ptr -= 1
+            promote(stack_ptr)
 
             if ctx_level == 0:
                 write_inner(frame, idx, value)
@@ -216,6 +222,7 @@ def interpret(method, frame, max_stack_size):
             value = stack[stack_ptr]
             stack[stack_ptr] = None
             stack_ptr -= 1
+            promote(stack_ptr)
 
             # Set the field with the computed index to the value popped from the stack
             get_self(frame, ctx_level).set_field(field_index, value)
@@ -250,6 +257,7 @@ def interpret(method, frame, max_stack_size):
                 stack_ptr = _send_does_not_understand(
                     receiver, signature, stack, stack_ptr
                 )
+            promote(stack_ptr)
 
         elif bytecode == Bytecodes.send_3:
             signature = method.get_constant(current_bc_idx)
@@ -269,6 +277,7 @@ def interpret(method, frame, max_stack_size):
                 stack_ptr = _send_does_not_understand(
                     receiver, signature, stack, stack_ptr
                 )
+            promote(stack_ptr)
 
         elif bytecode == Bytecodes.send_n:
             signature = method.get_constant(current_bc_idx)
@@ -285,9 +294,11 @@ def interpret(method, frame, max_stack_size):
                 stack_ptr = _send_does_not_understand(
                     receiver, signature, stack, stack_ptr
                 )
+            promote(stack_ptr)
 
         elif bytecode == Bytecodes.super_send:
             stack_ptr = _do_super_send(current_bc_idx, method, stack, stack_ptr)
+            promote(stack_ptr)
 
         elif bytecode == Bytecodes.return_local:
             return stack[stack_ptr]
@@ -341,18 +352,19 @@ def interpret(method, frame, max_stack_size):
             invokable = method.get_inline_cache_invokable(current_bc_idx)
             arg = stack[stack_ptr]
             stack_ptr -= 1
-            stack[stack_ptr] = invokable.invoke_2(stack[stack_ptr], arg)
+            stack[promote(stack_ptr)] = invokable.invoke_2(stack[stack_ptr], arg)
 
         elif bytecode == Bytecodes.q_super_send_3:
             invokable = method.get_inline_cache_invokable(current_bc_idx)
             arg2 = stack[stack_ptr]
             arg1 = stack[stack_ptr - 1]
             stack_ptr -= 2
-            stack[stack_ptr] = invokable.invoke_3(stack[stack_ptr], arg1, arg2)
+            stack[promote(stack_ptr)] = invokable.invoke_3(stack[stack_ptr], arg1, arg2)
 
         elif bytecode == Bytecodes.q_super_send_n:
             invokable = method.get_inline_cache_invokable(current_bc_idx)
             stack_ptr = invokable.invoke_n(stack, stack_ptr)
+            promote(stack_ptr)
 
         elif bytecode == Bytecodes.push_local:
             method.patch_variable_access(current_bc_idx)
