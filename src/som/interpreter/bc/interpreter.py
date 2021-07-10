@@ -164,12 +164,16 @@ def interpret(method, frame, max_stack_size):
             ctx_level = method.get_bytecode(current_bc_idx + 2)
 
             stack_ptr += 1
-            stack[promote(stack_ptr)] = get_self(frame, ctx_level).get_field(field_index)
+            stack[promote(stack_ptr)] = get_self(frame, ctx_level).get_field(
+                field_index
+            )
 
         elif bytecode == Bytecodes.push_block:
             block_method = method.get_constant(current_bc_idx)
             stack_ptr += 1
-            stack[promote(stack_ptr)] = BcBlock(block_method, get_inner_as_context(frame))
+            stack[promote(stack_ptr)] = BcBlock(
+                block_method, get_inner_as_context(frame)
+            )
 
         elif bytecode == Bytecodes.push_constant:
             stack_ptr += 1
