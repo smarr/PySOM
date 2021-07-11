@@ -1,16 +1,11 @@
 from rlib import jit
-from som.interp_type import is_ast_interpreter
 from som.vm.globals import nilObject
 from som.vmobjects.array import Array
-
-if is_ast_interpreter():
-    from som.vmobjects.object_with_layout import ObjectWithLayout as Object
-    from som.interpreter.objectstorage.object_layout import ObjectLayout
-else:
-    from som.vmobjects.object import Object
+from som.vmobjects.object_with_layout import ObjectWithLayout as Object
+from som.interpreter.objectstorage.object_layout import ObjectLayout
 
 
-class _Class(Object):
+class Class(Object):
 
     _immutable_fields_ = [
         "_super_class",
@@ -18,6 +13,7 @@ class _Class(Object):
         "_instance_fields",
         "_invokables_table",
         "has_primitives",
+        "_layout_for_instances?",
     ]
 
     def __init__(self, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
@@ -27,6 +23,11 @@ class _Class(Object):
         self._instance_fields = None
         self._invokables_table = None
         self.has_primitives = False
+
+        if number_of_fields >= 0:
+            self._layout_for_instances = ObjectLayout(number_of_fields, self)
+        else:
+            self._layout_for_instances = None
 
     def get_super_class(self):
         return self._super_class
@@ -49,6 +50,14 @@ class _Class(Object):
     def set_instance_fields(self, value):
         assert isinstance(value, Array)
         self._instance_fields = value
+        if (
+            self._layout_for_instances is None
+            or value.get_number_of_indexable_fields()
+            != self._layout_for_instances.get_number_of_fields()
+        ):
+            self._layout_for_instances = ObjectLayout(
+                value.get_number_of_indexable_fields(), self
+            )
 
     def get_instance_invokables(self):
         if not self._invokables_table:
@@ -136,6 +145,23 @@ class _Class(Object):
     def get_instance_field_name(self, index):
         return self.get_instance_fields().get_indexable_field(index)
 
+    def get_layout_for_instances(self):
+        return self._layout_for_instances
+
+    def update_instance_layout_with_initialized_field(self, field_idx, spec_type):
+        updated = self._layout_for_instances.with_initialized_field(
+            field_idx, spec_type
+        )
+        if updated is not self._layout_for_instances:
+            self._layout_for_instances = updated
+        return self._layout_for_instances
+
+    def update_instance_layout_with_generalized_field(self, field_idx):
+        updated = self._layout_for_instances.with_generalized_field(field_idx)
+        if updated is not self._layout_for_instances:
+            self._layout_for_instances = updated
+        return self._layout_for_instances
+
     @jit.elidable_promote("all")
     def get_number_of_instance_fields(self):
         # Get the total number of instance fields in this class
@@ -167,49 +193,3 @@ class _Class(Object):
 
     def __str__(self):
         return "Class(" + self.get_name().get_embedded_string() + ")"
-
-
-class _ClassWithLayout(_Class):
-    _immutable_fields_ = ["_layout_for_instances?"]
-
-    def __init__(self, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
-        _Class.__init__(self, number_of_fields, obj_class)
-        if number_of_fields >= 0:
-            self._layout_for_instances = ObjectLayout(number_of_fields, self)
-        else:
-            self._layout_for_instances = None
-
-    def set_instance_fields(self, value):
-        assert isinstance(value, Array)
-        self._instance_fields = value
-        if (
-            self._layout_for_instances is None
-            or value.get_number_of_indexable_fields()
-            != self._layout_for_instances.get_number_of_fields()
-        ):
-            self._layout_for_instances = ObjectLayout(
-                value.get_number_of_indexable_fields(), self
-            )
-
-    def get_layout_for_instances(self):
-        return self._layout_for_instances
-
-    def update_instance_layout_with_initialized_field(self, field_idx, spec_type):
-        updated = self._layout_for_instances.with_initialized_field(
-            field_idx, spec_type
-        )
-        if updated is not self._layout_for_instances:
-            self._layout_for_instances = updated
-        return self._layout_for_instances
-
-    def update_instance_layout_with_generalized_field(self, field_idx):
-        updated = self._layout_for_instances.with_generalized_field(field_idx)
-        if updated is not self._layout_for_instances:
-            self._layout_for_instances = updated
-        return self._layout_for_instances
-
-
-if is_ast_interpreter():
-    Class = _ClassWithLayout
-else:
-    Class = _Class

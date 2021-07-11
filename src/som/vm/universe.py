@@ -12,6 +12,7 @@ from som.vmobjects.array import Array
 from som.vmobjects.block_bc import block_evaluation_primitive
 from som.vmobjects.clazz import Class
 from som.vmobjects.object_without_fields import ObjectWithoutFields
+from som.vmobjects.object_with_layout import ObjectWithLayout as Object
 from som.vmobjects.symbol import Symbol
 from som.vmobjects.string import String
 
@@ -22,11 +23,6 @@ from som.compiler.sourcecode_compiler import (
     compile_class_from_file,
     compile_class_from_string,
 )
-
-if is_ast_interpreter():
-    from som.vmobjects.object_with_layout import ObjectWithLayout as Object
-else:
-    from som.vmobjects.object import Object
 
 
 class Assoc(object):

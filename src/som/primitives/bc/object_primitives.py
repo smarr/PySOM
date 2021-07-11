@@ -1,6 +1,6 @@
 from som.primitives.object_primitives import ObjectPrimitivesBase as _Base
 
-from som.vmobjects.object import Object
+from som.vmobjects.object_with_layout import ObjectWithLayout
 from som.vmobjects.primitive import (
     UnaryPrimitive,
 )
@@ -12,7 +12,7 @@ def _object_size(rcvr):
 
     size = 0
 
-    if isinstance(rcvr, Object):
+    if isinstance(rcvr, ObjectWithLayout):
         size = rcvr.get_number_of_fields()
     elif isinstance(rcvr, Array):
         size = rcvr.get_number_of_indexable_fields()
