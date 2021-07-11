@@ -52,21 +52,21 @@ def dump_method(m, indent):
             b += 1
             continue
 
-        if bytecode == Bytecodes.push_local:
+        if bytecode == Bytecodes.push_local or bytecode == Bytecodes.pop_local:
             error_println(
                 "local: "
                 + str(m.get_bytecode(b + 1))
                 + ", context: "
                 + str(m.get_bytecode(b + 2))
             )
-        elif bytecode == Bytecodes.push_argument:
+        elif bytecode == Bytecodes.push_argument or bytecode == Bytecodes.pop_argument:
             error_println(
                 "argument: "
                 + str(m.get_bytecode(b + 1))
                 + ", context "
                 + str(m.get_bytecode(b + 2))
             )
-        elif bytecode == Bytecodes.push_field:
+        elif bytecode == Bytecodes.push_field or bytecode == Bytecodes.pop_field:
             error_println(
                 "(index: "
                 + str(m.get_bytecode(b + 1))
@@ -93,40 +93,36 @@ def dump_method(m, indent):
                 + ") value: "
                 + str(m.get_constant(b))
             )
-        elif bytecode == Bytecodes.pop_local:
-            error_println(
-                "local: "
-                + str(m.get_bytecode(b + 1))
-                + ", context: "
-                + str(m.get_bytecode(b + 2))
-            )
-        elif bytecode == Bytecodes.pop_argument:
-            error_println(
-                "argument: "
-                + str(m.get_bytecode(b + 1))
-                + ", context: "
-                + str(m.get_bytecode(b + 2))
-            )
-        elif bytecode == Bytecodes.pop_field:
-            error_println(
-                "(index: "
-                + str(m.get_bytecode(b + 1))
-                + ") field: "
-                + str(m.get_holder().get_instance_field_name(m.get_bytecode(b + 1)))
-            )
-        elif bytecode == Bytecodes.send:
+        elif bytecode in (
+            Bytecodes.send_1,
+            Bytecodes.send_2,
+            Bytecodes.send_3,
+            Bytecodes.send_n,
+            Bytecodes.super_send,
+            Bytecodes.q_super_send_1,
+            Bytecodes.q_super_send_2,
+            Bytecodes.q_super_send_3,
+            Bytecodes.q_super_send_n,
+        ):
             error_println(
                 "(index: "
                 + str(m.get_bytecode(b + 1))
                 + ") signature: "
                 + str(m.get_constant(b))
             )
-        elif bytecode == Bytecodes.super_send:
+        elif bytecode == Bytecodes.push_inner or bytecode == Bytecodes.pop_inner:
             error_println(
-                "(index: "
+                "inner idx: "
                 + str(m.get_bytecode(b + 1))
-                + ") signature: "
-                + str(m.get_constant(b))
+                + ", context "
+                + str(m.get_bytecode(b + 2))
+            )
+        elif bytecode == Bytecodes.push_frame or bytecode == Bytecodes.pop_frame:
+            error_println(
+                "frame idx: "
+                + str(m.get_bytecode(b + 1))
+                + ", context "
+                + str(m.get_bytecode(b + 2))
             )
         else:
             error_println("<incorrect bytecode>")

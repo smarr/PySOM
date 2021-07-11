@@ -1,14 +1,10 @@
-from collections import OrderedDict
-
 from rtruffle.source_section import SourceSection
 
-from som.compiler.ast.variable import Argument, Local
 from som.compiler.method_generation_context import MethodGenerationContextBase
 
 from som.interpreter.ast.nodes.field_node import create_write_node, create_read_node
 from som.interpreter.ast.nodes.global_read_node import create_global_node
 from som.interpreter.ast.nodes.return_non_local_node import CatchNonLocalReturnNode
-from som.interpreter.ast.invokable import Invokable
 
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_ast import AstMethod
@@ -16,47 +12,12 @@ from som.vmobjects.method_ast import AstMethod
 
 class MethodGenerationContext(MethodGenerationContextBase):
     def __init__(self, universe, outer=None):
-        MethodGenerationContextBase.__init__(
-            self, universe, outer, OrderedDict(), OrderedDict()
-        )
+        MethodGenerationContextBase.__init__(self, universe, outer)
 
         self._embedded_block_methods = []
 
-        # does non-local return, directly or indirectly via a nested block
-        self.throws_non_local_return = False
-
-        self.needs_to_catch_non_local_returns = False
-        self._accesses_variables_of_outer_context = False
-
     def add_embedded_block_method(self, block_method):
         self._embedded_block_methods.append(block_method)
-
-    def make_catch_non_local_return(self):
-        self.throws_non_local_return = True
-        ctx = self._mark_outer_contexts_to_require_context_and_get_root_context()
-
-        assert ctx is not None
-        ctx.needs_to_catch_non_local_returns = True
-
-    def requires_context(self):
-        return self.throws_non_local_return or self._accesses_variables_of_outer_context
-
-    def _mark_outer_contexts_to_require_context_and_get_root_context(self):
-        ctx = self.outer_genc
-        while ctx.outer_genc is not None:
-            ctx.throws_non_local_return = True
-            ctx = ctx.outer_genc
-        return ctx
-
-    @staticmethod
-    def _separate_variables(variables, only_local_access, non_local_access):
-        for var in variables:
-            if var.is_accessed_out_of_context():
-                var.set_access_index(len(non_local_access))
-                non_local_access.append(var)
-            elif only_local_access is not None:
-                var.set_access_index(len(only_local_access))
-                only_local_access.append(var)
 
     @staticmethod
     def _add_argument_initialization(method_body):
@@ -74,39 +35,23 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if self._primitive:
             return empty_primitive(self._signature.get_embedded_string(), self.universe)
 
-        # local_args     = []
-        non_local_args = []
-        local_tmps = []
-        non_local_tmps = []
-        self._separate_variables(
-            [arg for arg in self._arguments.values() if not arg.is_self()],
-            None,
-            non_local_args,
-        )
-        self._separate_variables(self._locals.values(), local_tmps, non_local_tmps)
-
-        arg_mapping = [arg.get_argument_index() for arg in non_local_args]
-
         if self.needs_to_catch_non_local_returns:
             method_body = CatchNonLocalReturnNode(
                 method_body, method_body.source_section
             )
 
+        arg_inner_access, size_frame, size_inner = self.prepare_frame()
+
         method_body = self._add_argument_initialization(method_body)
-        method = Invokable(
-            self._get_source_section_for_method(method_body),
-            method_body,
-            arg_mapping,
-            len(local_tmps),
-            len(non_local_tmps),
-            self.universe,
-        )
         return AstMethod(
             self._signature,
-            method,
+            method_body,
+            arg_inner_access,
+            size_frame,
+            size_inner,
             # copy list to make it immutable for RPython
             self._embedded_block_methods[:],
-            self.universe,
+            self._get_source_section_for_method(method_body),
         )
 
     def _get_source_section_for_method(self, expr):
@@ -121,22 +66,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
             source_section=src_body,
         )
         return src_method
-
-    def add_argument(self, arg):
-        if (arg == "self" or arg == "$blockSelf") and len(self._arguments) > 0:
-            raise RuntimeError(
-                "The self argument always has to be the first " "argument of a method"
-            )
-        argument = Argument(arg, len(self._arguments) - 1)
-        self._arguments[arg] = argument
-
-    def add_argument_if_absent(self, arg):
-        if arg in self._arguments:
-            return
-        self.add_argument(arg)
-
-    def add_local(self, local):
-        self._locals[local] = Local(local, len(self._locals))
 
     def get_outer_self_context_level(self):
         level = 0
@@ -193,10 +122,4 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return None
         return create_write_node(
             self._get_self_read(), exp, self.get_field_index(field_name)
-        )
-
-    def __str__(self):
-        return "MethodGenC(%s>>%s)" % (
-            self.holder.get_name().get_string,
-            self._signature,
         )

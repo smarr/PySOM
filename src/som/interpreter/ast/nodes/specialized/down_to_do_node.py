@@ -30,7 +30,7 @@ class IntDownToIntDoNode(AbstractToDoNode):
         bottom = limit.get_embedded_integer()
         while i >= bottom:
             int_driver.jit_merge_point(block_method=block_method)
-            block_method.invoke(body_block, [Integer(i)])
+            block_method.invoke_2(body_block, Integer(i))
             i -= 1
 
     @staticmethod
@@ -74,7 +74,7 @@ class IntDownToDoubleDoNode(AbstractToDoNode):
         bottom = limit.get_embedded_double()
         while i >= bottom:
             double_driver.jit_merge_point(block_method=block_method)
-            block_method.invoke(body_block, [Integer(i)])
+            block_method.invoke_2(body_block, Integer(i))
             i -= 1
 
     @staticmethod

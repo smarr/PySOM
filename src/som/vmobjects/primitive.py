@@ -52,45 +52,9 @@ class _AstPrimitive(_AbstractPrimitive):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, rcvr, args):
+    def invoke_args(self, rcvr, args):
         prim_fn = self._prim_fn
         return prim_fn(self, rcvr, args)
-
-
-class _AstUnaryPrimitive(_AbstractPrimitive):
-    _immutable_fields_ = ["_prim_fn"]
-
-    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
-        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
-        self._prim_fn = prim_fn
-
-    def invoke(self, rcvr, _args):
-        prim_fn = self._prim_fn
-        return prim_fn(rcvr)
-
-
-class _AstBinaryPrimitive(_AbstractPrimitive):
-    _immutable_fields_ = ["_prim_fn"]
-
-    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
-        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
-        self._prim_fn = prim_fn
-
-    def invoke(self, rcvr, args):
-        prim_fn = self._prim_fn
-        return prim_fn(rcvr, args[0])
-
-
-class _AstTernaryPrimitive(_AbstractPrimitive):
-    _immutable_fields_ = ["_prim_fn"]
-
-    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
-        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
-        self._prim_fn = prim_fn
-
-    def invoke(self, rcvr, args):
-        prim_fn = self._prim_fn
-        return prim_fn(rcvr, args[0], args[1])
 
 
 class _BcPrimitive(_AbstractPrimitive):
@@ -100,69 +64,60 @@ class _BcPrimitive(_AbstractPrimitive):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, frame):
+    def invoke_n(self, stack, stack_ptr):
         prim_fn = self._prim_fn
-        prim_fn(self, frame)
+        return prim_fn(self, stack, stack_ptr)
 
     def get_number_of_signature_arguments(self):
         return self._signature.get_number_of_signature_arguments()
 
 
-class _BcUnaryPrimitive(_AbstractPrimitive):
+class UnaryPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
 
     def __init__(self, signature_string, universe, prim_fn, is_empty=False):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, frame):
+    def invoke_1(self, rcvr):
         prim_fn = self._prim_fn
-        rcvr = frame.top()
-        result = prim_fn(rcvr)
-        frame.set_top(result)
+        return prim_fn(rcvr)
 
     def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 1
 
 
-class _BcBinaryPrimitive(_AbstractPrimitive):
+class BinaryPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
 
     def __init__(self, signature_string, universe, prim_fn, is_empty=False):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, frame):
+    def invoke_2(self, rcvr, arg):
         prim_fn = self._prim_fn
-        arg = frame.pop()
-        rcvr = frame.top()
-        result = prim_fn(rcvr, arg)
-        frame.set_top(result)
+        return prim_fn(rcvr, arg)
 
     def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 2
 
 
-class _BcTernaryPrimitive(_AbstractPrimitive):
+class TernaryPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
 
     def __init__(self, signature_string, universe, prim_fn, is_empty=False):
         _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
         self._prim_fn = prim_fn
 
-    def invoke(self, frame):
+    def invoke_3(self, rcvr, arg1, arg2):
         prim_fn = self._prim_fn
-        arg2 = frame.pop()
-        arg1 = frame.pop()
-        rcvr = frame.top()
-        result = prim_fn(rcvr, arg1, arg2)
-        frame.set_top(result)
+        return prim_fn(rcvr, arg1, arg2)
 
     def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
         return 3
 
 
-def _empty_invoke(ivkbl, _a=None, _b=None):
+def _empty_invoke_ast(ivkbl, _rcvr, _args):
     """Write a warning to the screen"""
     print(
         "Warning: undefined primitive #%s called"
@@ -170,16 +125,21 @@ def _empty_invoke(ivkbl, _a=None, _b=None):
     )
 
 
+def _empty_invoke_bc(ivkbl, _stack, stack_ptr):
+    """Write a warning to the screen"""
+    print(
+        "Warning: undefined primitive #%s called"
+        % ivkbl.get_signature().get_embedded_string()
+    )
+    return stack_ptr
+
+
 if is_ast_interpreter():
     Primitive = _AstPrimitive
-    UnaryPrimitive = _AstUnaryPrimitive
-    BinaryPrimitive = _AstBinaryPrimitive
-    TernaryPrimitive = _AstTernaryPrimitive
+    _empty_invoke = _empty_invoke_ast
 else:
     Primitive = _BcPrimitive
-    UnaryPrimitive = _BcUnaryPrimitive
-    BinaryPrimitive = _BcBinaryPrimitive
-    TernaryPrimitive = _BcTernaryPrimitive
+    _empty_invoke = _empty_invoke_bc
 
 
 def empty_primitive(signature_string, universe):

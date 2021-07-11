@@ -1,16 +1,15 @@
 from som.primitives.primitives import Primitives
-from som.vmobjects.primitive import Primitive
-from som.vmobjects.block_bc import block_evaluate, BcBlock
+from som.vmobjects.primitive import BinaryPrimitive
 from som.vm.globals import nilObject, trueObject, falseObject
 
 from rlib import jit
 
 
 def get_printable_location(method_body, method_condition, _while_type):
-    from som.vmobjects.method_bc import BcMethod
+    from som.vmobjects.method_bc import BcAbstractMethod
 
-    assert isinstance(method_body, BcMethod)
-    assert isinstance(method_condition, BcMethod)
+    assert isinstance(method_body, BcAbstractMethod)
+    assert isinstance(method_condition, BcAbstractMethod)
 
     return "[%s>>%s] while [%s>>%s]" % (
         method_condition.get_holder().get_name().get_embedded_string(),
@@ -29,18 +28,7 @@ jitdriver = jit.JitDriver(
 )
 
 
-def _execute_block(frame, block, block_method):
-    b = BcBlock(block_method, block.get_context())
-    frame.push(b)
-
-    block_evaluate(b, frame)
-    return frame.pop()
-
-
-def _while_loop(frame, while_type):
-    loop_body = frame.pop()
-    loop_condition = frame.pop()
-
+def _while_loop(loop_condition, loop_body, while_type):
     method_body = loop_body.get_method()
     method_condition = loop_condition.get_method()
 
@@ -50,28 +38,27 @@ def _while_loop(frame, while_type):
             method_condition=method_condition,
             while_type=while_type,
         )
-        condition_result = _execute_block(frame, loop_condition, method_condition)
+        condition_result = method_condition.invoke_1(loop_condition)
         if condition_result is while_type:
-            _execute_block(frame, loop_body, method_body)
+            method_body.invoke_1(loop_body)
         else:
             break
-
-    frame.push(nilObject)
-
-
-def _while_false(_ivkbl, frame):
-    _while_loop(frame, falseObject)
+    return nilObject
 
 
-def _while_true(_ivkbl, frame):
-    _while_loop(frame, trueObject)
+def _while_false(rcvr, arg):
+    return _while_loop(rcvr, arg, falseObject)
+
+
+def _while_true(rcvr, arg):
+    return _while_loop(rcvr, arg, trueObject)
 
 
 class BlockPrimitives(Primitives):
     def install_primitives(self):
         self._install_instance_primitive(
-            Primitive("whileTrue:", self.universe, _while_true)
+            BinaryPrimitive("whileTrue:", self.universe, _while_true)
         )
         self._install_instance_primitive(
-            Primitive("whileFalse:", self.universe, _while_false)
+            BinaryPrimitive("whileFalse:", self.universe, _while_false)
         )

@@ -1,37 +1,74 @@
+from rlib.debug import make_sure_not_resized
+
 from som.compiler.method_generation_context import MethodGenerationContextBase
 from som.interpreter.bc.bytecodes import (
-    bytecode_length,
     bytecode_stack_effect,
     bytecode_stack_effect_depends_on_send,
-    Bytecodes,
+    bytecode_length,
 )
 from som.vmobjects.primitive import empty_primitive
-from som.vmobjects.method_bc import BcMethod
+from som.vmobjects.method_bc import (
+    BcMethodNLR,
+    BcMethod,
+)
 
 
 class MethodGenerationContext(MethodGenerationContextBase):
     def __init__(self, universe, outer=None):
-        MethodGenerationContextBase.__init__(self, universe, outer, [], [])
+        MethodGenerationContextBase.__init__(self, universe, outer)
 
         self._literals = []
         self._finished = False
         self._bytecode = []
 
+        # keep a list of arguments and locals for easy access
+        # when patching bytecodes on method completion
+        self._arg_list = []
+        self._local_list = []
+
     def add_argument(self, arg):
-        self._arguments.append(arg)
+        argument = MethodGenerationContextBase.add_argument(self, arg)
+        self._arg_list.append(argument)
+        return argument
+
+    def add_local(self, local):
+        local = MethodGenerationContextBase.add_local(self, local)
+        self._local_list.append(local)
+        return local
 
     def assemble(self, _dummy):
         if self._primitive:
             return empty_primitive(self._signature.get_embedded_string(), self.universe)
 
+        arg_inner_access, size_frame, size_inner = self.prepare_frame()
+
+        # +2 for buffer for dnu, #escapedBlock, etc.
+        max_stack_size = self._compute_stack_depth() + 2
         num_locals = len(self._locals)
 
-        meth = BcMethod(
+        if len(arg_inner_access) > 1:
+            arg_inner_access.reverse()
+            # to make the access fast in create_frame
+            # reverse things here, if we have more than 1 item
+            # then we don't need to mess with the index to access
+            # this map
+            make_sure_not_resized(arg_inner_access)
+
+        if self.needs_to_catch_non_local_returns:
+            bc_method_class = BcMethodNLR
+        else:
+            bc_method_class = BcMethod
+
+        meth = bc_method_class(
             list(self._literals),
             num_locals,
-            self._compute_stack_depth(),
+            max_stack_size,
             len(self._bytecode),
             self._signature,
+            arg_inner_access,
+            size_frame,
+            size_inner,
+            self.lexical_scope,
         )
 
         # copy bytecodes into method
@@ -42,6 +79,16 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         # return the method - the holder field is to be set later on!
         return meth
+
+    def get_argument(self, index, context):
+        if context > 0:
+            return self.outer_genc.get_argument(index, context - 1)
+        return self._arg_list[index]
+
+    def get_local(self, index, context):
+        if context > 0:
+            return self.outer_genc.get_local(index, context - 1)
+        return self._local_list[index]
 
     def _compute_stack_depth(self):
         depth = 0
@@ -66,21 +113,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         return max_depth
 
-    def add_argument_if_absent(self, arg):
-        if arg in self._locals:
-            return False
-
-        self._arguments.append(arg)
-        return True
-
     def is_finished(self):
         return self._finished
 
     def set_finished(self):
         self._finished = True
-
-    def add_local(self, local):
-        self._locals.append(local)
 
     def remove_last_bytecode(self):
         self._bytecode = self._bytecode[:-1]
@@ -104,26 +141,29 @@ class MethodGenerationContext(MethodGenerationContextBase):
         assert self._literals[index] == old_val
         self._literals[index] = new_val
 
-    def find_var(self, var, triplet):
-        # triplet: index, context, isArgument
+    def find_var(self, var, ctx_level):
         if var in self._locals:
-            triplet[0] = self._locals.index(var) + len(self._arguments)
-            return True
+            return FindVarResult(self._locals[var], ctx_level, False)
 
         if var in self._arguments:
-            triplet[0] = self._arguments.index(var)
-            triplet[2] = True
-            return True
+            return FindVarResult(self._arguments[var], ctx_level, True)
 
         if self.outer_genc:
-            triplet[1] = triplet[1] + 1
-            return self.outer_genc.find_var(var, triplet)
-        return False
+            result = self.outer_genc.find_var(var, ctx_level + 1)
+            if result:
+                self._accesses_variables_of_outer_context = True
+            return result
+        return None
 
     def get_max_context_level(self):
         if self.outer_genc is None:
             return 0
         return 1 + self.outer_genc.get_max_context_level()
+
+    def mark_self_as_accessed_from_outer_context(self):
+        if self.outer_genc:
+            self.outer_genc.mark_self_as_accessed_from_outer_context()
+        self._accesses_variables_of_outer_context = True
 
     def add_bytecode(self, bytecode):
         self._bytecode.append(bytecode)
@@ -135,10 +175,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
         return self._literals.index(lit)
 
 
-def create_bootstrap_method(universe):
-    """Create a fake bootstrap method to simplify later frame traversal"""
-    bootstrap_method = BcMethod([], 0, 2, 1, universe.symbol_for("bootstrap"))
+class FindVarResult(object):
+    def __init__(self, var, context, is_argument):
+        self.var = var
+        self.context = context
+        self.is_argument = is_argument
 
-    bootstrap_method.set_bytecode(0, Bytecodes.halt)
-    bootstrap_method.set_holder(universe.system_class)
-    return bootstrap_method
+    def mark_accessed(self):
+        self.var.mark_accessed(self.context)

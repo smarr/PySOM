@@ -15,7 +15,7 @@ def _invoke_on_with(_ivkbl, rcvr, args):
         direct_args = []
     else:
         direct_args = args[1].as_argument_array()
-    return rcvr.invoke(args[0], direct_args)
+    return rcvr.invoke_args(args[0], direct_args)
 
 
 class MethodPrimitives(_Base):

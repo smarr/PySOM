@@ -362,6 +362,8 @@ class ParserBase(object):
             self._locals(mgenc)
             self._expect(Symbol.Or)
 
+        mgenc.complete_lexical_scope()
+
         return self._block_body(mgenc, False)
 
     def _block_body(self, _a, _b):  # pylint: disable=no-self-use

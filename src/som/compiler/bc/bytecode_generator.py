@@ -78,7 +78,15 @@ def emit_super_send(mgenc, msg):
 
 def emit_send(mgenc, msg):
     idx = mgenc.add_literal_if_absent(msg)
-    _emit2(mgenc, BC.send, idx)
+    num_args = msg.get_number_of_signature_arguments()
+    if num_args == 1:
+        _emit2(mgenc, BC.send_1, idx)
+    elif num_args == 2:
+        _emit2(mgenc, BC.send_2, idx)
+    elif num_args == 3:
+        _emit2(mgenc, BC.send_3, idx)
+    else:
+        _emit2(mgenc, BC.send_n, idx)
 
 
 def emit_push_constant(mgenc, lit):

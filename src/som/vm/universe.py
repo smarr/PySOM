@@ -6,29 +6,27 @@ from rlib.string_stream import encode_to_bytes
 from rlib.exit import Exit
 from rlib.osext import path_split
 
-from som.compiler.bc.method_generation_context import create_bootstrap_method
-from som.interpreter.bc.frame import create_bootstrap_frame
-
 from som.interp_type import is_ast_interpreter
 
 from som.vmobjects.array import Array
+from som.vmobjects.block_bc import block_evaluation_primitive
 from som.vmobjects.clazz import Class
 from som.vmobjects.object_without_fields import ObjectWithoutFields
 from som.vmobjects.symbol import Symbol
 from som.vmobjects.string import String
 
 from som.vm.globals import nilObject, trueObject, falseObject
+from som.vm.shell import Shell
 
-import som.compiler.sourcecode_compiler as sourcecode_compiler
+from som.compiler.sourcecode_compiler import (
+    compile_class_from_file,
+    compile_class_from_string,
+)
 
 if is_ast_interpreter():
     from som.vmobjects.object_with_layout import ObjectWithLayout as Object
-    from som.vmobjects.block_ast import block_evaluation_primitive
-    from som.vm.shell import AstShell
 else:
     from som.vmobjects.object import Object
-    from som.vmobjects.block_bc import block_evaluation_primitive
-    from som.vm.shell import BcShell
 
 
 class Assoc(object):
@@ -120,10 +118,7 @@ class Universe(object):
         if invokable is None:
             raise Exception("Lookup of " + selector + " failed in class " + class_name)
 
-        return self._start_method_execution(clazz, invokable)
-
-    def _start_method_execution(self, _c, _i):  # pylint: disable=no-self-use
-        raise Exception("Implemented by Subclass")
+        return invokable.invoke_1(clazz)
 
     def interpret(self, arguments):
         # Check for command line switches
@@ -134,16 +129,11 @@ class Universe(object):
 
         # Start the shell if no filename is given
         if len(arguments) == 0:
-            return self._start_shell()
+            shell = Shell(self)
+            return shell.start()
         arguments_array = self.new_array_with_strings(arguments)
         initialize = self.system_class.lookup_invokable(self.symbol_for("initialize:"))
-        return self._start_execution(system_object, initialize, arguments_array)
-
-    def _start_execution(self, _s, _i, _a):  # pylint: disable=no-self-use
-        raise Exception("Implemented by Subclass")
-
-    def _start_shell(self):  # pylint: disable=no-self-use
-        raise Exception("Implemented by Subclass")
+        return initialize.invoke_2(system_object, arguments_array)
 
     def handle_arguments(self, arguments):
         got_classpath = False
@@ -461,7 +451,7 @@ class Universe(object):
         for cp_entry in self.classpath:
             try:
                 # Load the class from a file and return the loaded class
-                result = sourcecode_compiler.compile_class_from_file(
+                result = compile_class_from_file(
                     cp_entry, name.get_embedded_string(), system_class, self
                 )
                 if self._dump_bytecodes:
@@ -480,7 +470,7 @@ class Universe(object):
 
     def load_shell_class(self, stmt):
         # Load the class from a stream and return the loaded class
-        result = sourcecode_compiler.compile_class_from_string(stmt, None, self)
+        result = compile_class_from_string(stmt, None, self)
         if self._dump_bytecodes:
             from som.compiler.disassembler import dump
 
@@ -489,40 +479,10 @@ class Universe(object):
 
 
 class _ASTUniverse(Universe):
-    def _start_shell(self):
-        shell = AstShell(self)
-        return shell.start()
-
-    def _start_execution(
-        self, system_object, initialize, arguments_array
-    ):  # pylint: disable=no-self-use
-        return initialize.invoke(system_object, [arguments_array])
-
-    def _start_method_execution(self, clazz, invokable):  # pylint: disable=no-self-use
-        return invokable.invoke(clazz, [])
+    pass
 
 
 class _BCUniverse(Universe):
-    def _start_shell(self):
-        bootstrap_method = create_bootstrap_method(self)
-        shell = BcShell(self, bootstrap_method)
-        return shell.start()
-
-    def _start_execution(self, system_object, initialize, arguments_array):
-        bootstrap_method = create_bootstrap_method(self)
-        bootstrap_frame = create_bootstrap_frame(
-            bootstrap_method, system_object, arguments_array
-        )
-        # Lookup the initialize invokable on the system class
-        return initialize.invoke(bootstrap_frame)
-
-    def _start_method_execution(self, clazz, invokable):
-        bootstrap_method = create_bootstrap_method(self)
-        bootstrap_frame = create_bootstrap_frame(bootstrap_method, clazz)
-
-        invokable.invoke(bootstrap_frame)
-        return bootstrap_frame.pop()
-
     def _initialize_object_system(self):
         system_object = Universe._initialize_object_system(self)
         return system_object

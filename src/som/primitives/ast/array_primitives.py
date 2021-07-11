@@ -2,15 +2,7 @@ from rlib import jit
 from som.primitives.array_primitives import ArrayPrimitivesBase as _Base
 from som.vmobjects.block_ast import AstBlock
 from som.vmobjects.method_ast import AstMethod
-from som.vmobjects.primitive import Primitive
-
-
-def _at_put(_ivkbl, rcvr, args):
-    value = args[1]
-    index = args[0]
-
-    rcvr.set_indexable_field(index.get_embedded_integer() - 1, value)
-    return value
+from som.vmobjects.primitive import BinaryPrimitive
 
 
 def get_do_index_printable_location(block_method):
@@ -26,17 +18,16 @@ do_index_driver = jit.JitDriver(
 )
 
 
-def _do_indexes(_ivkbl, rcvr, args):
+def _do_indexes(rcvr, block):
     from som.vmobjects.integer import Integer
 
-    block = args[0]
     block_method = block.get_method()
 
     i = 1
     length = rcvr.get_number_of_indexable_fields()
     while i <= length:  # the i is propagated to Smalltalk, so, start with 1
         do_index_driver.jit_merge_point(block_method=block_method)
-        block_method.invoke(block, [Integer(i)])
+        block_method.invoke_2(block, Integer(i))
         i += 1
 
 
@@ -52,20 +43,18 @@ do_driver = jit.JitDriver(
 )
 
 
-def _do(_ivkbl, rcvr, args):
-    block = args[0]
+def _do(rcvr, block):
     block_method = block.get_method()
 
     i = 0
     length = rcvr.get_number_of_indexable_fields()
     while i < length:  # the array itself is zero indexed
         do_driver.jit_merge_point(block_method=block_method)
-        block_method.invoke(block, [rcvr.get_indexable_field(i)])
+        block_method.invoke_2(block, rcvr.get_indexable_field(i))
         i += 1
 
 
-def _put_all(_ivkbl, rcvr, args):
-    arg = args[0]
+def _put_all(rcvr, arg):
     if isinstance(arg, AstBlock):
         rcvr.set_all_with_block(arg)
         return rcvr
@@ -80,10 +69,10 @@ def _put_all(_ivkbl, rcvr, args):
 class ArrayPrimitives(_Base):
     def install_primitives(self):
         _Base.install_primitives(self)
-        self._install_instance_primitive(Primitive("at:put:", self.universe, _at_put))
-
         self._install_instance_primitive(
-            Primitive("doIndexes:", self.universe, _do_indexes)
+            BinaryPrimitive("doIndexes:", self.universe, _do_indexes)
         )
-        self._install_instance_primitive(Primitive("do:", self.universe, _do))
-        self._install_instance_primitive(Primitive("putAll:", self.universe, _put_all))
+        self._install_instance_primitive(BinaryPrimitive("do:", self.universe, _do))
+        self._install_instance_primitive(
+            BinaryPrimitive("putAll:", self.universe, _put_all)
+        )

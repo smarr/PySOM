@@ -1,8 +1,14 @@
+from som.interpreter.ast.frame import (
+    mark_as_no_longer_on_stack,
+    FRAME_AND_INNER_RCVR_IDX,
+    read_frame,
+    get_inner_as_context,
+)
 from som.interpreter.ast.nodes.contextual_node import ContextualNode
-from som.interpreter.ast.nodes.dispatch import lookup_and_send
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 from som.interpreter.control_flow import ReturnException
+from som.interpreter.send import lookup_and_send_2
 
 
 class ReturnNonLocalNode(ContextualNode):
@@ -21,14 +27,9 @@ class ReturnNonLocalNode(ContextualNode):
 
         if block.is_outer_on_stack():
             raise ReturnException(result, block.get_on_stack_marker())
-        block = frame.get_self()
-        outer_self = block.get_outer_self()
-        return self.send_escaped_block(outer_self, block, self.universe)
-
-    @staticmethod
-    def send_escaped_block(receiver, block, universe):
-        arguments = [block]
-        return lookup_and_send(receiver, "escapedBlock:", arguments, universe)
+        block = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+        outer_self = block.get_from_outer(FRAME_AND_INNER_RCVR_IDX)
+        return lookup_and_send_2(outer_self, block, "escapedBlock:")
 
 
 class CatchNonLocalReturnNode(ExpressionNode):
@@ -41,12 +42,14 @@ class CatchNonLocalReturnNode(ExpressionNode):
         self._method_body = self.adopt_child(method_body)
 
     def execute(self, frame):
-        marker = frame.get_on_stack_marker()
+        inner = get_inner_as_context(frame)
+        assert isinstance(inner, list)
+
         try:
             return self._method_body.execute(frame)
         except ReturnException as ex:
-            if not ex.has_reached_target(marker):
+            if not ex.has_reached_target(inner):
                 raise ex
             return ex.get_result()
         finally:
-            marker.mark_as_no_longer_on_stack()
+            mark_as_no_longer_on_stack(inner)

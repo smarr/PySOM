@@ -62,7 +62,7 @@ class IntToIntByDoNode(AbstractToByDoNode):
         by = step.get_embedded_integer()
         while i <= top:
             int_driver.jit_merge_point(block_method=block_method)
-            block_method.invoke(body_block, [Integer(i)])
+            block_method.invoke_2(body_block, Integer(i))
             i += by
 
     @staticmethod
@@ -109,7 +109,7 @@ class IntToDoubleByDoNode(AbstractToByDoNode):
         by = step.get_embedded_integer()
         while i <= top:
             double_driver.jit_merge_point(block_method=block_method)
-            block_method.invoke(body_block, [Integer(i)])
+            block_method.invoke_2(body_block, Integer(i))
             i += by
 
     @staticmethod

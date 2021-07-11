@@ -1,11 +1,11 @@
 from som.primitives.true_primitives import TruePrimitivesBase as _Base
 
 
-def _and(_ivkbl, frame):
-    block = frame.pop()
-    frame.pop()
-    block_method = block.get_method()
-    block_method.invoke(frame)
+# def _and(_ivkbl, frame):
+#     block = stack_pop(frame)
+#     stack_pop(frame)
+#     block_method = block.get_method()
+#     block_method.invoke(frame)
 
 
 TruePrimitives = _Base

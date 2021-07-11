@@ -81,6 +81,7 @@ class Parser(ParserBase):
 
         if mgenc.is_block_method:
             emit_return_non_local(mgenc)
+            mgenc.make_catch_non_local_return()
         else:
             emit_return_local(mgenc)
 
@@ -350,20 +351,20 @@ class Parser(ParserBase):
         # This is done by examining all available lexical contexts, starting with
         # the innermost (i.e., the one represented by mgenc).
 
-        # triplet: index, context, isArgument
-        triplet = [0, 0, False]
-
-        if mgenc.find_var(var, triplet):
-            if triplet[2]:
-                emit_push_argument(mgenc, triplet[0], triplet[1])
+        result = mgenc.find_var(var, 0)
+        if result is not None:
+            if result.is_argument:
+                emit_push_argument(mgenc, result.var.idx, result.context)
             else:
-                emit_push_local(mgenc, triplet[0], triplet[1])
+                emit_push_local(mgenc, result.var.idx, result.context)
+            result.mark_accessed()
         else:
             identifier = self.universe.symbol_for(var)
             if mgenc.has_field(identifier):
                 field_name = identifier
                 mgenc.add_literal_if_absent(field_name)
                 emit_push_field(mgenc, field_name)
+                mgenc.mark_self_as_accessed_from_outer_context()
             else:
                 globe = identifier
                 mgenc.add_literal_if_absent(globe)
@@ -375,13 +376,13 @@ class Parser(ParserBase):
         # This is done by examining all available lexical contexts, starting with
         # the innermost (i.e., the one represented by mgenc).
 
-        # triplet: index, context, isArgument
-        triplet = [0, 0, False]
-
-        if mgenc.find_var(var, triplet):
-            if triplet[2]:
-                emit_pop_argument(mgenc, triplet[0], triplet[1])
+        result = mgenc.find_var(var, 0)
+        if result is not None:
+            if result.is_argument:
+                emit_pop_argument(mgenc, result.var.idx, result.context)
             else:
-                emit_pop_local(mgenc, triplet[0], triplet[1])
+                emit_pop_local(mgenc, result.var.idx, result.context)
+            result.mark_accessed()
         else:
             emit_pop_field(mgenc, self.universe.symbol_for(var))
+            mgenc.mark_self_as_accessed_from_outer_context()

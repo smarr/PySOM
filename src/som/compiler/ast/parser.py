@@ -8,7 +8,12 @@ from som.compiler.symbol import Symbol
 from som.interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
 from som.interpreter.ast.nodes.global_read_node import create_global_node
 from som.interpreter.ast.nodes.literal_node import LiteralNode
-from som.interpreter.ast.nodes.message.super_node import SuperMessageNode
+from som.interpreter.ast.nodes.message.super_node import (
+    UnarySuper,
+    BinarySuper,
+    TernarySuper,
+    NArySuper,
+)
 from som.interpreter.ast.nodes.message.uninitialized_node import (
     UninitializedMessageNode,
 )
@@ -191,9 +196,7 @@ class Parser(ParserBase):
         selector = self._unary_selector()
 
         if is_super_send:
-            msg = SuperMessageNode(
-                selector, receiver, [], mgenc.holder.get_super_class()
-            )
+            msg = UnarySuper(selector, receiver, mgenc.holder.get_super_class())
         else:
             msg = UninitializedMessageNode(selector, self.universe, receiver, [])
         return self._assign_source(msg, coord)
@@ -204,14 +207,16 @@ class Parser(ParserBase):
 
         coord = self._lexer.get_source_coordinate()
         selector = self._binary_selector()
-        args = [self._binary_operand(mgenc)]
+        arg_expr = self._binary_operand(mgenc)
 
         if is_super_send:
-            msg = SuperMessageNode(
-                selector, receiver, args, mgenc.holder.get_super_class()
+            msg = BinarySuper(
+                selector, receiver, arg_expr, mgenc.holder.get_super_class()
             )
         else:
-            msg = UninitializedMessageNode(selector, self.universe, receiver, args)
+            msg = UninitializedMessageNode(
+                selector, self.universe, receiver, [arg_expr]
+            )
         return self._assign_source(msg, coord)
 
     def _binary_operand(self, mgenc):
@@ -234,14 +239,29 @@ class Parser(ParserBase):
             arguments.append(self._formula(mgenc))
 
         selector = self.universe.symbol_for("".join(keyword))
-        args = arguments[:]
 
         if is_super_send:
-            msg = SuperMessageNode(
-                selector, receiver, args, mgenc.holder.get_super_class()
-            )
+            num_args = len(arguments) + 1
+            if num_args == 2:
+                msg = BinarySuper(
+                    selector, receiver, arguments[0], mgenc.holder.get_super_class()
+                )
+            elif num_args == 3:
+                msg = TernarySuper(
+                    selector,
+                    receiver,
+                    arguments[0],
+                    arguments[1],
+                    mgenc.holder.get_super_class(),
+                )
+            else:
+                msg = NArySuper(
+                    selector, receiver, arguments[:], mgenc.holder.get_super_class()
+                )
         else:
-            msg = UninitializedMessageNode(selector, self.universe, receiver, args)
+            msg = UninitializedMessageNode(
+                selector, self.universe, receiver, arguments[:]
+            )
         return self._assign_source(msg, coord)
 
     def _formula(self, mgenc):
