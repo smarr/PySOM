@@ -3,6 +3,8 @@ from som.primitives.primitives import Primitives
 from som.vm.current import current_universe
 
 from som.vm.globals import trueObject, falseObject
+from som.vmobjects.array import Array
+from som.vmobjects.object_with_layout import ObjectWithLayout
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 
 
@@ -10,6 +12,18 @@ def _equals(op1, op2):
     if op1 is op2:
         return trueObject
     return falseObject
+
+
+def _object_size(rcvr):
+    from som.vmobjects.integer import Integer
+    size = 0
+
+    if isinstance(rcvr, ObjectWithLayout):
+        size = rcvr.get_number_of_fields()
+    elif isinstance(rcvr, Array):
+        size = rcvr.get_number_of_indexable_fields()
+
+    return Integer(size)
 
 
 def _hashcode(rcvr):
@@ -25,6 +39,11 @@ def _inst_var_at(rcvr, idx):
 def _inst_var_at_put(rcvr, idx, val):
     rcvr.set_field(idx.get_embedded_integer() - 1, val)
     return val
+
+
+def _inst_var_named(rcvr, arg):
+    i = rcvr.get_field_index(arg)
+    return rcvr.get_field(i)
 
 
 def _halt(rcvr):
@@ -70,10 +89,16 @@ class ObjectPrimitivesBase(Primitives):
             UnaryPrimitive("hashcode", self.universe, _hashcode)
         )
         self._install_instance_primitive(
+            UnaryPrimitive("objectSize", self.universe, _object_size)
+        )
+        self._install_instance_primitive(
             BinaryPrimitive("instVarAt:", self.universe, _inst_var_at)
         )
         self._install_instance_primitive(
             TernaryPrimitive("instVarAt:put:", self.universe, _inst_var_at_put)
+        )
+        self._install_instance_primitive(
+            BinaryPrimitive("instVarNamed:", self.universe, _inst_var_named)
         )
 
         self._install_instance_primitive(UnaryPrimitive("halt", self.universe, _halt))
