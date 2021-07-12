@@ -129,7 +129,6 @@ class ObjectWithLayout(ObjectWithoutFields):
         )
 
         assert layout is not self._object_layout
-
         self._set_layout_and_transfer_fields(layout)
 
     def update_layout_with_generalized_field(self, idx):
@@ -169,13 +168,15 @@ class ObjectWithLayout(ObjectWithoutFields):
         return location
 
     def _is_field_set(self, field_idx):
-        return self.get_location(field_idx).is_set(self)
+        location = self.get_location(field_idx)
+        return location.is_set_fn(location, self)
 
     def get_field(self, field_idx):
         # Get the field with the given index
         assert isinstance(field_idx, int)
 
-        return self.get_location(field_idx).read_location(self)
+        location = self.get_location(field_idx)
+        return location.read_fn(location, self)
 
     def set_field(self, field_idx, value):
         # Set the field with the given index to the given value
@@ -185,18 +186,18 @@ class ObjectWithLayout(ObjectWithoutFields):
         location = self.get_location(field_idx)
 
         try:
-            location.write_location(self, value)
+            location.write_fn(location, self, value)
             return
         except UninitializedStorageLocationException:
             self.update_layout_with_initialized_field(field_idx, value.__class__)
         except GeneralizeStorageLocationException:
             self.update_layout_with_generalized_field(field_idx)
-        self._set_field_after_layout_change(field_idx, value)
+        self.set_field_after_layout_change(field_idx, value)
 
-    def _set_field_after_layout_change(self, field_idx, value):
+    def set_field_after_layout_change(self, field_idx, value):
         assert not we_are_jitted()
 
         location = self.get_location(field_idx)
         # we aren't handling potential exceptions here, because,
         # they should not happen by construction
-        location.write_location(self, value)
+        location.write_fn(location, self, value)

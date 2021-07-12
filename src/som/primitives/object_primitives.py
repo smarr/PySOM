@@ -16,6 +16,7 @@ def _equals(op1, op2):
 
 def _object_size(rcvr):
     from som.vmobjects.integer import Integer
+
     size = 0
 
     if isinstance(rcvr, ObjectWithLayout):
