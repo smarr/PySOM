@@ -357,8 +357,8 @@ _long_direct_write = [
 ]
 
 _double_direct_read = [
-    _make_double_direct_read(i + 1) for i in range(NUMBER_OF_POINTER_FIELDS)
+    _make_double_direct_read(i + 1) for i in range(NUMBER_OF_PRIMITIVE_FIELDS)
 ]
 _double_direct_write = [
-    _make_double_direct_write(i + 1) for i in range(NUMBER_OF_POINTER_FIELDS)
+    _make_double_direct_write(i + 1) for i in range(NUMBER_OF_PRIMITIVE_FIELDS)
 ]
