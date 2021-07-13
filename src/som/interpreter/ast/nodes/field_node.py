@@ -1,4 +1,4 @@
-from rlib.jit import elidable_promote
+from rlib.jit import elidable_promote, dont_look_inside
 from som.interpreter.objectstorage.layout_transitions import (
     UninitializedStorageLocationException,
     GeneralizeStorageLocationException,
@@ -23,8 +23,8 @@ class _AbstractFieldNode(ExpressionNode):
         self._field_idx = field_idx
         self._access_node = None
 
-    @elidable_promote("0,1")
-    def _lookup(self, layout, obj):
+    @elidable_promote("all")
+    def _lookup(self, layout):
         first = self._access_node
         cache = first
         while cache is not None:
@@ -32,15 +32,11 @@ class _AbstractFieldNode(ExpressionNode):
                 return cache
             cache = cache.next_entry
 
-        if not layout.is_latest:
-            obj.update_layout_to_match_class()
-            return self._lookup(obj.get_object_layout(), obj)
-
-        # this is the generic dispatch node
+        # this is the generic node
         if first and first.layout is None:
             return first
 
-        return self._specialize(layout)
+        return None
 
     def _get_cache_size_and_drop_old_entries(self):
         size = 0
@@ -60,7 +56,14 @@ class _AbstractFieldNode(ExpressionNode):
             cache = cache.next_entry
         return size
 
-    def _specialize(self, layout):
+    @dont_look_inside
+    def _specialize(self, layout, obj):
+        if not layout.is_latest:
+            obj.update_layout_to_match_class()
+            location = self._lookup(obj.get_object_layout())
+            if location is not None:
+                return location
+
         cache_size = self._get_cache_size_and_drop_old_entries()
 
         if cache_size < _MAX_CHAIN_LENGTH:
@@ -77,7 +80,9 @@ class FieldReadNode(_AbstractFieldNode):
         assert isinstance(self_obj, ObjectWithLayout)
 
         layout = self_obj.get_object_layout()
-        location = self._lookup(layout, self_obj)
+        location = self._lookup(layout)
+        if location is None:
+            location = self._specialize(layout, self_obj)
         return location.read_fn(location, self_obj)
 
 
@@ -97,7 +102,9 @@ class FieldWriteNode(_AbstractFieldNode):
         assert isinstance(value, AbstractObject)
 
         layout = self_obj.get_object_layout()
-        location = self._lookup(layout, self_obj)
+        location = self._lookup(layout)
+        if location is None:
+            location = self._specialize(layout, self_obj)
 
         try:
             location.write_fn(location, self_obj, value)
