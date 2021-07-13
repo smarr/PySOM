@@ -23,14 +23,18 @@ class _AbstractFieldNode(ExpressionNode):
         self._field_idx = field_idx
         self._access_node = None
 
-    @elidable_promote("all")
-    def _lookup(self, layout):
+    @elidable_promote("0,1")
+    def _lookup(self, layout, obj):
         first = self._access_node
         cache = first
         while cache is not None:
             if cache.layout is layout:
                 return cache
             cache = cache.next_entry
+
+        if not layout.is_latest:
+            obj.update_layout_to_match_class()
+            return self._lookup(obj.get_object_layout(), obj)
 
         # this is the generic dispatch node
         if first and first.layout is None:
@@ -73,11 +77,7 @@ class FieldReadNode(_AbstractFieldNode):
         assert isinstance(self_obj, ObjectWithLayout)
 
         layout = self_obj.get_object_layout()
-        if not layout.is_latest:
-            self_obj.update_layout_to_match_class()
-            layout = self_obj.get_object_layout()
-
-        location = self._lookup(layout)
+        location = self._lookup(layout, self_obj)
         return location.read_fn(location, self_obj)
 
 
@@ -97,11 +97,7 @@ class FieldWriteNode(_AbstractFieldNode):
         assert isinstance(value, AbstractObject)
 
         layout = self_obj.get_object_layout()
-        if not layout.is_latest:
-            self_obj.update_layout_to_match_class()
-            layout = self_obj.get_object_layout()
-
-        location = self._lookup(layout)
+        location = self._lookup(layout, self_obj)
 
         try:
             location.write_fn(location, self_obj, value)
