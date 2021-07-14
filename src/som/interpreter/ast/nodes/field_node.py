@@ -1,12 +1,3 @@
-from rlib.jit import elidable_promote, dont_look_inside
-from som.interpreter.objectstorage.layout_transitions import (
-    UninitializedStorageLocationException,
-    GeneralizeStorageLocationException,
-)
-from som.interpreter.objectstorage.storage_location import create_generic_access_node
-from som.vmobjects.abstract_object import AbstractObject
-from som.vmobjects.object_with_layout import ObjectWithLayout
-
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
@@ -23,68 +14,11 @@ class _AbstractFieldNode(ExpressionNode):
         self._field_idx = field_idx
         self._access_node = None
 
-    @elidable_promote("all")
-    def _lookup(self, layout):
-        first = self._access_node
-        cache = first
-        while cache is not None:
-            if cache.layout is layout:
-                return cache
-            cache = cache.next_entry
-
-        # this is the generic node
-        if first and first.layout is None:
-            return first
-
-        return None
-
-    def _get_cache_size_and_drop_old_entries(self):
-        size = 0
-        prev = None
-        cache = self._access_node
-        while cache is not None:
-            if not cache.layout.is_latest:
-                # drop from cache if not latest
-                if prev is None:
-                    self._access_node = cache.next_entry
-                else:
-                    prev.next_entry = cache.next_entry
-            else:
-                size += 1
-                prev = cache
-
-            cache = cache.next_entry
-        return size
-
-    @dont_look_inside
-    def _specialize(self, layout, obj):
-        if not layout.is_latest:
-            obj.update_layout_to_match_class()
-            layout = obj.get_object_layout()
-            location = self._lookup(layout)
-            if location is not None:
-                return location
-
-        cache_size = self._get_cache_size_and_drop_old_entries()
-
-        if cache_size < MAX_FIELD_ACCESS_CHAIN_LENGTH:
-            node = layout.create_access_node(self._field_idx, self._access_node)
-            self._access_node = node
-        else:
-            self._access_node = create_generic_access_node(self._field_idx)
-        return self._access_node
-
 
 class FieldReadNode(_AbstractFieldNode):
     def execute(self, frame):
         self_obj = self._self_exp.execute(frame)
-        assert isinstance(self_obj, ObjectWithLayout)
-
-        layout = self_obj.get_object_layout()
-        location = self._lookup(layout)
-        if location is None:
-            location = self._specialize(layout, self_obj)
-        return location.read_fn(location, self_obj)
+        return self_obj.get_field(self._field_idx)
 
 
 class FieldWriteNode(_AbstractFieldNode):
@@ -99,25 +33,7 @@ class FieldWriteNode(_AbstractFieldNode):
     def execute(self, frame):
         self_obj = self._self_exp.execute(frame)
         value = self._value_exp.execute(frame)
-        assert isinstance(self_obj, ObjectWithLayout)
-        assert isinstance(value, AbstractObject)
-
-        layout = self_obj.get_object_layout()
-        location = self._lookup(layout)
-        if location is None:
-            location = self._specialize(layout, self_obj)
-
-        try:
-            location.write_fn(location, self_obj, value)
-            return value
-        except UninitializedStorageLocationException:
-            self_obj.update_layout_with_initialized_field(
-                self._field_idx, value.__class__
-            )
-        except GeneralizeStorageLocationException:
-            self_obj.update_layout_with_generalized_field(self._field_idx)
-
-        self_obj.set_field_after_layout_change(self._field_idx, value)
+        self_obj.set_field(self._field_idx, value)
         return value
 
 

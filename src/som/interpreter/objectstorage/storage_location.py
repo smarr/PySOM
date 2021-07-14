@@ -12,7 +12,7 @@ NUMBER_OF_PRIMITIVE_FIELDS = 5
 NUMBER_OF_POINTER_FIELDS = 5
 
 
-class _BasicLocation(object):
+class _Location(object):
     _immutable_fields_ = [
         "field_idx",
         "access_idx",
@@ -20,19 +20,6 @@ class _BasicLocation(object):
         "is_set_fn",
         "read_fn",
         "write_fn",
-    ]
-
-    def __init__(self, field_idx, access_idx, mask, is_set_fn, read_fn, write_fn):
-        self.field_idx = field_idx
-        self.access_idx = access_idx
-        self.mask = mask
-        self.is_set_fn = is_set_fn
-        self.read_fn = read_fn
-        self.write_fn = write_fn
-
-
-class _Location(_BasicLocation):
-    _immutable_fields_ = [
         "store_idx",
         "storage_type",
     ]
@@ -47,56 +34,17 @@ class _Location(_BasicLocation):
         write_fn,
         storage_type,
     ):
-        _BasicLocation.__init__(
-            self,
-            field_idx,
-            access_idx,
-            _get_primitive_field_mask(store_idx),
-            is_set_fn,
-            read_fn,
-            write_fn,
-        )
+        self.field_idx = field_idx
+        self.access_idx = access_idx
+        self.mask = _get_primitive_field_mask(store_idx)
+        self.is_set_fn = is_set_fn
+        self.read_fn = read_fn
+        self.write_fn = write_fn
         self.store_idx = store_idx
         self.storage_type = storage_type
 
-    def create_access_node(self, layout, next_entry):
-        return _AccessNode(
-            layout,
-            self.field_idx,
-            self.access_idx,
-            self.mask,
-            self.is_set_fn,
-            self.read_fn,
-            self.write_fn,
-            next_entry,
-        )
-
     def __str__(self):
         return "Location(" + str(self.field_idx) + ")"
-
-
-class _AccessNode(_BasicLocation):
-    _immutable_fields_ = [
-        "layout",
-        "next_entry?",
-    ]
-
-    def __init__(
-        self,
-        layout,
-        field_idx,
-        access_idx,
-        mask,
-        is_set_fn,
-        read_fn,
-        write_fn,
-        next_entry,
-    ):
-        _BasicLocation.__init__(
-            self, field_idx, access_idx, mask, is_set_fn, read_fn, write_fn
-        )
-        self.layout = layout
-        self.next_entry = next_entry
 
 
 def _get_primitive_field_mask(store_idx):
@@ -179,25 +127,6 @@ def create_location_for_unwritten(field_idx):
     return _Location(
         field_idx, -1, -1, _unwritten_is_set, _unwritten_read, _unwritten_write, None
     )
-
-
-def create_generic_access_node(field_idx):
-    return _AccessNode(
-        None, field_idx, -1, -1, _generic_is_set, _generic_read, _generic_write, None
-    )
-
-
-def _generic_is_set(node, obj):
-    location = obj.get_location(node.field_idx)
-    return location.is_set_fn(location, obj)
-
-
-def _generic_read(node, obj):
-    return obj.get_field(node.field_idx)
-
-
-def _generic_write(node, obj, value):
-    obj.set_field(node.field_idx, value)
 
 
 def _unwritten_is_set(_node, _obj):

@@ -6,25 +6,18 @@ from som.interpreter.ast.frame import (
     FRAME_AND_INNER_RCVR_IDX,
     get_inner_as_context,
 )
-from som.interpreter.ast.nodes.field_node import MAX_FIELD_ACCESS_CHAIN_LENGTH
 from som.interpreter.bc.bytecodes import bytecode_length, Bytecodes
 from som.interpreter.bc.frame import (
     get_block_at,
     get_self_dynamically,
 )
 from som.interpreter.control_flow import ReturnException
-from som.interpreter.objectstorage.layout_transitions import (
-    UninitializedStorageLocationException,
-    GeneralizeStorageLocationException,
-)
-from som.interpreter.objectstorage.storage_location import create_generic_access_node
 from som.interpreter.send import lookup_and_send_2, lookup_and_send_3
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import BcBlock
-from som.vmobjects.object_with_layout import ObjectWithLayout
 
 from rlib import jit
-from rlib.jit import promote, elidable_promote, dont_look_inside
+from rlib.jit import promote
 
 
 def _do_super_send(bytecode_index, method, stack, stack_ptr):
@@ -168,19 +161,11 @@ def interpret(method, frame, max_stack_size):
                 stack[stack_ptr] = block.get_from_outer(idx)
 
         elif bytecode == Bytecodes.push_field:
+            field_idx = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)
             self_obj = get_self(frame, ctx_level)
-            assert isinstance(self_obj, ObjectWithLayout)
-
-            layout = self_obj.get_object_layout()
-            location = _lookup_quick_node(method, current_bc_idx, layout)
-            if location is None:
-                location = _quicken_field_access(
-                    method, current_bc_idx, layout, self_obj
-                )
-
             stack_ptr += 1
-            stack[stack_ptr] = location.read_fn(location, self_obj)
+            stack[stack_ptr] = self_obj.get_field(field_idx)
 
         elif bytecode == Bytecodes.push_block:
             block_method = method.get_constant(current_bc_idx)
@@ -228,33 +213,15 @@ def interpret(method, frame, max_stack_size):
                 block.set_outer(idx, value)
 
         elif bytecode == Bytecodes.pop_field:
+            field_idx = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)
             self_obj = get_self(frame, ctx_level)
-            assert isinstance(self_obj, ObjectWithLayout)
-
-            layout = self_obj.get_object_layout()
-            location = _lookup_quick_node(method, current_bc_idx, layout)
-            if location is None:
-                location = _quicken_field_access(
-                    method, current_bc_idx, layout, self_obj
-                )
 
             value = stack[stack_ptr]
             stack[stack_ptr] = None
             stack_ptr -= 1
 
-            try:
-                location.write_fn(location, self_obj, value)
-            except UninitializedStorageLocationException:
-                field_idx = method.get_bytecode(current_bc_idx + 1)
-                self_obj.update_layout_with_initialized_field(
-                    field_idx, value.__class__
-                )
-                self_obj.set_field_after_layout_change(field_idx, value)
-            except GeneralizeStorageLocationException:
-                field_idx = method.get_bytecode(current_bc_idx + 1)
-                self_obj.update_layout_with_generalized_field(field_idx)
-                self_obj.set_field_after_layout_change(field_idx, value)
+            self_obj.set_field(field_idx, value)
 
         elif bytecode == Bytecodes.send_1:
             signature = method.get_constant(current_bc_idx)
@@ -410,63 +377,6 @@ def interpret(method, frame, max_stack_size):
             _unknown_bytecode(bytecode, current_bc_idx, method)
 
         current_bc_idx = next_bc_idx
-
-
-@elidable_promote("all")
-def _lookup_quick_node(method, current_bc_idx, layout):
-    first = method.quick_nodes[current_bc_idx]
-    cache = first
-    while cache is not None:
-        if cache.layout is layout:
-            return cache
-        cache = cache.next_entry
-
-    # this is the generic node
-    if first and first.layout is None:
-        return first
-
-    return None
-
-
-def _get_cache_size_and_drop_old_entries(method, current_bc_idx):
-    size = 0
-    prev = None
-    cache = method.quick_nodes[current_bc_idx]
-    while cache is not None:
-        if not cache.layout.is_latest:
-            # drop from cache if not latest
-            if prev is None:
-                method.quick_nodes[current_bc_idx] = cache.next_entry
-            else:
-                prev.next_entry = cache.next_entry
-        else:
-            size += 1
-            prev = cache
-
-        cache = cache.next_entry
-    return size
-
-
-@dont_look_inside
-def _quicken_field_access(method, current_bc_idx, layout, obj):
-    if not layout.is_latest:
-        obj.update_layout_to_match_class()
-        layout = obj.get_object_layout()
-        location = _lookup_quick_node(method, current_bc_idx, layout)
-        if location is not None:
-            return location
-
-    cache_size = _get_cache_size_and_drop_old_entries(method, current_bc_idx)
-
-    field_index = method.get_bytecode(current_bc_idx + 1)
-    if cache_size < MAX_FIELD_ACCESS_CHAIN_LENGTH:
-        node = layout.create_access_node(
-            field_index, method.quick_nodes[current_bc_idx]
-        )
-        method.quick_nodes[current_bc_idx] = node
-    else:
-        method.quick_nodes[current_bc_idx] = create_generic_access_node(field_index)
-    return method.quick_nodes[current_bc_idx]
 
 
 def _not_yet_implemented():
