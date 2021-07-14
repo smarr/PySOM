@@ -28,6 +28,7 @@ class BcAbstractMethod(AbstractMethod):
         "_literals[*]",
         "_inline_cache_class",
         "_inline_cache_invokable",
+        "quick_nodes?[*]",
         "_receiver_class_table",
         "_number_of_locals",
         "_maximum_number_of_stack_elements",
@@ -56,6 +57,7 @@ class BcAbstractMethod(AbstractMethod):
         self._bytecodes = ["\x00"] * num_bytecodes
         self._inline_cache_class = [None] * num_bytecodes
         self._inline_cache_invokable = [None] * num_bytecodes
+        self.quick_nodes = [None] * num_bytecodes
 
         self._literals = literals
 

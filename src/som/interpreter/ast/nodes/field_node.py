@@ -10,7 +10,7 @@ from som.vmobjects.object_with_layout import ObjectWithLayout
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
-_MAX_CHAIN_LENGTH = 6
+MAX_FIELD_ACCESS_CHAIN_LENGTH = 6
 
 
 class _AbstractFieldNode(ExpressionNode):
@@ -67,7 +67,7 @@ class _AbstractFieldNode(ExpressionNode):
 
         cache_size = self._get_cache_size_and_drop_old_entries()
 
-        if cache_size < _MAX_CHAIN_LENGTH:
+        if cache_size < MAX_FIELD_ACCESS_CHAIN_LENGTH:
             node = layout.create_access_node(self._field_idx, self._access_node)
             self._access_node = node
         else:
