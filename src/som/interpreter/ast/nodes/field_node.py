@@ -60,7 +60,8 @@ class _AbstractFieldNode(ExpressionNode):
     def _specialize(self, layout, obj):
         if not layout.is_latest:
             obj.update_layout_to_match_class()
-            location = self._lookup(obj.get_object_layout())
+            layout = obj.get_object_layout()
+            location = self._lookup(layout)
             if location is not None:
                 return location
 
