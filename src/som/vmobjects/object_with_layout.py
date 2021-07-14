@@ -1,5 +1,4 @@
 from rlib.jit import promote, we_are_jitted
-from som.interpreter.objectstorage.object_layout import ObjectLayout
 from som.interpreter.objectstorage.layout_transitions import (
     UninitializedStorageLocationException,
     GeneralizeStorageLocationException,
@@ -11,21 +10,15 @@ from som.vm.globals import nilObject
 _EMPTY_LIST = []
 
 
-class ObjectWithLayout(ObjectWithoutFields):
+class Object(ObjectWithoutFields):
 
-    _immutable_fields_ = ["_object_layout?", "fields?", "prim_fields?"]
+    _immutable_fields_ = ["fields?", "prim_fields?"]
 
     # Static field indices and number of object fields
     NUMBER_OF_OBJECT_FIELDS = 0
 
-    def __init__(self, obj_class, number_of_fields=NUMBER_OF_OBJECT_FIELDS):
-        cls = obj_class if obj_class is not None else nilObject
-        ObjectWithoutFields.__init__(self, cls)
-
-        if obj_class is not None:
-            self._object_layout = obj_class.get_layout_for_instances()
-        else:
-            self._object_layout = ObjectLayout(number_of_fields)
+    def __init__(self, layout):
+        ObjectWithoutFields.__init__(self, layout)
 
         # IMPORTANT: when changing the number of preallocated fields,
         # you'll also need to update storage_location.py's constants:
@@ -42,10 +35,10 @@ class ObjectWithLayout(ObjectWithoutFields):
         self.prim_field4 = 0
         self.prim_field5 = 0
 
-        assert self._object_layout.get_number_of_fields() == number_of_fields
-        # TODO:
-        # or obj_class is None
-        # or not obj_class.universe.is_object_system_initialized())
+        if layout is None:
+            self.prim_fields = _EMPTY_LIST
+            self.fields = None
+            return
 
         n = self._object_layout.get_number_of_used_extended_prim_locations()
         if n > 0:
@@ -60,9 +53,6 @@ class ObjectWithLayout(ObjectWithoutFields):
             self.fields = [nilObject] * n
         else:
             self.fields = None  ## for some reason _EMPTY_LIST doesn't typecheck here
-
-    def get_object_layout(self):
-        return promote(self._object_layout)
 
     def _get_all_fields(self):
         assert not we_are_jitted()
@@ -90,7 +80,7 @@ class ObjectWithLayout(ObjectWithoutFields):
 
     def update_layout_to_match_class(self):
         assert not we_are_jitted()
-        class_layout = self._class.get_layout_for_instances()
+        class_layout = self._object_layout.for_class.get_layout_for_instances()
         assert (
             self._object_layout.get_number_of_fields()
             == class_layout.get_number_of_fields()
@@ -124,8 +114,10 @@ class ObjectWithLayout(ObjectWithoutFields):
 
     def update_layout_with_initialized_field(self, idx, field_type):
         assert not we_are_jitted()
-        layout = self._class.update_instance_layout_with_initialized_field(
-            idx, field_type
+        layout = (
+            self._object_layout.for_class.update_instance_layout_with_initialized_field(
+                idx, field_type
+            )
         )
 
         assert layout is not self._object_layout
@@ -133,18 +125,22 @@ class ObjectWithLayout(ObjectWithoutFields):
 
     def update_layout_with_generalized_field(self, idx):
         assert not we_are_jitted()
-        layout = self._class.update_instance_layout_with_generalized_field(idx)
+        layout = (
+            self._object_layout.for_class.update_instance_layout_with_generalized_field(
+                idx
+            )
+        )
 
         assert layout is not self._object_layout
         self._set_layout_and_transfer_fields(layout)
 
     def get_field_name(self, index):
         # Get the name of the field with the given index
-        return self._class.get_instance_field_name(index)
+        return self._object_layout.for_class.get_instance_field_name(index)
 
     def get_field_index(self, name):
         # Get the index for the field with the given name
-        return self._class.lookup_field_index(name)
+        return self._object_layout.for_class.lookup_field_index(name)
 
     def get_number_of_fields(self):
         # Get the number of fields in this object

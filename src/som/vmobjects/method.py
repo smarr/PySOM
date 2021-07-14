@@ -33,6 +33,9 @@ class AbstractMethod(AbstractObject):
     def get_class(self, universe):
         return universe.method_class
 
+    def get_object_layout(self, universe):
+        return universe.method_layout
+
     def __str__(self):
         if self._holder:
             holder = self._holder.get_name().get_embedded_string()

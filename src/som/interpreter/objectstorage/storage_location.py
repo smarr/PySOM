@@ -100,7 +100,7 @@ def create_location_for_double(field_idx, prim_field_idx):
 
 
 def create_location_for_object(field_idx, ptr_field_idx):
-    from som.vmobjects.object_with_layout import ObjectWithLayout
+    from som.vmobjects.object_with_layout import Object
 
     if ptr_field_idx < NUMBER_OF_POINTER_FIELDS:
         return _Location(
@@ -110,7 +110,7 @@ def create_location_for_object(field_idx, ptr_field_idx):
             _object_is_set,
             _object_direct_read[ptr_field_idx],
             _object_direct_write[ptr_field_idx],
-            ObjectWithLayout,
+            Object,
         )
     return _Location(
         field_idx,
@@ -119,7 +119,7 @@ def create_location_for_object(field_idx, ptr_field_idx):
         _object_is_set,
         _object_array_read,
         _object_array_write,
-        ObjectWithLayout,
+        Object,
     )
 
 

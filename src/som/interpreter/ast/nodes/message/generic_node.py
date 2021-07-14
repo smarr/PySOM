@@ -23,39 +23,55 @@ class _AbstractGenericMessageNode(ExpressionNode):
         self._dispatch = None
 
     @elidable_promote("all")
-    def _lookup(self, rcvr_class):
+    def _lookup(self, layout):
         first = self._dispatch
         cache = first
         while cache is not None:
-            if cache.expected_class is rcvr_class:
+            if cache.expected_layout is layout:
                 return cache
             cache = cache.next_entry
 
         # this is the generic dispatch node
-        if first and first.expected_class is None:
+        if first and first.expected_layout is None:
             return first
 
-        return self._specialize(rcvr_class)
+        return None
 
-    def _get_cache_size(self):
+    def _get_cache_size_and_drop_old_entries(self):
         size = 0
+        prev = None
         cache = self._dispatch
         while cache is not None:
-            size += 1
+            if not cache.expected_layout.is_latest:
+                # drop old layout from cache
+                if prev is None:
+                    self._dispatch = cache.next_entry
+                else:
+                    prev.next_entry = cache.next_entry
+            else:
+                size += 1
+                prev = cache
+
             cache = cache.next_entry
         return size
 
-    def _specialize(self, rcvr_class):
-        cache_size = self._get_cache_size()
+    def _specialize(self, layout, obj):
+        if not layout.is_latest:
+            obj.update_layout_to_match_class()
+            layout = obj.get_object_layout(self.universe)
+            cache = self._lookup(layout)
+            if cache is not None:
+                return cache
 
+        cache_size = self._get_cache_size_and_drop_old_entries()
         if cache_size < INLINE_CACHE_SIZE:
-            method = rcvr_class.lookup_invokable(self._selector)
+            method = layout.lookup_invokable(self._selector)
 
             if method is not None:
-                node = CachedDispatchNode(rcvr_class, method, self._dispatch)
+                node = CachedDispatchNode(layout, method, self._dispatch)
             else:
                 node = CachedDnuNode(
-                    self._selector, rcvr_class, self._dispatch, self.universe
+                    self._selector, layout, self._dispatch, self.universe
                 )
 
             node.parent = self
@@ -63,7 +79,7 @@ class _AbstractGenericMessageNode(ExpressionNode):
             return node
 
         # the chain is longer than the maximum defined by INLINE_CACHE_SIZE
-        # and thus, this callsite is considered to be megaprophic, and we
+        # and thus, this callsite is considered to be megamorphic, and we
         # generalize it.
         generic_replacement = GenericDispatchNode(self._selector, self.universe)
         generic_replacement.parent = self
@@ -86,13 +102,17 @@ class UnarySend(_AbstractGenericMessageNode):
 
     def execute(self, frame):
         rcvr = self._rcvr_expr.execute(frame)
-        rcvr_class = rcvr.get_class(self.universe)
-        dispatch_node = self._lookup(rcvr_class)
+        layout = rcvr.get_object_layout(self.universe)
+        dispatch_node = self._lookup(layout)
+        if dispatch_node is None:
+            dispatch_node = self._specialize(layout, rcvr)
         return dispatch_node.dispatch_1(rcvr)
 
     def execute_evaluated(self, _frame, rcvr, _args):
-        rcvr_class = rcvr.get_class(self.universe)
-        dispatch_node = self._lookup(rcvr_class)
+        layout = rcvr.get_object_layout(self.universe)
+        dispatch_node = self._lookup(layout)
+        if dispatch_node is None:
+            dispatch_node = self._specialize(layout, rcvr)
         return dispatch_node.dispatch_1(rcvr)
 
 
@@ -116,8 +136,10 @@ class BinarySend(_AbstractGenericMessageNode):
         return self.exec_evaluated_2(rcvr, args[0])
 
     def exec_evaluated_2(self, rcvr, arg):
-        rcvr_class = rcvr.get_class(self.universe)
-        dispatch_node = self._lookup(rcvr_class)
+        layout = rcvr.get_object_layout(self.universe)
+        dispatch_node = self._lookup(layout)
+        if dispatch_node is None:
+            dispatch_node = self._specialize(layout, rcvr)
         return dispatch_node.dispatch_2(rcvr, arg)
 
 
@@ -145,8 +167,10 @@ class TernarySend(_AbstractGenericMessageNode):
         return self.exec_evaluated_3(rcvr, args[0], args[1])
 
     def exec_evaluated_3(self, rcvr, arg1, arg2):
-        rcvr_class = rcvr.get_class(self.universe)
-        dispatch_node = self._lookup(rcvr_class)
+        layout = rcvr.get_object_layout(self.universe)
+        dispatch_node = self._lookup(layout)
+        if dispatch_node is None:
+            dispatch_node = self._specialize(layout, rcvr)
         return dispatch_node.dispatch_3(rcvr, arg1, arg2)
 
 
@@ -168,6 +192,8 @@ class NArySend(_AbstractGenericMessageNode):
         return self.execute_evaluated(None, rcvr, args)
 
     def execute_evaluated(self, _frame, rcvr, args):
-        rcvr_class = rcvr.get_class(self.universe)
-        dispatch_node = self._lookup(rcvr_class)
+        layout = rcvr.get_object_layout(self.universe)
+        dispatch_node = self._lookup(layout)
+        if dispatch_node is None:
+            dispatch_node = self._specialize(layout, rcvr)
         return dispatch_node.dispatch_args(rcvr, args)

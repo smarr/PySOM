@@ -55,3 +55,6 @@ class Symbol(String):
 
     def get_class(self, universe):
         return universe.symbol_class
+
+    def get_object_layout(self, universe):
+        return universe.symbol_layout

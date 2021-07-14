@@ -1,7 +1,7 @@
 from rlib import jit
 from som.vm.globals import nilObject
 from som.vmobjects.array import Array
-from som.vmobjects.object_with_layout import ObjectWithLayout as Object
+from som.vmobjects.object_with_layout import Object
 from som.interpreter.objectstorage.object_layout import ObjectLayout
 
 
@@ -17,17 +17,17 @@ class Class(Object):
     ]
 
     def __init__(self, number_of_fields=Object.NUMBER_OF_OBJECT_FIELDS, obj_class=None):
-        Object.__init__(self, obj_class, number_of_fields)
+        Object.__init__(
+            self, obj_class.get_layout_for_instances() if obj_class else None
+        )
         self._super_class = nilObject
         self._name = None
         self._instance_fields = None
         self._invokables_table = None
         self.has_primitives = False
 
-        if number_of_fields >= 0:
-            self._layout_for_instances = ObjectLayout(number_of_fields, self)
-        else:
-            self._layout_for_instances = None
+        assert number_of_fields >= 0
+        self._layout_for_instances = ObjectLayout(number_of_fields, self)
 
     def get_super_class(self):
         return self._super_class
@@ -171,7 +171,7 @@ class Class(Object):
         if self.has_primitives:
             return True
         # a bit involved to make RPython's type inferencer happy
-        clazz = self._class
+        clazz = self._object_layout.for_class
         if isinstance(clazz, Class):
             return clazz.has_primitives
         return False

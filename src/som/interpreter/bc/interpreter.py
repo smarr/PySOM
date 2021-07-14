@@ -17,7 +17,7 @@ from som.vmobjects.array import Array
 from som.vmobjects.block_bc import BcBlock
 
 from rlib import jit
-from rlib.jit import promote
+from rlib.jit import promote, elidable_promote
 
 
 def _do_super_send(bytecode_index, method, stack, stack_ptr):
@@ -30,7 +30,9 @@ def _do_super_send(bytecode_index, method, stack, stack_ptr):
     receiver = stack[stack_ptr - (num_args - 1)]
 
     if invokable:
-        method.set_inline_cache(bytecode_index, receiver_class, invokable)
+        method.set_inline_cache(
+            bytecode_index, receiver_class.get_layout_for_instances(), invokable
+        )
         if num_args == 1:
             bc = Bytecodes.q_super_send_1
         elif num_args == 2:
@@ -227,11 +229,15 @@ def interpret(method, frame, max_stack_size):
             signature = method.get_constant(current_bc_idx)
             receiver = stack[stack_ptr]
 
-            invokable = _lookup(
-                receiver.get_class(current_universe), signature, method, current_bc_idx
-            )
-            if invokable:
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, signature, method, current_bc_idx)
+            if invokable is not None:
                 stack[stack_ptr] = invokable.invoke_1(receiver)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
             else:
                 stack_ptr = _send_does_not_understand(
                     receiver, signature, stack, stack_ptr
@@ -241,14 +247,18 @@ def interpret(method, frame, max_stack_size):
             signature = method.get_constant(current_bc_idx)
             receiver = stack[stack_ptr - 1]
 
-            invokable = _lookup(
-                receiver.get_class(current_universe), signature, method, current_bc_idx
-            )
-            if invokable:
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, signature, method, current_bc_idx)
+            if invokable is not None:
                 arg = stack[stack_ptr]
                 stack[stack_ptr] = None
                 stack_ptr -= 1
                 stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
             else:
                 stack_ptr = _send_does_not_understand(
                     receiver, signature, stack, stack_ptr
@@ -258,16 +268,20 @@ def interpret(method, frame, max_stack_size):
             signature = method.get_constant(current_bc_idx)
             receiver = stack[stack_ptr - 2]
 
-            invokable = _lookup(
-                receiver.get_class(current_universe), signature, method, current_bc_idx
-            )
-            if invokable:
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, signature, method, current_bc_idx)
+            if invokable is not None:
                 arg2 = stack[stack_ptr]
                 arg1 = stack[stack_ptr - 1]
                 stack[stack_ptr] = None
                 stack[stack_ptr - 1] = None
                 stack_ptr -= 2
                 stack[stack_ptr] = invokable.invoke_3(receiver, arg1, arg2)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
             else:
                 stack_ptr = _send_does_not_understand(
                     receiver, signature, stack, stack_ptr
@@ -279,11 +293,15 @@ def interpret(method, frame, max_stack_size):
                 stack_ptr - (signature.get_number_of_signature_arguments() - 1)
             ]
 
-            invokable = _lookup(
-                receiver.get_class(current_universe), signature, method, current_bc_idx
-            )
-            if invokable:
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, signature, method, current_bc_idx)
+            if invokable is not None:
                 stack_ptr = invokable.invoke_n(stack, stack_ptr)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
             else:
                 stack_ptr = _send_does_not_understand(
                     receiver, signature, stack, stack_ptr
@@ -399,28 +417,40 @@ def get_self(frame, ctx_level):
     return get_block_at(frame, ctx_level).get_from_outer(FRAME_AND_INNER_RCVR_IDX)
 
 
-def _lookup(receiver_class, selector, method, bytecode_index):
-    # First try the inline cache
-    cached_class = method.get_inline_cache_class(bytecode_index)
-    if cached_class == receiver_class:
+@elidable_promote("all")
+def _lookup(layout, selector, method, bytecode_index):
+    # First try of inline cache
+    cached_layout1 = method.get_inline_cache_layout(bytecode_index)
+    if cached_layout1 is layout:
         invokable = method.get_inline_cache_invokable(bytecode_index)
+    elif cached_layout1 is None:
+        invokable = layout.lookup_invokable(selector)
+        method.set_inline_cache(bytecode_index, layout, invokable)
     else:
-        if not cached_class:
-            invokable = receiver_class.lookup_invokable(selector)
-            method.set_inline_cache(bytecode_index, receiver_class, invokable)
+        # second try
+        # the bytecode index after the send is used by the selector constant,
+        # and can be used safely as another cache item
+        cached_layout2 = method.get_inline_cache_layout(bytecode_index + 1)
+        if cached_layout2 == layout:
+            invokable = method.get_inline_cache_invokable(bytecode_index + 1)
         else:
-            # the bytecode index after the send is used by the selector constant,
-            # and can be used safely as another cache item
-            cached_class = method.get_inline_cache_class(bytecode_index + 1)
-            if cached_class == receiver_class:
-                invokable = method.get_inline_cache_invokable(bytecode_index + 1)
-            else:
-                invokable = receiver_class.lookup_invokable(selector)
-                if not cached_class:
-                    method.set_inline_cache(
-                        bytecode_index + 1, receiver_class, invokable
-                    )
+            invokable = layout.lookup_invokable(selector)
+            if cached_layout2 is None:
+                method.set_inline_cache(bytecode_index + 1, layout, invokable)
     return invokable
+
+
+def _update_object_and_invalidate_old_caches(obj, method, bytecode_index, universe):
+    obj.update_layout_to_match_class()
+    obj.get_object_layout(universe)
+
+    cached_layout1 = method.get_inline_cache_layout(bytecode_index)
+    if cached_layout1 is not None and not cached_layout1.is_latest:
+        method.set_inline_cache(bytecode_index, None, None)
+
+    cached_layout2 = method.get_inline_cache_layout(bytecode_index + 1)
+    if cached_layout2 is not None and not cached_layout2.is_latest:
+        method.set_inline_cache(bytecode_index + 1, None, None)
 
 
 def _send_does_not_understand(receiver, selector, stack, stack_ptr):

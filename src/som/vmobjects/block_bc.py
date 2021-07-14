@@ -51,6 +51,9 @@ class BcBlock(AbstractObject):
     def get_class(self, universe):
         return universe.block_classes[self._method.get_number_of_arguments()]
 
+    def get_object_layout(self, universe):
+        return universe.block_layouts[self._method.get_number_of_arguments()]
+
 
 def block_evaluation_primitive(num_args, universe):
     if num_args == 1:

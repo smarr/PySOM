@@ -4,7 +4,7 @@ from som.vm.current import current_universe
 
 from som.vm.globals import trueObject, falseObject
 from som.vmobjects.array import Array
-from som.vmobjects.object_with_layout import ObjectWithLayout
+from som.vmobjects.object_with_layout import Object
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 
 
@@ -19,7 +19,7 @@ def _object_size(rcvr):
 
     size = 0
 
-    if isinstance(rcvr, ObjectWithLayout):
+    if isinstance(rcvr, Object):
         size = rcvr.get_number_of_fields()
     elif isinstance(rcvr, Array):
         size = rcvr.get_number_of_indexable_fields()
@@ -58,7 +58,7 @@ def _class(rcvr):
 
 
 def _perform(rcvr, selector):
-    invokable = rcvr.get_class(current_universe).lookup_invokable(selector)
+    invokable = rcvr.get_object_layout(current_universe).lookup_invokable(selector)
     return invokable.invoke_1(rcvr)
 
 
@@ -70,7 +70,7 @@ def _perform_in_superclass(rcvr, selector, clazz):
 def _perform_with_arguments(rcvr, selector, args):
     num_args = args.get_number_of_indexable_fields() + 1
 
-    invokable = rcvr.get_class(current_universe).lookup_invokable(selector)
+    invokable = rcvr.get_object_layout(current_universe).lookup_invokable(selector)
 
     if num_args == 1:
         return invokable.invoke_1(rcvr)
