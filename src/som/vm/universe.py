@@ -504,20 +504,8 @@ class Universe(object):
         return result
 
 
-class _ASTUniverse(Universe):
-    pass
-
-
-class _BCUniverse(Universe):
-    def _initialize_object_system(self):
-        system_object = Universe._initialize_object_system(self)
-        return system_object
-
-
 def create_universe(avoid_exit=False):
-    if is_ast_interpreter():
-        return _ASTUniverse(avoid_exit)
-    return _BCUniverse(avoid_exit)
+    return Universe(avoid_exit)
 
 
 def error_print(msg):
