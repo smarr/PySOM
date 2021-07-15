@@ -1,4 +1,4 @@
-from rlib import jit
+from rlib.jit import promote
 from som.interpreter.ast.frame import is_on_stack
 
 from som.vmobjects.abstract_object import AbstractObject
@@ -26,15 +26,15 @@ class AstBlock(AbstractObject):
         return self._outer is other_block._outer  # pylint: disable=protected-access
 
     def get_method(self):
-        return self._method
+        return promote(self._method)
 
     def get_from_outer(self, index):
-        jit.promote(index)
+        promote(index)
         assert 0 <= index < len(self._outer)
         return self._outer[index]
 
     def set_outer(self, index, value):
-        jit.promote(index)
+        promote(index)
         assert 0 <= index < len(self._outer)
         self._outer[index] = value
 
