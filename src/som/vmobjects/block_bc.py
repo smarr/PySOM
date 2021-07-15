@@ -28,7 +28,9 @@ class BcBlock(AbstractObject):
 
     def get_from_outer(self, index):
         promote(index)
-        assert 0 <= index < len(self._outer)
+        assert self._outer and 0 <= index < len(self._outer), "No outer in " + str(
+            self._method
+        )
         assert isinstance(self._outer[index], AbstractObject)
         return self._outer[index]
 
