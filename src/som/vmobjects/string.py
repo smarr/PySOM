@@ -16,3 +16,6 @@ class String(AbstractObject):
 
     def get_class(self, universe):
         return universe.string_class
+
+    def get_object_layout(self, universe):
+        return universe.string_layout

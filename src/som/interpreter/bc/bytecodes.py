@@ -51,9 +51,9 @@ _BYTECODE_LENGTH = [
     2,  # push_constant
     2,  # push_global
     1,  # pop
-    3,  # pop_local
     3,  # pop_frame
     3,  # pop_inner
+    3,  # pop_field
     2,  # send_1
     2,  # send_2
     2,  # send_3

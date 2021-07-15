@@ -24,11 +24,10 @@ from som.vmobjects.method import AbstractMethod
 class BcAbstractMethod(AbstractMethod):
 
     _immutable_fields_ = [
-        "_bytecodes[*]",
+        "_bytecodes?[*]",
         "_literals[*]",
-        "_inline_cache_class",
+        "_inline_cache_layout",
         "_inline_cache_invokable",
-        "_receiver_class_table",
         "_number_of_locals",
         "_maximum_number_of_stack_elements",
         "_number_of_arguments",
@@ -54,15 +53,13 @@ class BcAbstractMethod(AbstractMethod):
 
         # Set the number of bytecodes in this method
         self._bytecodes = ["\x00"] * num_bytecodes
-        self._inline_cache_class = [None] * num_bytecodes
+        self._inline_cache_layout = [None] * num_bytecodes
         self._inline_cache_invokable = [None] * num_bytecodes
 
         self._literals = literals
 
         self._number_of_arguments = signature.get_number_of_signature_arguments()
-
         self._number_of_locals = num_locals
-
         self._maximum_number_of_stack_elements = max_stack_elements + 2
 
         self._arg_inner_access = arg_inner_access
@@ -121,17 +118,17 @@ class BcAbstractMethod(AbstractMethod):
         self._bytecodes[index] = chr(value)
 
     @jit.elidable
-    def get_inline_cache_class(self, bytecode_index):
-        assert 0 <= bytecode_index < len(self._inline_cache_class)
-        return self._inline_cache_class[bytecode_index]
+    def get_inline_cache_layout(self, bytecode_index):
+        assert 0 <= bytecode_index < len(self._inline_cache_layout)
+        return self._inline_cache_layout[bytecode_index]
 
     @jit.elidable
     def get_inline_cache_invokable(self, bytecode_index):
         assert 0 <= bytecode_index < len(self._inline_cache_invokable)
         return self._inline_cache_invokable[bytecode_index]
 
-    def set_inline_cache(self, bytecode_index, receiver_class, invokable):
-        self._inline_cache_class[bytecode_index] = receiver_class
+    def set_inline_cache(self, bytecode_index, layout, invokable):
+        self._inline_cache_layout[bytecode_index] = layout
         self._inline_cache_invokable[bytecode_index] = invokable
 
     def patch_variable_access(self, bytecode_index):

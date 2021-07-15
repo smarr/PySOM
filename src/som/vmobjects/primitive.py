@@ -37,6 +37,9 @@ class _AbstractPrimitive(AbstractObject):
     def get_class(self, universe):
         return universe.primitive_class
 
+    def get_object_layout(self, universe):
+        return universe.primitive_layout
+
     def __str__(self):
         if self._holder:
             holder = self.get_holder().get_name().get_embedded_string()

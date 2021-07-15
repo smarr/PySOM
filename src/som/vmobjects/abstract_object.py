@@ -5,6 +5,11 @@ class AbstractObject(object):
     def get_class(self, universe):
         raise NotImplementedError("Subclasses need to implement get_class(universe).")
 
+    def get_object_layout(self, universe):
+        raise NotImplementedError(
+            "Subclasses need to implement get_object_layout(universe)."
+        )
+
     @staticmethod
     def is_invokable():
         return False

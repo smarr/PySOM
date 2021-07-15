@@ -3,6 +3,8 @@ from som.primitives.primitives import Primitives
 from som.vm.current import current_universe
 
 from som.vm.globals import trueObject, falseObject
+from som.vmobjects.array import Array
+from som.vmobjects.object_with_layout import Object
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 
 
@@ -10,6 +12,19 @@ def _equals(op1, op2):
     if op1 is op2:
         return trueObject
     return falseObject
+
+
+def _object_size(rcvr):
+    from som.vmobjects.integer import Integer
+
+    size = 0
+
+    if isinstance(rcvr, Object):
+        size = rcvr.get_number_of_fields()
+    elif isinstance(rcvr, Array):
+        size = rcvr.get_number_of_indexable_fields()
+
+    return Integer(size)
 
 
 def _hashcode(rcvr):
@@ -27,6 +42,11 @@ def _inst_var_at_put(rcvr, idx, val):
     return val
 
 
+def _inst_var_named(rcvr, arg):
+    i = rcvr.get_field_index(arg)
+    return rcvr.get_field(i)
+
+
 def _halt(rcvr):
     # noop
     print("BREAKPOINT")
@@ -38,7 +58,7 @@ def _class(rcvr):
 
 
 def _perform(rcvr, selector):
-    invokable = rcvr.get_class(current_universe).lookup_invokable(selector)
+    invokable = rcvr.get_object_layout(current_universe).lookup_invokable(selector)
     return invokable.invoke_1(rcvr)
 
 
@@ -50,7 +70,7 @@ def _perform_in_superclass(rcvr, selector, clazz):
 def _perform_with_arguments(rcvr, selector, args):
     num_args = args.get_number_of_indexable_fields() + 1
 
-    invokable = rcvr.get_class(current_universe).lookup_invokable(selector)
+    invokable = rcvr.get_object_layout(current_universe).lookup_invokable(selector)
 
     if num_args == 1:
         return invokable.invoke_1(rcvr)
@@ -70,10 +90,16 @@ class ObjectPrimitivesBase(Primitives):
             UnaryPrimitive("hashcode", self.universe, _hashcode)
         )
         self._install_instance_primitive(
+            UnaryPrimitive("objectSize", self.universe, _object_size)
+        )
+        self._install_instance_primitive(
             BinaryPrimitive("instVarAt:", self.universe, _inst_var_at)
         )
         self._install_instance_primitive(
             TernaryPrimitive("instVarAt:put:", self.universe, _inst_var_at_put)
+        )
+        self._install_instance_primitive(
+            BinaryPrimitive("instVarNamed:", self.universe, _inst_var_named)
         )
 
         self._install_instance_primitive(UnaryPrimitive("halt", self.universe, _halt))

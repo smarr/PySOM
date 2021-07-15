@@ -842,3 +842,6 @@ class Array(AbstractObject):
 
     def get_class(self, universe):
         return universe.array_class
+
+    def get_object_layout(self, universe):
+        return universe.array_layout

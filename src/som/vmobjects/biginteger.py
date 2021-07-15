@@ -21,6 +21,9 @@ class BigInteger(AbstractObject):
     def get_class(self, universe):
         return universe.integer_class
 
+    def get_object_layout(self, universe):
+        return universe.integer_layout
+
     def _to_double(self):
         from som.vmobjects.double import Double
 

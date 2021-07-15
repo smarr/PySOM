@@ -1,19 +1,26 @@
+from rlib.jit import promote
+
 from som.vmobjects.abstract_object import AbstractObject
 
 
 class ObjectWithoutFields(AbstractObject):
 
-    _immutable_fields_ = ["_class"]
+    _immutable_fields_ = ["_object_layout?"]
 
-    def __init__(self, obj_class):  # pylint: disable=W
-        assert obj_class is None or isinstance(obj_class, ObjectWithoutFields)
-        self._class = obj_class
+    def __init__(self, layout):  # pylint: disable=W
+        self._object_layout = layout
 
     def get_class(self, universe):
-        return self._class
+        assert self._object_layout is not None
+        return self._object_layout.for_class
 
-    def set_class(self, value):
-        self._class = value
+    def get_object_layout(self, _universe):
+        return promote(self._object_layout)
+
+    def set_class(self, clazz):
+        layout = clazz.get_layout_for_instances()
+        assert layout is not None
+        self._object_layout = layout
 
     def get_number_of_fields(self):  # pylint: disable=no-self-use
         return 0

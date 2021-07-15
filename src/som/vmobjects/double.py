@@ -22,6 +22,9 @@ class Double(AbstractObject):
     def get_class(self, universe):
         return universe.double_class
 
+    def get_object_layout(self, universe):
+        return universe.double_layout
+
     @staticmethod
     def _get_float(obj):
         from som.vmobjects.integer import Integer

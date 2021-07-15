@@ -6,12 +6,11 @@ from rlib.string_stream import encode_to_bytes
 from rlib.exit import Exit
 from rlib.osext import path_split
 
-from som.interp_type import is_ast_interpreter
-
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import block_evaluation_primitive
 from som.vmobjects.clazz import Class
 from som.vmobjects.object_without_fields import ObjectWithoutFields
+from som.vmobjects.object_with_layout import Object
 from som.vmobjects.symbol import Symbol
 from som.vmobjects.string import String
 
@@ -22,11 +21,6 @@ from som.compiler.sourcecode_compiler import (
     compile_class_from_file,
     compile_class_from_string,
 )
-
-if is_ast_interpreter():
-    from som.vmobjects.object_with_layout import ObjectWithLayout as Object
-else:
-    from som.vmobjects.object import Object
 
 
 class Assoc(object):
@@ -49,15 +43,23 @@ class Universe(object):
         "metaclass_class",
         "nil_class",
         "integer_class",
+        "integer_layout?",
         "array_class",
+        "array_layout?",
         "method_class",
+        "method_layout?",
         "symbol_class",
+        "symbol_layout?",
         "primitive_class",
+        "primitive_layout?",
         "system_class",
         "block_class",
         "block_classes[*]",
+        "block_layouts?[*]",
         "string_class",
+        "string_layout?",
         "double_class",
+        "double_layout?",
         "_symbol_table",
         "_globals",
         "_object_system_initialized",
@@ -73,15 +75,23 @@ class Universe(object):
 
         self.nil_class = None
         self.integer_class = None
+        self.integer_layout = None
         self.array_class = None
+        self.array_layout = None
         self.method_class = None
+        self.method_layout = None
         self.symbol_class = None
+        self.symbol_layout = None
         self.primitive_class = None
+        self.primitive_layout = None
         self.system_class = None
         self.block_class = None
         self.block_classes = None
+        self.block_layouts = None
         self.string_class = None
+        self.string_layout = None
         self.double_class = None
+        self.double_layout = None
 
         self.sym_nil = None
         self.sym_plus = None
@@ -206,13 +216,27 @@ class Universe(object):
         self.object_class = self.new_system_class()
         self.nil_class = self.new_system_class()
         self.class_class = self.new_system_class()
+
         self.array_class = self.new_system_class()
+        self.array_layout = self.array_class.get_layout_for_instances()
+
         self.symbol_class = self.new_system_class()
+        self.symbol_layout = self.symbol_class.get_layout_for_instances()
+
         self.method_class = self.new_system_class()
+        self.method_layout = self.method_class.get_layout_for_instances()
+
         self.integer_class = self.new_system_class()
+        self.integer_layout = self.integer_class.get_layout_for_instances()
+
         self.primitive_class = self.new_system_class()
+        self.primitive_layout = self.primitive_class.get_layout_for_instances()
+
         self.string_class = self.new_system_class()
+        self.string_layout = self.string_class.get_layout_for_instances()
+
         self.double_class = self.new_system_class()
+        self.double_layout = self.double_class.get_layout_for_instances()
 
         # Setup the class reference for the nil object
         nilObject.set_class(self.nil_class)
@@ -286,6 +310,8 @@ class Universe(object):
             self._make_block_class(i) for i in [1, 2, 3]
         ]
 
+        self.block_layouts = [c.get_layout_for_instances() for c in self.block_classes]
+
         self._object_system_initialized = True
         return system_object
 
@@ -310,10 +336,11 @@ class Universe(object):
 
     @staticmethod
     def new_instance(instance_class):
-        num_fields = instance_class.get_number_of_instance_fields()
+        layout = instance_class.get_layout_for_instances()
+        num_fields = layout.get_number_of_fields()
         if num_fields == 0:
-            return ObjectWithoutFields(instance_class)
-        return Object(instance_class, num_fields)
+            return ObjectWithoutFields(layout)
+        return Object(layout)
 
     def new_metaclass_class(self):
         # Allocate the metaclass classes
@@ -389,9 +416,6 @@ class Universe(object):
 
     def get_globals_association_or_none(self, name):
         return self._globals.get(name, None)
-
-    def _get_block_class(self, number_of_arguments):
-        return self.block_classes[number_of_arguments]
 
     def _make_block_class(self, number_of_arguments):
         # Compute the name of the block class with the given number of
@@ -478,20 +502,8 @@ class Universe(object):
         return result
 
 
-class _ASTUniverse(Universe):
-    pass
-
-
-class _BCUniverse(Universe):
-    def _initialize_object_system(self):
-        system_object = Universe._initialize_object_system(self)
-        return system_object
-
-
 def create_universe(avoid_exit=False):
-    if is_ast_interpreter():
-        return _ASTUniverse(avoid_exit)
-    return _BCUniverse(avoid_exit)
+    return Universe(avoid_exit)
 
 
 def error_print(msg):
