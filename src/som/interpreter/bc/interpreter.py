@@ -174,6 +174,11 @@ def interpret(method, frame, max_stack_size):
             stack_ptr += 1
             stack[stack_ptr] = BcBlock(block_method, get_inner_as_context(frame))
 
+        elif bytecode == Bytecodes.push_block_no_ctx:
+            block_method = method.get_constant(current_bc_idx)
+            stack_ptr += 1
+            stack[stack_ptr] = BcBlock(block_method, None)
+
         elif bytecode == Bytecodes.push_constant:
             stack_ptr += 1
             stack[stack_ptr] = method.get_constant(current_bc_idx)
