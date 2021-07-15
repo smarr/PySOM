@@ -6,8 +6,6 @@ from rlib.string_stream import encode_to_bytes
 from rlib.exit import Exit
 from rlib.osext import path_split
 
-from som.interp_type import is_ast_interpreter
-
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import block_evaluation_primitive
 from som.vmobjects.clazz import Class
