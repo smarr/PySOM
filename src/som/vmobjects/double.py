@@ -100,9 +100,7 @@ class Double(AbstractObject):
 
     def prim_less_than(self, right):
         r = self._get_float(right)
-        if self._embedded_double < r:
-            return trueObject
-        return falseObject
+        return self._embedded_double < r
 
     def prim_less_than_or_equal(self, right):
         r = self._get_float(right)
@@ -113,5 +111,11 @@ class Double(AbstractObject):
     def prim_greater_than(self, right):
         r = self._get_float(right)
         if self._embedded_double > r:
+            return trueObject
+        return falseObject
+
+    def prim_greater_than_or_equal(self, right):
+        r = self._get_float(right)
+        if self._embedded_double >= r:
             return trueObject
         return falseObject

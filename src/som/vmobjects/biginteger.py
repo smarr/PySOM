@@ -36,15 +36,10 @@ class BigInteger(AbstractObject):
         if isinstance(right, Double):
             return self._to_double().prim_less_than(right)
         if not isinstance(right, BigInteger):
-            result = self._embedded_biginteger.lt(
+            return self._embedded_biginteger.lt(
                 bigint_from_int(right.get_embedded_integer())
             )
-        else:
-            result = self._embedded_biginteger.lt(right.get_embedded_biginteger())
-
-        if result:
-            return trueObject
-        return falseObject
+        return self._embedded_biginteger.lt(right.get_embedded_biginteger())
 
     def prim_less_than_or_equal(self, right):
         from som.vmobjects.double import Double
@@ -80,6 +75,23 @@ class BigInteger(AbstractObject):
             return trueObject
         return falseObject
 
+    def prim_greater_than_or_equal(self, right):
+        from som.vmobjects.double import Double
+
+        # Check second parameter type:
+        if isinstance(right, Double):
+            return self._to_double().prim_greater_than_or_equal(right)
+        if not isinstance(right, BigInteger):
+            result = self._embedded_biginteger.ge(
+                bigint_from_int(right.get_embedded_integer())
+            )
+        else:
+            result = self._embedded_biginteger.ge(right.get_embedded_biginteger())
+
+        if result:
+            return trueObject
+        return falseObject
+
     def prim_as_string(self):
         from som.vmobjects.string import String
 
@@ -97,20 +109,6 @@ class BigInteger(AbstractObject):
         from som.vmobjects.integer import Integer
 
         return Integer(self._embedded_biginteger.digit(0))
-
-    def prim_max(self, right):
-        if isinstance(right, BigInteger):
-            if right.get_embedded_biginteger().gt(self._embedded_biginteger):
-                return right
-            return self
-        from som.vmobjects.integer import Integer
-
-        assert isinstance(right, Integer)
-
-        right_big = bigint_from_int(right.get_embedded_integer())
-        if right_big.gt(self._embedded_biginteger):
-            return right
-        return self
 
     def prim_inc(self):
         return BigInteger(bigint_from_int(1).add(self._embedded_biginteger))

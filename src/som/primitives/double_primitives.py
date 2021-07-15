@@ -2,6 +2,7 @@ from math import cos, sin, sqrt
 from rlib.float import round_double, INFINITY
 
 from som.primitives.primitives import Primitives
+from som.vm.globals import falseObject, trueObject
 from som.vmobjects.double import Double
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive
 
@@ -42,8 +43,22 @@ def _unequals(left, right):
     return left.prim_unequals(right)
 
 
+def _min(left, right):
+    if left.prim_less_than(right):
+        return left
+    return right
+
+
+def _max(left, right):
+    if left.prim_less_than(right):
+        return right
+    return left
+
+
 def _less_than(left, right):
-    return left.prim_less_than(right)
+    if left.prim_less_than(right):
+        return trueObject
+    return falseObject
 
 
 def _less_than_or_equal(left, right):
@@ -52,6 +67,10 @@ def _less_than_or_equal(left, right):
 
 def _greater_than(left, right):
     return left.prim_greater_than(right)
+
+
+def _greater_than_or_equal(left, right):
+    return left.prim_greater_than_or_equal(right)
 
 
 def _round(rcvr):
@@ -119,11 +138,17 @@ class DoublePrimitives(Primitives):
             BinaryPrimitive(">", self.universe, _greater_than)
         )
         self._install_instance_primitive(
+            BinaryPrimitive(">=", self.universe, _greater_than_or_equal)
+        )
+        self._install_instance_primitive(
             BinaryPrimitive("<>", self.universe, _unequals)
         )
         self._install_instance_primitive(
             BinaryPrimitive("~=", self.universe, _unequals)
         )
+
+        self._install_instance_primitive(BinaryPrimitive("max:", self.universe, _max))
+        self._install_instance_primitive(BinaryPrimitive("min:", self.universe, _min))
 
         self._install_instance_primitive(UnaryPrimitive("sin", self.universe, _sin))
         self._install_instance_primitive(UnaryPrimitive("cos", self.universe, _cos))
