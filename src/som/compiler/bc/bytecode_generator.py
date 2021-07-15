@@ -55,6 +55,8 @@ def emit_push_field(mgenc, field_name):
 
 
 def emit_push_global(mgenc, glob):
+    # the block needs to be able to send #unknownGlobal: to self
+    mgenc.mark_self_as_accessed_from_outer_context()
     _emit2(mgenc, BC.push_global, mgenc.find_literal_index(glob))
 
 
