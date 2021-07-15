@@ -14,23 +14,23 @@ from som.vmobjects.method import AbstractMethod
 
 
 def get_printable_location_1(node):
-    assert isinstance(node, AstMethod)
-    return node.source_section.identifier  # pylint: disable=protected-access
+    assert isinstance(node, _Invokable)
+    return node.source_section.identifier
 
 
 def get_printable_location_2(node):
-    assert isinstance(node, AstMethod)
-    return node.source_section.identifier  # pylint: disable=protected-access
+    assert isinstance(node, _Invokable)
+    return node.source_section.identifier
 
 
 def get_printable_location_3(node):
-    assert isinstance(node, AstMethod)
-    return node.source_section.identifier  # pylint: disable=protected-access
+    assert isinstance(node, _Invokable)
+    return node.source_section.identifier
 
 
 def get_printable_location_args(node):
-    assert isinstance(node, AstMethod)
-    return node.source_section.identifier  # pylint: disable=protected-access
+    assert isinstance(node, _Invokable)
+    return node.source_section.identifier
 
 
 jitdriver_1 = jit.JitDriver(

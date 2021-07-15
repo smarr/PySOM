@@ -37,17 +37,12 @@ class Integer(AbstractObject):
 
         # Check second parameter type:
         if isinstance(right, BigInteger):
-            result = bigint_from_int(self._embedded_integer).lt(
+            return bigint_from_int(self._embedded_integer).lt(
                 right.get_embedded_biginteger()
             )
-        elif isinstance(right, Double):
+        if isinstance(right, Double):
             return self._to_double().prim_less_than(right)
-        else:
-            result = self._embedded_integer < right.get_embedded_integer()
-
-        if result:
-            return trueObject
-        return falseObject
+        return self._embedded_integer < right.get_embedded_integer()
 
     def prim_less_than_or_equal(self, right):
         from som.vmobjects.double import Double
@@ -85,6 +80,24 @@ class Integer(AbstractObject):
             return trueObject
         return falseObject
 
+    def prim_greater_than_or_equal(self, right):
+        from som.vmobjects.double import Double
+        from som.vmobjects.biginteger import BigInteger
+
+        # Check second parameter type:
+        if isinstance(right, BigInteger):
+            result = bigint_from_int(self._embedded_integer).ge(
+                right.get_embedded_biginteger()
+            )
+        elif isinstance(right, Double):
+            return self._to_double().prim_greater_than_or_equal(right)
+        else:
+            result = self._embedded_integer >= right.get_embedded_integer()
+
+        if result:
+            return trueObject
+        return falseObject
+
     def prim_as_string(self):
         from som.vmobjects.string import String
 
@@ -101,19 +114,6 @@ class Integer(AbstractObject):
     def prim_as_32_bit_signed_value(self):
         val = as_32_bit_signed_value(self._embedded_integer)
         return Integer(val)
-
-    def prim_max(self, right):
-        from som.vmobjects.biginteger import BigInteger
-
-        if isinstance(right, BigInteger):
-            left = bigint_from_int(self._embedded_integer)
-            if right.get_embedded_biginteger().gt(left):
-                return right
-            return self
-        assert isinstance(right, Integer)
-        if right.get_embedded_integer() > self._embedded_integer:
-            return right
-        return self
 
     def prim_inc(self):
         from som.vmobjects.biginteger import BigInteger
