@@ -59,15 +59,11 @@ def _do_return_non_local(result, frame, ctx_level):
 
     # Make sure the block context is still on the stack
     if not block.is_outer_on_stack():
-        # Try to recover by sending 'escapedBlock:' to the sending object
-        # this can get a bit nasty when using nested blocks. In this case
-        # the "sender" will be the surrounding block and not the object
-        # that actually sent the 'value' message.
+        # Try to recover by sending 'escapedBlock:' to the self object.
+        # That is the most outer self object, not the blockSelf.
         block = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
-        sender = get_self_dynamically(frame)
-
-        # ... and execute the escapedBlock message instead
-        return lookup_and_send_2(sender, block, "escapedBlock:")
+        outer_self = get_self_dynamically(frame)
+        return lookup_and_send_2(outer_self, block, "escapedBlock:")
 
     raise ReturnException(result, block.get_on_stack_marker())
 
