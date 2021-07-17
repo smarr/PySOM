@@ -1,8 +1,8 @@
 from som.interpreter.ast.frame import (
     mark_as_no_longer_on_stack,
-    FRAME_AND_INNER_RCVR_IDX,
-    read_frame,
     get_inner_as_context,
+    read_frame,
+    FRAME_AND_INNER_RCVR_IDX,
 )
 from som.interpreter.ast.nodes.contextual_node import ContextualNode
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
@@ -27,9 +27,9 @@ class ReturnNonLocalNode(ContextualNode):
 
         if block.is_outer_on_stack():
             raise ReturnException(result, block.get_on_stack_marker())
-        block = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
-        outer_self = block.get_from_outer(FRAME_AND_INNER_RCVR_IDX)
-        return lookup_and_send_2(outer_self, block, "escapedBlock:")
+        outer_self = self.determine_outer_self(frame)
+        self_block = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+        return lookup_and_send_2(outer_self, self_block, "escapedBlock:")
 
 
 class CatchNonLocalReturnNode(ExpressionNode):

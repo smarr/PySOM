@@ -33,8 +33,12 @@ def emit_dup(mgenc):
     _emit1(mgenc, BC.dup)
 
 
-def emit_push_block(mgenc, block_method):
-    _emit2(mgenc, BC.push_block, mgenc.find_literal_index(block_method))
+def emit_push_block(mgenc, block_method, with_ctx):
+    _emit2(
+        mgenc,
+        BC.push_block if with_ctx else BC.push_block_no_ctx,
+        mgenc.find_literal_index(block_method),
+    )
 
 
 def emit_push_local(mgenc, idx, ctx):
@@ -51,6 +55,9 @@ def emit_push_field(mgenc, field_name):
 
 
 def emit_push_global(mgenc, glob):
+    # the block needs to be able to send #unknownGlobal: to self
+    if not mgenc.is_global_known(glob):
+        mgenc.mark_self_as_accessed_from_outer_context()
     _emit2(mgenc, BC.push_global, mgenc.find_literal_index(glob))
 
 

@@ -10,36 +10,37 @@ class Bytecodes(object):
     push_inner = 3
     push_field = 4
     push_block = 5
-    push_constant = 6
-    push_global = 7
-    pop = 8
-    pop_frame = 9
-    pop_inner = 10
-    pop_field = 11
-    send_1 = 12
-    send_2 = 13
-    send_3 = 14
-    send_n = 15
-    super_send = 16
-    return_local = 17
-    return_non_local = 18
-    return_self = 19
+    push_block_no_ctx = 6
+    push_constant = 7
+    push_global = 8
+    pop = 9
+    pop_frame = 10
+    pop_inner = 11
+    pop_field = 12
+    send_1 = 13
+    send_2 = 14
+    send_3 = 15
+    send_n = 16
+    super_send = 17
+    return_local = 18
+    return_non_local = 19
+    return_self = 20
 
-    inc = 20
-    dec = 21
+    inc = 21
+    dec = 22
 
-    q_super_send_1 = 22
-    q_super_send_2 = 23
-    q_super_send_3 = 24
-    q_super_send_n = 25
+    q_super_send_1 = 23
+    q_super_send_2 = 24
+    q_super_send_3 = 25
+    q_super_send_n = 26
 
-    push_local = 26
-    push_argument = 27
-    pop_local = 28
-    pop_argument = 29
+    push_local = 27
+    push_argument = 28
+    pop_local = 29
+    pop_argument = 30
 
 
-_NUM_BYTECODES = 30
+_NUM_BYTECODES = 31
 
 _BYTECODE_LENGTH = [
     1,  # halt
@@ -48,6 +49,7 @@ _BYTECODE_LENGTH = [
     3,  # push_inner
     3,  # push_field
     2,  # push_block
+    2,  # push_block_no_ctx
     2,  # push_constant
     2,  # push_global
     1,  # pop
@@ -85,6 +87,7 @@ _BYTECODE_STACK_EFFECT = [
     1,  # push_inner
     1,  # push_field
     1,  # push_block
+    1,  # push_block_no_ctx
     1,  # push_constant
     1,  # push_global
     -1,  # pop

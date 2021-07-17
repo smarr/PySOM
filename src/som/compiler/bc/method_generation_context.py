@@ -160,11 +160,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return 0
         return 1 + self.outer_genc.get_max_context_level()
 
-    def mark_self_as_accessed_from_outer_context(self):
-        if self.outer_genc:
-            self.outer_genc.mark_self_as_accessed_from_outer_context()
-        self._accesses_variables_of_outer_context = True
-
     def add_bytecode(self, bytecode):
         self._bytecode.append(bytecode)
 

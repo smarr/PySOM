@@ -92,6 +92,20 @@ class MethodGenerationContextBase(object):
             list(self._locals.values()),
         )
 
+    def is_global_known(self, global_name):
+        glob = global_name.get_embedded_string()
+        return (
+            glob == "true"
+            or glob == "false"
+            or glob == "nil"
+            or self.universe.has_global(global_name)
+        )
+
+    def mark_self_as_accessed_from_outer_context(self):
+        if self.outer_genc:
+            self.outer_genc.mark_self_as_accessed_from_outer_context()
+        self._accesses_variables_of_outer_context = True
+
     def make_catch_non_local_return(self):
         self.throws_non_local_return = True
         ctx = self._mark_outer_contexts_to_require_context_and_get_root_context()
