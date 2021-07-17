@@ -75,6 +75,7 @@ class Parser(ParserBase):
             nil_exp = create_global_node(
                 self.universe.sym_nil,
                 self.universe,
+                None,
                 self._get_source_section(coordinate),
             )
             return nil_exp

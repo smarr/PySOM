@@ -115,7 +115,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         return create_read_node(self._get_self_read(), self.get_field_index(field_name))
 
     def get_global_read(self, var_name):
-        return create_global_node(var_name, self.universe, None)
+        return create_global_node(var_name, self.universe, self, None)
 
     def get_object_field_write(self, field_name, exp):
         if not self.has_field(field_name):
