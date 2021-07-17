@@ -61,9 +61,9 @@ def _do_return_non_local(result, frame, ctx_level):
     if not block.is_outer_on_stack():
         # Try to recover by sending 'escapedBlock:' to the self object.
         # That is the most outer self object, not the blockSelf.
-        block = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+        self_block = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
         outer_self = get_self_dynamically(frame)
-        return lookup_and_send_2(outer_self, block, "escapedBlock:")
+        return lookup_and_send_2(outer_self, self_block, "escapedBlock:")
 
     raise ReturnException(result, block.get_on_stack_marker())
 
