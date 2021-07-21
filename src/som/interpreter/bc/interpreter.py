@@ -165,6 +165,16 @@ def interpret(method, frame, max_stack_size):
             stack_ptr += 1
             stack[stack_ptr] = self_obj.get_field(field_idx)
 
+        elif bytecode == Bytecodes.push_field_0:
+            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+            stack_ptr += 1
+            stack[stack_ptr] = self_obj.get_field(0)
+
+        elif bytecode == Bytecodes.push_field_1:
+            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+            stack_ptr += 1
+            stack[stack_ptr] = self_obj.get_field(1)
+
         elif bytecode == Bytecodes.push_block:
             block_method = method.get_constant(current_bc_idx)
             stack_ptr += 1
@@ -225,6 +235,24 @@ def interpret(method, frame, max_stack_size):
             stack_ptr -= 1
 
             self_obj.set_field(field_idx, value)
+
+        elif bytecode == Bytecodes.pop_field_0:
+            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+
+            value = stack[stack_ptr]
+            stack[stack_ptr] = None
+            stack_ptr -= 1
+
+            self_obj.set_field(0, value)
+
+        elif bytecode == Bytecodes.pop_field_1:
+            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+
+            value = stack[stack_ptr]
+            stack[stack_ptr] = None
+            stack_ptr -= 1
+
+            self_obj.set_field(1, value)
 
         elif bytecode == Bytecodes.send_1:
             signature = method.get_constant(current_bc_idx)

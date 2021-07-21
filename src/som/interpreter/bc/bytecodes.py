@@ -6,22 +6,36 @@ class Bytecodes(object):
     # Bytecodes used by the Simple Object Machine (SOM)
     halt = 0
     dup = halt + 1
+
     push_frame = dup + 1
     push_inner = push_frame + 1
+
     push_field = push_inner + 1
-    push_block = push_field + 1
+    push_field_0 = push_field + 1
+    push_field_1 = push_field_0 + 1
+
+    push_block = push_field_1 + 1
     push_block_no_ctx = push_block + 1
+
     push_constant = push_block_no_ctx + 1
     push_global = push_constant + 1
+
     pop = push_global + 1
+
     pop_frame = pop + 1
     pop_inner = pop_frame + 1
+
     pop_field = pop_inner + 1
-    send_1 = pop_field + 1
+    pop_field_0 = pop_field + 1
+    pop_field_1 = pop_field_0 + 1
+
+    send_1 = pop_field_1 + 1
     send_2 = send_1 + 1
     send_3 = send_2 + 1
     send_n = send_3 + 1
+
     super_send = send_n + 1
+
     return_local = super_send + 1
     return_non_local = return_local + 1
     return_self = return_non_local + 1
@@ -48,6 +62,8 @@ _BYTECODE_LENGTH = [
     3,  # push_frame
     3,  # push_inner
     3,  # push_field
+    1,  # push_field_0
+    1,  # push_field_1
     2,  # push_block
     2,  # push_block_no_ctx
     2,  # push_constant
@@ -56,6 +72,8 @@ _BYTECODE_LENGTH = [
     3,  # pop_frame
     3,  # pop_inner
     3,  # pop_field
+    1,  # pop_field_0
+    1,  # pop_field_1
     2,  # send_1
     2,  # send_2
     2,  # send_3
@@ -86,6 +104,8 @@ _BYTECODE_STACK_EFFECT = [
     1,  # push_frame
     1,  # push_inner
     1,  # push_field
+    1,  # push_field_0
+    1,  # push_field_1
     1,  # push_block
     1,  # push_block_no_ctx
     1,  # push_constant
@@ -94,6 +114,8 @@ _BYTECODE_STACK_EFFECT = [
     -1,  # pop_frame
     -1,  # pop_inner
     -1,  # pop_field
+    -1,  # pop_field_0
+    -1,  # pop_field_1
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # send_1
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # send_2
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # send_3
