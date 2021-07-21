@@ -147,6 +147,18 @@ def interpret(method, frame, max_stack_size):
                 frame, method.get_bytecode(current_bc_idx + 1)
             )
 
+        elif bytecode == Bytecodes.push_frame_0:
+            stack_ptr += 1
+            stack[stack_ptr] = read_frame(frame, FRAME_AND_INNER_RCVR_IDX + 0)
+
+        elif bytecode == Bytecodes.push_frame_1:
+            stack_ptr += 1
+            stack[stack_ptr] = read_frame(frame, FRAME_AND_INNER_RCVR_IDX + 1)
+
+        elif bytecode == Bytecodes.push_frame_2:
+            stack_ptr += 1
+            stack[stack_ptr] = read_frame(frame, FRAME_AND_INNER_RCVR_IDX + 2)
+
         elif bytecode == Bytecodes.push_inner:
             idx = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)
@@ -157,6 +169,18 @@ def interpret(method, frame, max_stack_size):
             else:
                 block = get_block_at(frame, ctx_level)
                 stack[stack_ptr] = block.get_from_outer(idx)
+
+        elif bytecode == Bytecodes.push_inner_0:
+            stack_ptr += 1
+            stack[stack_ptr] = read_inner(frame, FRAME_AND_INNER_RCVR_IDX + 0)
+
+        elif bytecode == Bytecodes.push_inner_1:
+            stack_ptr += 1
+            stack[stack_ptr] = read_inner(frame, FRAME_AND_INNER_RCVR_IDX + 1)
+
+        elif bytecode == Bytecodes.push_inner_2:
+            stack_ptr += 1
+            stack[stack_ptr] = read_inner(frame, FRAME_AND_INNER_RCVR_IDX + 2)
 
         elif bytecode == Bytecodes.push_field:
             field_idx = method.get_bytecode(current_bc_idx + 1)
@@ -212,6 +236,24 @@ def interpret(method, frame, max_stack_size):
             stack_ptr -= 1
             write_frame(frame, method.get_bytecode(current_bc_idx + 1), value)
 
+        elif bytecode == Bytecodes.pop_frame_0:
+            value = stack[stack_ptr]
+            stack[stack_ptr] = None
+            stack_ptr -= 1
+            write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 0, value)
+
+        elif bytecode == Bytecodes.pop_frame_1:
+            value = stack[stack_ptr]
+            stack[stack_ptr] = None
+            stack_ptr -= 1
+            write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 1, value)
+
+        elif bytecode == Bytecodes.pop_frame_2:
+            value = stack[stack_ptr]
+            stack[stack_ptr] = None
+            stack_ptr -= 1
+            write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 2, value)
+
         elif bytecode == Bytecodes.pop_inner:
             idx = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)
@@ -224,6 +266,27 @@ def interpret(method, frame, max_stack_size):
             else:
                 block = get_block_at(frame, ctx_level)
                 block.set_outer(idx, value)
+
+        elif bytecode == Bytecodes.pop_inner_0:
+            value = stack[stack_ptr]
+            stack[stack_ptr] = None
+            stack_ptr -= 1
+
+            write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 0, value)
+
+        elif bytecode == Bytecodes.pop_inner_1:
+            value = stack[stack_ptr]
+            stack[stack_ptr] = None
+            stack_ptr -= 1
+
+            write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 1, value)
+
+        elif bytecode == Bytecodes.pop_inner_2:
+            value = stack[stack_ptr]
+            stack[stack_ptr] = None
+            stack_ptr -= 1
+
+            write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 2, value)
 
         elif bytecode == Bytecodes.pop_field:
             field_idx = method.get_bytecode(current_bc_idx + 1)

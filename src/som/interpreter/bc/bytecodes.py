@@ -8,9 +8,16 @@ class Bytecodes(object):
     dup = halt + 1
 
     push_frame = dup + 1
-    push_inner = push_frame + 1
+    push_frame_0 = push_frame + 1
+    push_frame_1 = push_frame_0 + 1
+    push_frame_2 = push_frame_1 + 1
 
-    push_field = push_inner + 1
+    push_inner = push_frame_2 + 1
+    push_inner_0 = push_inner + 1
+    push_inner_1 = push_inner_0 + 1
+    push_inner_2 = push_inner_1 + 1
+
+    push_field = push_inner_2 + 1
     push_field_0 = push_field + 1
     push_field_1 = push_field_0 + 1
 
@@ -23,9 +30,16 @@ class Bytecodes(object):
     pop = push_global + 1
 
     pop_frame = pop + 1
-    pop_inner = pop_frame + 1
+    pop_frame_0 = pop_frame + 1
+    pop_frame_1 = pop_frame_0 + 1
+    pop_frame_2 = pop_frame_1 + 1
 
-    pop_field = pop_inner + 1
+    pop_inner = pop_frame_2 + 1
+    pop_inner_0 = pop_inner + 1
+    pop_inner_1 = pop_inner_0 + 1
+    pop_inner_2 = pop_inner_1 + 1
+
+    pop_field = pop_inner_2 + 1
     pop_field_0 = pop_field + 1
     pop_field_1 = pop_field_0 + 1
 
@@ -60,7 +74,13 @@ _BYTECODE_LENGTH = [
     1,  # halt
     1,  # dup
     3,  # push_frame
+    3,  # push_frame_0
+    3,  # push_frame_1
+    3,  # push_frame_2
     3,  # push_inner
+    3,  # push_inner_0
+    3,  # push_inner_1
+    3,  # push_inner_2
     3,  # push_field
     1,  # push_field_0
     1,  # push_field_1
@@ -70,7 +90,13 @@ _BYTECODE_LENGTH = [
     2,  # push_global
     1,  # pop
     3,  # pop_frame
+    3,  # pop_frame_0
+    3,  # pop_frame_1
+    3,  # pop_frame_2
     3,  # pop_inner
+    3,  # pop_inner_0
+    3,  # pop_inner_1
+    3,  # pop_inner_2
     3,  # pop_field
     1,  # pop_field_0
     1,  # pop_field_1
@@ -102,7 +128,13 @@ _BYTECODE_STACK_EFFECT = [
     0,  # halt
     1,  # dup
     1,  # push_frame
+    1,  # push_frame_0
+    1,  # push_frame_1
+    1,  # push_frame_2
     1,  # push_inner
+    1,  # push_inner_0
+    1,  # push_inner_1
+    1,  # push_inner_2
     1,  # push_field
     1,  # push_field_0
     1,  # push_field_1
@@ -112,7 +144,13 @@ _BYTECODE_STACK_EFFECT = [
     1,  # push_global
     -1,  # pop
     -1,  # pop_frame
+    -1,  # pop_frame_0
+    -1,  # pop_frame_1
+    -1,  # pop_frame_2
     -1,  # pop_inner
+    -1,  # pop_inner_0
+    -1,  # pop_inner_1
+    -1,  # pop_inner_2
     -1,  # pop_field
     -1,  # pop_field_0
     -1,  # pop_field_1

@@ -138,16 +138,16 @@ class BcAbstractMethod(AbstractMethod):
 
         if bc == Bytecodes.push_argument:
             var = self._lexical_scope.get_argument(idx, ctx_level)
-            self.set_bytecode(bytecode_index, var.get_push_bytecode())
+            self.set_bytecode(bytecode_index, var.get_push_bytecode(ctx_level))
         elif bc == Bytecodes.pop_argument:
             var = self._lexical_scope.get_argument(idx, ctx_level)
-            self.set_bytecode(bytecode_index, var.get_pop_bytecode())
+            self.set_bytecode(bytecode_index, var.get_pop_bytecode(ctx_level))
         elif bc == Bytecodes.push_local:
             var = self._lexical_scope.get_local(idx, ctx_level)
-            self.set_bytecode(bytecode_index, var.get_push_bytecode())
+            self.set_bytecode(bytecode_index, var.get_push_bytecode(ctx_level))
         elif bc == Bytecodes.pop_local:
             var = self._lexical_scope.get_local(idx, ctx_level)
-            self.set_bytecode(bytecode_index, var.get_pop_bytecode())
+            self.set_bytecode(bytecode_index, var.get_pop_bytecode(ctx_level))
         else:
             raise Exception("Unsupported bytecode?")
         assert (
