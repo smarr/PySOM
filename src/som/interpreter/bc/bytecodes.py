@@ -5,42 +5,42 @@ class Bytecodes(object):
 
     # Bytecodes used by the Simple Object Machine (SOM)
     halt = 0
-    dup = 1
-    push_frame = 2
-    push_inner = 3
-    push_field = 4
-    push_block = 5
-    push_block_no_ctx = 6
-    push_constant = 7
-    push_global = 8
-    pop = 9
-    pop_frame = 10
-    pop_inner = 11
-    pop_field = 12
-    send_1 = 13
-    send_2 = 14
-    send_3 = 15
-    send_n = 16
-    super_send = 17
-    return_local = 18
-    return_non_local = 19
-    return_self = 20
+    dup = halt + 1
+    push_frame = dup + 1
+    push_inner = push_frame + 1
+    push_field = push_inner + 1
+    push_block = push_field + 1
+    push_block_no_ctx = push_block + 1
+    push_constant = push_block_no_ctx + 1
+    push_global = push_constant + 1
+    pop = push_global + 1
+    pop_frame = pop + 1
+    pop_inner = pop_frame + 1
+    pop_field = pop_inner + 1
+    send_1 = pop_field + 1
+    send_2 = send_1 + 1
+    send_3 = send_2 + 1
+    send_n = send_3 + 1
+    super_send = send_n + 1
+    return_local = super_send + 1
+    return_non_local = return_local + 1
+    return_self = return_non_local + 1
 
-    inc = 21
-    dec = 22
+    inc = return_self + 1
+    dec = inc + 1
 
-    q_super_send_1 = 23
-    q_super_send_2 = 24
-    q_super_send_3 = 25
-    q_super_send_n = 26
+    q_super_send_1 = dec + 1
+    q_super_send_2 = q_super_send_1 + 1
+    q_super_send_3 = q_super_send_2 + 1
+    q_super_send_n = q_super_send_3 + 1
 
-    push_local = 27
-    push_argument = 28
-    pop_local = 29
-    pop_argument = 30
+    push_local = q_super_send_n + 1
+    push_argument = push_local + 1
+    pop_local = push_argument + 1
+    pop_argument = pop_local + 1
 
 
-_NUM_BYTECODES = 31
+_NUM_BYTECODES = Bytecodes.pop_argument + 1
 
 _BYTECODE_LENGTH = [
     1,  # halt
