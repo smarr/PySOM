@@ -118,7 +118,33 @@ def emit_send(mgenc, msg):
 
 
 def emit_push_constant(mgenc, lit):
-    _emit2(mgenc, BC.push_constant, mgenc.find_literal_index(lit))
+    from som.vmobjects.integer import Integer
+    from som.vm.globals import nilObject
+
+    if isinstance(lit, Integer):
+        if lit.get_embedded_integer() == 0:
+            _emit1(mgenc, BC.push_0)
+            return
+        if lit.get_embedded_integer() == 1:
+            _emit1(mgenc, BC.push_1)
+            return
+
+    if lit is nilObject:
+        _emit1(mgenc, BC.push_nil)
+        return
+
+    idx = mgenc.add_literal_if_absent(lit)
+    if idx == 0:
+        _emit1(mgenc, BC.push_constant_0)
+        return
+    if idx == 1:
+        _emit1(mgenc, BC.push_constant_1)
+        return
+    if idx == 2:
+        _emit1(mgenc, BC.push_constant_2)
+        return
+
+    _emit2(mgenc, BC.push_constant, idx)
 
 
 def emit_push_constant_index(mgenc, lit_index):

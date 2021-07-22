@@ -25,7 +25,15 @@ class Bytecodes(object):
     push_block_no_ctx = push_block + 1
 
     push_constant = push_block_no_ctx + 1
-    push_global = push_constant + 1
+    push_constant_0 = push_constant + 1
+    push_constant_1 = push_constant_0 + 1
+    push_constant_2 = push_constant_1 + 1
+
+    push_0 = push_constant_2 + 1
+    push_1 = push_0 + 1
+    push_nil = push_1 + 1
+
+    push_global = push_nil + 1
 
     pop = push_global + 1
 
@@ -87,6 +95,12 @@ _BYTECODE_LENGTH = [
     2,  # push_block
     2,  # push_block_no_ctx
     2,  # push_constant
+    1,  # push_constant_0
+    1,  # push_constant_1
+    1,  # push_constant_2
+    1,  # push_0
+    1,  # push_1
+    1,  # push_nil
     2,  # push_global
     1,  # pop
     3,  # pop_frame
@@ -141,6 +155,12 @@ _BYTECODE_STACK_EFFECT = [
     1,  # push_block
     1,  # push_block_no_ctx
     1,  # push_constant
+    1,  # push_constant_0
+    1,  # push_constant_1
+    1,  # push_constant_2
+    1,  # push_0
+    1,  # push_1
+    1,  # push_nil
     1,  # push_global
     -1,  # pop
     -1,  # pop_frame

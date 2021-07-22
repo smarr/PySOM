@@ -273,7 +273,6 @@ class Parser(ParserBase):
         else:
             lit = self._literal_decimal(False)
 
-        mgenc.add_literal_if_absent(lit)
         emit_push_constant(mgenc, lit)
 
     def _literal_symbol(self, mgenc):
@@ -284,15 +283,12 @@ class Parser(ParserBase):
         else:
             symb = self._selector()
 
-        mgenc.add_literal_if_absent(symb)
         emit_push_constant(mgenc, symb)
 
     def _literal_string(self, mgenc):
         s = self._string()
 
         string = String(s)
-        mgenc.add_literal_if_absent(string)
-
         emit_push_constant(mgenc, string)
 
     def _literal_array(self, mgenc):
@@ -316,7 +312,6 @@ class Parser(ParserBase):
 
         while self._sym != Symbol.EndTerm:
             push_idx = Integer(i)
-            mgenc.add_literal_if_absent(push_idx)
             emit_push_constant(mgenc, push_idx)
 
             self._literal(mgenc)
