@@ -80,7 +80,7 @@ jobs:
       - name: Install and Run PyLint
         run: |
           pip install pylint
-          pylint src tests
+          pylint --init-hook="import sys; sys.setrecursionlimit(2000)" src tests
         if: matrix.python-version == '3.8'
 
 
