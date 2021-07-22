@@ -141,7 +141,6 @@ def interpret(method, frame, max_stack_size):
             stack[stack_ptr] = val
 
         elif bytecode == Bytecodes.push_frame:
-            assert method.get_bytecode(current_bc_idx + 2) == 0
             stack_ptr += 1
             stack[stack_ptr] = read_frame(
                 frame, method.get_bytecode(current_bc_idx + 1)
@@ -230,7 +229,6 @@ def interpret(method, frame, max_stack_size):
             stack_ptr -= 1
 
         elif bytecode == Bytecodes.pop_frame:
-            assert method.get_bytecode(current_bc_idx + 2) == 0
             value = stack[stack_ptr]
             stack[stack_ptr] = None
             stack_ptr -= 1
