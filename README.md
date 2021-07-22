@@ -4,12 +4,12 @@ PySOM - The Simple Object Machine Smalltalk
 Introduction
 ------------
 
-SOM is a minimal Smalltalk dialect used to teach VM construction at the [Hasso
-Plattner Institute][SOM]. It was originally built at the University of Århus
+SOM is a minimal Smalltalk dialect that was used to teach at the [Hasso
+Plattner Institute][SOM] and before that at the University of Århus
 (Denmark) where it was used for teaching and as the foundation for [Resilient
 Smalltalk][RS].
 
-In addition to RPySOM, other implementations exist for Java (SOM, TruffleSOM),
+In addition to PySOM, other implementations exist for Java (SOM, TruffleSOM),
 C (CSOM), C++ (SOM++), Python (PySOM), and Squeak/Pharo Smalltalk (AweSOM).
 
 A simple Hello World looks like:
@@ -23,26 +23,26 @@ Hello = (
 ```
 
 This repository contains a Python-base implementation of SOM, including
-SOM's standard library and a number of examples. Please see the [main project
-page][SOMst] for links to other VM implementations.
+SOM's standard library, and a number of benchmarks. The [main project
+page][SOMst] has links to other SOM VM implementations.
 
-The implementation use either an abstract-syntax-tree or a 
-bytecode-based interpreter. One can chose between them with the `SOM_INTERP` environment variable.
+PySOM implementation use either an abstract-syntax-tree or a 
+bytecode-based interpreter. One can choose between them with the `SOM_INTERP` environment variable.
 
  - AST-based interpreter: `SOM_INTERP=AST`
  - bytecode-based interpreter: `SOM_INTERP=BC`
 
-To checkout the code:
+To check out the code, run:
 
     git clone https://github.com/SOM-st/PySOM.git
 
 PySOM's tests can be executed with:
 
-    $ ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+    ./som.sh -cp Smalltalk TestSuite/TestHarness.som
    
-A simple Hello World program is executed with:
+A simple Hello World program can be started with:
 
-    $ ./som.sh -cp Smalltalk Examples/Hello/Hello.som
+    ./som.sh -cp Smalltalk Examples/Hello/Hello.som
 
 To compile PySOM, a recent PyPy is recommended and the RPython source
 code is required. The source distribution of PyPy 7.3 can be used like this:
@@ -68,8 +68,8 @@ repository.
 Build Status
 ------------
 
-Thanks to Travis CI, all commits of this repository are tested.
-The current build status is: [![Build Status](https://travis-ci.com/SOM-st/PySOM.png?branch=master)](https://travis-ci.com/SOM-st/PySOM)
+Thanks to GitHub Actions, all pull requests of this repository are automatically tested.
+The current build status is: [![Build Status](https://github.com/SOM-st/PySOM/actions/workflows/ci.yml/badge.svg)](https://github.com/SOM-st/PySOM/actions)
 
  [SOM]: http://www.hpi.uni-potsdam.de/hirschfeld/projects/som/
  [SOMst]: https://travis-ci.org/SOM-st/
