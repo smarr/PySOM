@@ -309,3 +309,7 @@ class Integer(AbstractObject):
         if result:
             return trueObject
         return falseObject
+
+
+int_0 = Integer(0)
+int_1 = Integer(1)

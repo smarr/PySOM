@@ -46,6 +46,17 @@ def emit_push_local(mgenc, idx, ctx):
 
 
 def emit_push_field(mgenc, field_name):
+    ctx_level = mgenc.get_max_context_level()
+    field_idx = mgenc.get_field_index(field_name)
+
+    if ctx_level == 0:
+        if field_idx == 0:
+            _emit1(mgenc, BC.push_field_0)
+            return
+        if field_idx == 1:
+            _emit1(mgenc, BC.push_field_1)
+            return
+
     _emit3(
         mgenc,
         BC.push_field,
@@ -70,11 +81,21 @@ def emit_pop_local(mgenc, idx, ctx):
 
 
 def emit_pop_field(mgenc, field_name):
+    ctx_level = mgenc.get_max_context_level()
+    field_idx = mgenc.get_field_index(field_name)
+
+    if ctx_level == 0:
+        if field_idx == 0:
+            _emit1(mgenc, BC.pop_field_0)
+            return
+        if field_idx == 1:
+            _emit1(mgenc, BC.pop_field_1)
+            return
     _emit3(
         mgenc,
         BC.pop_field,
-        mgenc.get_field_index(field_name),
-        mgenc.get_max_context_level(),
+        field_idx,
+        ctx_level,
     )
 
 
@@ -97,7 +118,33 @@ def emit_send(mgenc, msg):
 
 
 def emit_push_constant(mgenc, lit):
-    _emit2(mgenc, BC.push_constant, mgenc.find_literal_index(lit))
+    from som.vmobjects.integer import Integer
+    from som.vm.globals import nilObject
+
+    if isinstance(lit, Integer):
+        if lit.get_embedded_integer() == 0:
+            _emit1(mgenc, BC.push_0)
+            return
+        if lit.get_embedded_integer() == 1:
+            _emit1(mgenc, BC.push_1)
+            return
+
+    if lit is nilObject:
+        _emit1(mgenc, BC.push_nil)
+        return
+
+    idx = mgenc.add_literal_if_absent(lit)
+    if idx == 0:
+        _emit1(mgenc, BC.push_constant_0)
+        return
+    if idx == 1:
+        _emit1(mgenc, BC.push_constant_1)
+        return
+    if idx == 2:
+        _emit1(mgenc, BC.push_constant_2)
+        return
+
+    _emit2(mgenc, BC.push_constant, idx)
 
 
 def emit_push_constant_index(mgenc, lit_index):

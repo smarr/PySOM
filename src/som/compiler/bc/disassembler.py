@@ -34,99 +34,100 @@ def dump_method(m, indent):
     b = 0
     while b < m.get_number_of_bytecodes():
         error_print(indent)
-
-        # bytecode index
-        if b < 10:
-            error_print(" ")
-        if b < 100:
-            error_print(" ")
-        error_print(" %d:" % b)
-
-        # mnemonic
-        bytecode = m.get_bytecode(b)
-        error_print(bytecode_as_str(bytecode) + "  ")
-
-        # parameters (if any)
-        if bytecode_length(bytecode) == 1:
-            error_println()
-            b += 1
-            continue
-
-        if bytecode == Bytecodes.push_local or bytecode == Bytecodes.pop_local:
-            error_println(
-                "local: "
-                + str(m.get_bytecode(b + 1))
-                + ", context: "
-                + str(m.get_bytecode(b + 2))
-            )
-        elif bytecode == Bytecodes.push_argument or bytecode == Bytecodes.pop_argument:
-            error_println(
-                "argument: "
-                + str(m.get_bytecode(b + 1))
-                + ", context "
-                + str(m.get_bytecode(b + 2))
-            )
-        elif bytecode == Bytecodes.push_field or bytecode == Bytecodes.pop_field:
-            error_println(
-                "(index: "
-                + str(m.get_bytecode(b + 1))
-                + ") field: "
-                + str(m.get_holder().get_instance_field_name(m.get_bytecode(b + 1)))
-            )
-        elif bytecode == Bytecodes.push_block:
-            error_print("block: (index: " + str(m.get_bytecode(b + 1)) + ") ")
-            dump_method(m.get_constant(b), indent + "\t")
-        elif bytecode == Bytecodes.push_constant:
-            constant = m.get_constant(b)
-            error_println(
-                "(index: "
-                + str(m.get_bytecode(b + 1))
-                + ") value: ("
-                + str(constant.get_class(current_universe).get_name())
-                + ") "
-                + str(constant)
-            )
-        elif bytecode == Bytecodes.push_global:
-            error_println(
-                "(index: "
-                + str(m.get_bytecode(b + 1))
-                + ") value: "
-                + str(m.get_constant(b))
-            )
-        elif bytecode in (
-            Bytecodes.send_1,
-            Bytecodes.send_2,
-            Bytecodes.send_3,
-            Bytecodes.send_n,
-            Bytecodes.super_send,
-            Bytecodes.q_super_send_1,
-            Bytecodes.q_super_send_2,
-            Bytecodes.q_super_send_3,
-            Bytecodes.q_super_send_n,
-        ):
-            error_println(
-                "(index: "
-                + str(m.get_bytecode(b + 1))
-                + ") signature: "
-                + str(m.get_constant(b))
-            )
-        elif bytecode == Bytecodes.push_inner or bytecode == Bytecodes.pop_inner:
-            error_println(
-                "inner idx: "
-                + str(m.get_bytecode(b + 1))
-                + ", context "
-                + str(m.get_bytecode(b + 2))
-            )
-        elif bytecode == Bytecodes.push_frame or bytecode == Bytecodes.pop_frame:
-            error_println(
-                "frame idx: "
-                + str(m.get_bytecode(b + 1))
-                + ", context "
-                + str(m.get_bytecode(b + 2))
-            )
-        else:
-            error_println("<incorrect bytecode>")
-
+        dump_bytecode(m, b, indent)
         b += bytecode_length(m.get_bytecode(b))
 
     error_println(indent + ")")
+
+
+def dump_bytecode(m, b, indent=""):
+    # bytecode index
+    if b < 10:
+        error_print(" ")
+    if b < 100:
+        error_print(" ")
+    error_print(" %d:" % b)
+
+    # mnemonic
+    bytecode = m.get_bytecode(b)
+    error_print(bytecode_as_str(bytecode) + "  ")
+
+    # parameters (if any)
+    if bytecode_length(bytecode) == 1:
+        error_println()
+        return
+
+    if bytecode == Bytecodes.push_local or bytecode == Bytecodes.pop_local:
+        error_println(
+            "local: "
+            + str(m.get_bytecode(b + 1))
+            + ", context: "
+            + str(m.get_bytecode(b + 2))
+        )
+    elif bytecode == Bytecodes.push_argument or bytecode == Bytecodes.pop_argument:
+        error_println(
+            "argument: "
+            + str(m.get_bytecode(b + 1))
+            + ", context "
+            + str(m.get_bytecode(b + 2))
+        )
+    elif bytecode == Bytecodes.push_field or bytecode == Bytecodes.pop_field:
+        error_println(
+            "(index: "
+            + str(m.get_bytecode(b + 1))
+            + ") field: "
+            + str(m.get_holder().get_instance_field_name(m.get_bytecode(b + 1)))
+        )
+    elif bytecode == Bytecodes.push_block:
+        error_print("block: (index: " + str(m.get_bytecode(b + 1)) + ") ")
+        dump_method(m.get_constant(b), indent + "\t")
+    elif bytecode == Bytecodes.push_constant:
+        constant = m.get_constant(b)
+        error_println(
+            "(index: "
+            + str(m.get_bytecode(b + 1))
+            + ") value: ("
+            + str(constant.get_class(current_universe).get_name())
+            + ") "
+            + str(constant)
+        )
+    elif bytecode == Bytecodes.push_global:
+        error_println(
+            "(index: "
+            + str(m.get_bytecode(b + 1))
+            + ") value: "
+            + str(m.get_constant(b))
+        )
+    elif bytecode in (
+        Bytecodes.send_1,
+        Bytecodes.send_2,
+        Bytecodes.send_3,
+        Bytecodes.send_n,
+        Bytecodes.super_send,
+        Bytecodes.q_super_send_1,
+        Bytecodes.q_super_send_2,
+        Bytecodes.q_super_send_3,
+        Bytecodes.q_super_send_n,
+    ):
+        error_println(
+            "(index: "
+            + str(m.get_bytecode(b + 1))
+            + ") signature: "
+            + str(m.get_constant(b))
+        )
+    elif bytecode == Bytecodes.push_inner or bytecode == Bytecodes.pop_inner:
+        error_println(
+            "inner idx: "
+            + str(m.get_bytecode(b + 1))
+            + ", context "
+            + str(m.get_bytecode(b + 2))
+        )
+    elif bytecode == Bytecodes.push_frame or bytecode == Bytecodes.pop_frame:
+        error_println(
+            "frame idx: "
+            + str(m.get_bytecode(b + 1))
+            + ", context "
+            + str(m.get_bytecode(b + 2))
+        )
+    else:
+        error_println("<incorrect bytecode>")

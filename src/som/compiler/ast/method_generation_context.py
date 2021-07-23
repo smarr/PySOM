@@ -42,7 +42,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
-        method_body = self._add_argument_initialization(method_body)
+        # method_body = self._add_argument_initialization(method_body)
         return AstMethod(
             self._signature,
             method_body,
