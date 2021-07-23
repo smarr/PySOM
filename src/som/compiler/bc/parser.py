@@ -53,11 +53,12 @@ class Parser(ParserBase):
                 # a POP has been generated which must be elided (blocks always
                 # return the value of the last expression, regardless of
                 # whether it was terminated with a . or not)
-                mgenc.remove_last_bytecode()
+                mgenc.remove_last_pop_for_block_local_return()
 
             # if this block is empty, we need to return nil
             if mgenc.is_block_method and not mgenc.has_bytecode():
                 from som.vm.globals import nilObject
+
                 emit_push_constant(mgenc, nilObject)
 
             emit_return_local(mgenc)
@@ -346,6 +347,7 @@ class Parser(ParserBase):
         if not mgenc.is_finished():
             if not mgenc.has_bytecode():
                 from som.vm.globals import nilObject
+
                 emit_push_constant(mgenc, nilObject)
             emit_return_local(mgenc)
             mgenc.set_finished()

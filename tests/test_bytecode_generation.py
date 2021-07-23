@@ -12,6 +12,10 @@ from som.vm.current import current_universe
 
 
 class BytecodeGenerationTest(TestCase):
+    def setUp(self):
+        self.cgenc = None
+        self.mgenc = None
+
     def add_field(self, name):
         self.cgenc.add_instance_field(current_universe.symbol_for(name))
 
@@ -48,28 +52,27 @@ class BytecodeMethodGenerationTest(BytecodeGenerationTest):
 
     def test_dup_pop_argument_pop(self):
         bytecodes = self.parse_to_bytecodes("test: arg = ( arg := 1. ^ self )")
-        self.assertEqual(7, len(bytecodes))
+
+        self.assertEqual(5, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
-        self.assertEqual(Bytecodes.dup, bytecodes[1])
-        self.assertEqual(Bytecodes.pop_argument, bytecodes[2])
-        self.assertEqual(Bytecodes.pop, bytecodes[5])
+        self.assertEqual(Bytecodes.pop_argument, bytecodes[1])
+        self.assertEqual(Bytecodes.return_self, bytecodes[4])
 
     def test_dup_pop_argument_pop_implicit_return_self(self):
         bytecodes = self.parse_to_bytecodes("test: arg = ( arg := 1 )")
-        self.assertEqual(7, len(bytecodes))
+
+        self.assertEqual(5, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
-        self.assertEqual(Bytecodes.dup, bytecodes[1])
-        self.assertEqual(Bytecodes.pop_argument, bytecodes[2])
-        self.assertEqual(Bytecodes.pop, bytecodes[5])
+        self.assertEqual(Bytecodes.pop_argument, bytecodes[1])
+        self.assertEqual(Bytecodes.return_self, bytecodes[4])
 
     def test_dup_pop_local_pop(self):
         bytecodes = self.parse_to_bytecodes("test = ( | local | local := 1. ^ self )")
 
-        self.assertEqual(7, len(bytecodes))
+        self.assertEqual(5, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
-        self.assertEqual(Bytecodes.dup, bytecodes[1])
-        self.assertEqual(Bytecodes.pop_local, bytecodes[2])
-        self.assertEqual(Bytecodes.pop, bytecodes[5])
+        self.assertEqual(Bytecodes.pop_local, bytecodes[1])
+        self.assertEqual(Bytecodes.return_self, bytecodes[4])
 
     def test_dup_pop_field_0_pop(self):
         self.add_field("field")
@@ -89,11 +92,10 @@ class BytecodeMethodGenerationTest(BytecodeGenerationTest):
         self.add_field("field")
         bytecodes = self.parse_to_bytecodes("test = ( field := 1. ^ self )")
 
-        self.assertEqual(7, len(bytecodes))
+        self.assertEqual(5, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
-        self.assertEqual(Bytecodes.dup, bytecodes[1])
-        self.assertEqual(Bytecodes.pop_field, bytecodes[2])
-        self.assertEqual(Bytecodes.pop, bytecodes[5])
+        self.assertEqual(Bytecodes.pop_field, bytecodes[1])
+        self.assertEqual(Bytecodes.return_self, bytecodes[4])
 
 
 @pytest.mark.skipif(
@@ -118,17 +120,24 @@ class BytecodeBlockGenerationTest(BytecodeGenerationTest):
 
     def test_block_dup_pop_argument_pop(self):
         bytecodes = self.parse_to_bytecodes("[:arg | arg := 1. arg ]")
-        self.dump()
-        self.assertEqual(10, len(bytecodes))
+
+        self.assertEqual(8, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
-        self.assertEqual(Bytecodes.dup, bytecodes[1])
-        self.assertEqual(Bytecodes.pop_argument, bytecodes[2])
-        self.assertEqual(Bytecodes.pop, bytecodes[5])
-        self.assertEqual(Bytecodes.push_argument, bytecodes[6])
-        self.assertEqual(Bytecodes.return_local, bytecodes[9])
+        self.assertEqual(Bytecodes.pop_argument, bytecodes[1])
+        self.assertEqual(Bytecodes.push_argument, bytecodes[4])
+        self.assertEqual(Bytecodes.return_local, bytecodes[7])
 
     def test_block_dup_pop_argument_pop_implicit_return_self(self):
         bytecodes = self.parse_to_bytecodes("[:arg | arg := 1 ]")
+
+        self.assertEqual(6, len(bytecodes))
+        self.assertEqual(Bytecodes.push_1, bytecodes[0])
+        self.assertEqual(Bytecodes.dup, bytecodes[1])
+        self.assertEqual(Bytecodes.pop_argument, bytecodes[2])
+        self.assertEqual(Bytecodes.return_local, bytecodes[5])
+
+    def test_block_dup_pop_argument_pop_implicit_return_self_dot(self):
+        bytecodes = self.parse_to_bytecodes("[:arg | arg := 1. ]")
 
         self.assertEqual(6, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
@@ -148,6 +157,16 @@ class BytecodeBlockGenerationTest(BytecodeGenerationTest):
     def test_block_dup_pop_field_return_local(self):
         self.add_field("field")
         bytecodes = self.parse_to_bytecodes("[ field := 1 ]")
+
+        self.assertEqual(6, len(bytecodes))
+        self.assertEqual(Bytecodes.push_1, bytecodes[0])
+        self.assertEqual(Bytecodes.dup, bytecodes[1])
+        self.assertEqual(Bytecodes.pop_field, bytecodes[2])
+        self.assertEqual(Bytecodes.return_local, bytecodes[5])
+
+    def test_block_dup_pop_field_return_local_dot(self):
+        self.add_field("field")
+        bytecodes = self.parse_to_bytecodes("[ field := 1. ]")
 
         self.assertEqual(6, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])

@@ -75,8 +75,12 @@ class Bytecodes(object):
     pop_local = push_argument + 1
     pop_argument = pop_local + 1
 
+    invalid = pop_argument + 1
+
 
 _NUM_BYTECODES = Bytecodes.pop_argument + 1
+
+POP_X_BYTECODES = [Bytecodes.pop_local, Bytecodes.pop_argument, Bytecodes.pop_field]
 
 _BYTECODE_LENGTH = [
     1,  # halt

@@ -10,7 +10,8 @@ def emit_dec(mgenc):
 
 
 def emit_pop(mgenc):
-    _emit1(mgenc, BC.pop)
+    if not mgenc.optimize_dup_pop_pop_sequence():
+        _emit1(mgenc, BC.pop)
 
 
 def emit_push_argument(mgenc, idx, ctx):
@@ -18,6 +19,7 @@ def emit_push_argument(mgenc, idx, ctx):
 
 
 def emit_return_self(mgenc):
+    mgenc.optimize_dup_pop_pop_sequence()
     _emit1(mgenc, BC.return_self)
 
 
@@ -157,10 +159,10 @@ def _emit1(mgenc, code):
 
 def _emit2(mgenc, code, idx):
     mgenc.add_bytecode(code)
-    mgenc.add_bytecode(idx)
+    mgenc.add_bytecode_argument(idx)
 
 
 def _emit3(mgenc, code, idx, ctx):
     mgenc.add_bytecode(code)
-    mgenc.add_bytecode(idx)
-    mgenc.add_bytecode(ctx)
+    mgenc.add_bytecode_argument(idx)
+    mgenc.add_bytecode_argument(ctx)
