@@ -158,7 +158,7 @@ class Parser(ParserBase):
             bgenc = MethodGenerationContext(self.universe, mgenc)
             bgenc.holder = mgenc.holder
 
-            self._nested_block(bgenc)
+            self.nested_block(bgenc)
 
             block_method = bgenc.assemble(None)
             mgenc.add_literal(block_method)
@@ -339,7 +339,7 @@ class Parser(ParserBase):
         )
         self._expect(Symbol.EndTerm)
 
-    def _nested_block(self, mgenc):
+    def nested_block(self, mgenc):
         self._nested_block_signature(mgenc)
         self._block_contents(mgenc)
 
