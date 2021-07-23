@@ -35,6 +35,12 @@ class BytecodeGenerationTest(TestCase):
         self.assertEqual(1, len(bytecodes))
         self.assertEqual(Bytecodes.return_self, bytecodes[0])
 
+    def test_explicit_return_self(self):
+        bytecodes = self.parse_to_bytecodes("test = ( ^ self )")
+
+        self.assertEqual(1, len(bytecodes))
+        self.assertEqual(Bytecodes.return_self, bytecodes[0])
+
     def test_dup_pop_argument_pop(self):
         bytecodes = self.parse_to_bytecodes("test: arg = ( arg := 1. ^ self )")
         self.assertEqual(10, len(bytecodes))
