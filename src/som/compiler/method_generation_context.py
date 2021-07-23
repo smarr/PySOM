@@ -6,8 +6,9 @@ from som.interpreter.ast.frame import ARG_OFFSET, FRAME_AND_INNER_RCVR_IDX
 
 
 class MethodGenerationContextBase(object):
-    def __init__(self, universe, outer):
-        self.holder = None
+    def __init__(self, universe, holder, outer):
+        self.holder = holder
+        assert holder
         self._arguments = OrderedDict()
         self._locals = OrderedDict()
         self.outer_genc = outer

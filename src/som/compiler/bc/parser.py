@@ -155,9 +155,7 @@ class Parser(ParserBase):
         elif self._sym == Symbol.NewTerm:
             self._nested_term(mgenc)
         elif self._sym == Symbol.NewBlock:
-            bgenc = MethodGenerationContext(self.universe, mgenc)
-            bgenc.holder = mgenc.holder
-
+            bgenc = MethodGenerationContext(self.universe, mgenc.holder, mgenc)
             self.nested_block(bgenc)
 
             block_method = bgenc.assemble(None)

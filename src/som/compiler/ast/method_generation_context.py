@@ -11,8 +11,8 @@ from som.vmobjects.method_ast import AstMethod
 
 
 class MethodGenerationContext(MethodGenerationContextBase):
-    def __init__(self, universe, outer=None):
-        MethodGenerationContextBase.__init__(self, universe, outer)
+    def __init__(self, universe, holder, outer):
+        MethodGenerationContextBase.__init__(self, universe, holder, outer)
 
         self._embedded_block_methods = []
 

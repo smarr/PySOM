@@ -14,8 +14,8 @@ from som.vmobjects.method_bc import (
 
 
 class MethodGenerationContext(MethodGenerationContextBase):
-    def __init__(self, universe, outer=None):
-        MethodGenerationContextBase.__init__(self, universe, outer)
+    def __init__(self, universe, holder, outer):
+        MethodGenerationContextBase.__init__(self, universe, holder, outer)
 
         self._literals = []
         self._finished = False

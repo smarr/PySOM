@@ -25,8 +25,7 @@ class BytecodeGenerationTest(TestCase):
 class BytecodeMethodGenerationTest(BytecodeGenerationTest):
     def setUp(self):
         self.cgenc = ClassGenerationContext(current_universe)
-        self.mgenc = MethodGenerationContext(current_universe)
-        self.mgenc.holder = self.cgenc
+        self.mgenc = MethodGenerationContext(current_universe, self.cgenc, None)
         self.mgenc.add_argument("self")
 
     def parse_to_bytecodes(self, source):
@@ -103,11 +102,11 @@ class BytecodeMethodGenerationTest(BytecodeGenerationTest):
 class BytecodeBlockGenerationTest(BytecodeGenerationTest):
     def setUp(self):
         self.cgenc = ClassGenerationContext(current_universe)
-        self.method_mgenc = MethodGenerationContext(current_universe)
+        self.method_mgenc = MethodGenerationContext(current_universe, self.cgenc, None)
         self.method_mgenc.holder = self.cgenc
         self.method_mgenc.add_argument("self")
 
-        self.mgenc = MethodGenerationContext(current_universe, self.method_mgenc)
+        self.mgenc = MethodGenerationContext(current_universe, self.cgenc, self.method_mgenc)
         self.mgenc.holder = self.cgenc
         self.mgenc.add_argument("$blockSelf")
 

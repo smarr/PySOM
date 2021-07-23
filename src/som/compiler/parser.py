@@ -81,8 +81,7 @@ class ParserBase(object):
             or self._sym == Symbol.OperatorSequence
             or self._sym_in(self._binary_op_syms)
         ):
-            mgenc = MethodGenerationContext(self.universe)
-            mgenc.holder = cgenc
+            mgenc = MethodGenerationContext(self.universe, cgenc, None)
             mgenc.add_argument("self")
 
             cgenc.add_instance_method(mgenc.assemble(self.method(mgenc)))
@@ -97,8 +96,7 @@ class ParserBase(object):
                 or self._sym == Symbol.OperatorSequence
                 or self._sym_in(self._binary_op_syms)
             ):
-                mgenc = MethodGenerationContext(self.universe)
-                mgenc.holder = cgenc
+                mgenc = MethodGenerationContext(self.universe, cgenc, None)
                 mgenc.add_argument("self")
 
                 cgenc.add_class_method(mgenc.assemble(self.method(mgenc)))

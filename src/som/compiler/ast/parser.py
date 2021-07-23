@@ -158,8 +158,7 @@ class Parser(ParserBase):
 
         if self._sym == Symbol.NewBlock:
             coordinate = self._lexer.get_source_coordinate()
-            bgenc = MethodGenerationContext(self.universe, mgenc)
-            bgenc.holder = mgenc.holder
+            bgenc = MethodGenerationContext(self.universe, mgenc.holder, mgenc)
 
             block_body = self.nested_block(bgenc)
             block_method = bgenc.assemble(block_body)
