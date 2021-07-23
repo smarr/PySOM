@@ -1,6 +1,6 @@
+from unittest import TestCase
 import pytest
 from rlib.string_stream import StringStream
-from unittest import TestCase
 
 from som.compiler.bc.disassembler import dump_method
 from som.compiler.bc.method_generation_context import MethodGenerationContext
@@ -11,9 +11,10 @@ from som.interpreter.bc.bytecodes import Bytecodes
 from som.vm.current import current_universe
 
 
-@pytest.mark.skipif(is_ast_interpreter(), reason="Tests are specific to bytecode interpreter")
+@pytest.mark.skipif(
+    is_ast_interpreter(), reason="Tests are specific to bytecode interpreter"
+)
 class BytecodeGenerationTest(TestCase):
-
     def setUp(self):
         self.cgenc = ClassGenerationContext(current_universe)
         self.mgenc = MethodGenerationContext(current_universe)
@@ -22,6 +23,9 @@ class BytecodeGenerationTest(TestCase):
 
     def add_field(self, name):
         self.cgenc.add_instance_field(current_universe.symbol_for(name))
+
+    def dump(self):
+        dump_method(self.mgenc, "")
 
     def parse_to_bytecodes(self, source):
         parser = Parser(StringStream(source), "test", current_universe)
@@ -43,7 +47,7 @@ class BytecodeGenerationTest(TestCase):
 
     def test_dup_pop_argument_pop(self):
         bytecodes = self.parse_to_bytecodes("test: arg = ( arg := 1. ^ self )")
-        self.assertEqual(10, len(bytecodes))
+        self.assertEqual(7, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
         self.assertEqual(Bytecodes.dup, bytecodes[1])
         self.assertEqual(Bytecodes.pop_argument, bytecodes[2])
@@ -52,7 +56,7 @@ class BytecodeGenerationTest(TestCase):
     def test_dup_pop_local_pop(self):
         bytecodes = self.parse_to_bytecodes("test = ( | local | local := 1. ^ self )")
 
-        self.assertEqual(10, len(bytecodes))
+        self.assertEqual(7, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
         self.assertEqual(Bytecodes.dup, bytecodes[1])
         self.assertEqual(Bytecodes.pop_local, bytecodes[2])
@@ -62,8 +66,7 @@ class BytecodeGenerationTest(TestCase):
         self.add_field("field")
         bytecodes = self.parse_to_bytecodes("test = ( field := 1. ^ self )")
 
-        dump_method(self.mgenc, "")
-        self.assertEqual(8, len(bytecodes))
+        self.assertEqual(5, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
         self.assertEqual(Bytecodes.dup, bytecodes[1])
         self.assertEqual(Bytecodes.pop_field_0, bytecodes[2])
@@ -77,10 +80,8 @@ class BytecodeGenerationTest(TestCase):
         self.add_field("field")
         bytecodes = self.parse_to_bytecodes("test = ( field := 1. ^ self )")
 
-        dump_method(self.mgenc, "")
-        self.assertEqual(10, len(bytecodes))
+        self.assertEqual(7, len(bytecodes))
         self.assertEqual(Bytecodes.push_1, bytecodes[0])
         self.assertEqual(Bytecodes.dup, bytecodes[1])
         self.assertEqual(Bytecodes.pop_field, bytecodes[2])
         self.assertEqual(Bytecodes.pop, bytecodes[5])
-

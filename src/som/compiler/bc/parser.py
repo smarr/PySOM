@@ -76,6 +76,22 @@ class Parser(ParserBase):
                 self._block_body(mgenc, True)
 
     def _result(self, mgenc):
+        # try to parse a `^ self` to emit RETURN_SELF
+        if (
+            not mgenc.is_block_method
+            and self._sym == Symbol.Identifier
+            and self._text == "self"
+        ):
+            self._peek_for_next_symbol_from_lexer_if_necessary()
+            if self._next_sym == Symbol.Period or self._next_sym == Symbol.EndTerm:
+                self._expect(Symbol.Identifier)
+
+                emit_return_self(mgenc)
+                mgenc.set_finished()
+
+                self._accept(Symbol.Period)
+                return
+
         self._expression(mgenc)
         self._accept(Symbol.Period)
 

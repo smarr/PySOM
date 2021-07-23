@@ -243,7 +243,7 @@ class ParserBase(object):
         return self._identifier()
 
     def _expression(self, mgenc):
-        self._peek_for_next_symbol_from_lexer()
+        self._peek_for_next_symbol_from_lexer_if_necessary()
 
         if self._next_sym == Symbol.Assign:
             return self._assignation(mgenc)
