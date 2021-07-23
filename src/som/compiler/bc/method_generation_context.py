@@ -26,6 +26,22 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._arg_list = []
         self._local_list = []
 
+    def get_number_of_locals(self):
+        return len(self._local_list)
+
+    def get_number_of_bytecodes(self):
+        return len(self._bytecode)
+
+    def get_maximum_number_of_stack_elements(self):
+        """Should not be used on the fast path. Really just hear for the disassembler."""
+        return self._compute_stack_depth()
+
+    def get_bytecode(self, idx):
+        return self._bytecode[idx]
+
+    def get_holder(self):
+        return self.holder
+
     def add_argument(self, arg):
         argument = MethodGenerationContextBase.add_argument(self, arg)
         self._arg_list.append(argument)

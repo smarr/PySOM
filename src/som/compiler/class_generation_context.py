@@ -63,6 +63,9 @@ class ClassGenerationContext(object):
     def add_instance_field(self, field):
         self._instance_fields.append(field)
 
+    def get_instance_field_name(self, idx):
+        return self._instance_fields[idx]
+
     def add_class_field(self, field):
         self._class_fields.append(field)
 
