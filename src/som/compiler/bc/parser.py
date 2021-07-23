@@ -57,9 +57,8 @@ class Parser(ParserBase):
 
             # if this block is empty, we need to return nil
             if mgenc.is_block_method and not mgenc.has_bytecode():
-                nil_sym = self.universe.symbol_for("nil")
-                mgenc.add_literal_if_absent(nil_sym)
-                emit_push_global(mgenc, nil_sym)
+                from som.vm.globals import nilObject
+                emit_push_constant(mgenc, nilObject)
 
             emit_return_local(mgenc)
             mgenc.set_finished()
@@ -346,9 +345,8 @@ class Parser(ParserBase):
         # a return
         if not mgenc.is_finished():
             if not mgenc.has_bytecode():
-                nil_sym = self.universe.sym_nil
-                mgenc.add_literal_if_absent(nil_sym)
-                emit_push_global(mgenc, nil_sym)
+                from som.vm.globals import nilObject
+                emit_push_constant(mgenc, nilObject)
             emit_return_local(mgenc)
             mgenc.set_finished()
 
