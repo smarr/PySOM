@@ -169,6 +169,9 @@ class MethodGenerationContext(MethodGenerationContextBase):
     def find_literal_index(self, lit):
         return self._literals.index(lit)
 
+    def get_bytecodes(self):
+        return self._bytecode
+
 
 class FindVarResult(object):
     def __init__(self, var, context, is_argument):

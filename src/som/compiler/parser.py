@@ -85,7 +85,7 @@ class ParserBase(object):
             mgenc.holder = cgenc
             mgenc.add_argument("self")
 
-            cgenc.add_instance_method(mgenc.assemble(self._method(mgenc)))
+            cgenc.add_instance_method(mgenc.assemble(self.method(mgenc)))
 
         if self._accept(Symbol.Separator):
             cgenc.switch_to_class_side()
@@ -101,7 +101,7 @@ class ParserBase(object):
                 mgenc.holder = cgenc
                 mgenc.add_argument("self")
 
-                cgenc.add_class_method(mgenc.assemble(self._method(mgenc)))
+                cgenc.add_class_method(mgenc.assemble(self.method(mgenc)))
 
         self._expect(Symbol.EndTerm)
 
@@ -346,7 +346,7 @@ class ParserBase(object):
             self._accept(Symbol.Colon)
             mgenc.add_argument_if_absent(self._argument())
 
-    def _method(self, mgenc):
+    def method(self, mgenc):
         self._pattern(mgenc)
         self._expect(Symbol.Equal)
         if self._sym == Symbol.Primitive:
