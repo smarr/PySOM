@@ -158,10 +158,9 @@ class Parser(ParserBase):
 
         if self._sym == Symbol.NewBlock:
             coordinate = self._lexer.get_source_coordinate()
-            bgenc = MethodGenerationContext(self.universe, mgenc)
-            bgenc.holder = mgenc.holder
+            bgenc = MethodGenerationContext(self.universe, mgenc.holder, mgenc)
 
-            block_body = self._nested_block(bgenc)
+            block_body = self.nested_block(bgenc)
             block_method = bgenc.assemble(block_body)
             mgenc.add_embedded_block_method(block_method)
 
@@ -320,7 +319,7 @@ class Parser(ParserBase):
         self._expect(Symbol.EndTerm)
         return Array.from_values(literals[:])
 
-    def _nested_block(self, mgenc):
+    def nested_block(self, mgenc):
         self._nested_block_signature(mgenc)
         expressions = self._block_contents(mgenc)
         self._expect(Symbol.EndBlock)

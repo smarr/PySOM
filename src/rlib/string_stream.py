@@ -59,3 +59,12 @@ class StringStream(Stream):
         data = self._string[self.pos : end]
         self.pos += len(data)
         return data
+
+    def readline(self):
+        for i in range(self.pos, len(self._string)):
+            if self._string[i] == "\n":
+                return self.read(i - self.pos + 1)
+        if self.pos == 0:
+            self.pos = len(self._string)
+            return self._string
+        return ""

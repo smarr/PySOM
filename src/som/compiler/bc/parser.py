@@ -53,13 +53,13 @@ class Parser(ParserBase):
                 # a POP has been generated which must be elided (blocks always
                 # return the value of the last expression, regardless of
                 # whether it was terminated with a . or not)
-                mgenc.remove_last_bytecode()
+                mgenc.remove_last_pop_for_block_local_return()
 
             # if this block is empty, we need to return nil
             if mgenc.is_block_method and not mgenc.has_bytecode():
-                nil_sym = self.universe.symbol_for("nil")
-                mgenc.add_literal_if_absent(nil_sym)
-                emit_push_global(mgenc, nil_sym)
+                from som.vm.globals import nilObject
+
+                emit_push_constant(mgenc, nilObject)
 
             emit_return_local(mgenc)
             mgenc.set_finished()
@@ -76,6 +76,22 @@ class Parser(ParserBase):
                 self._block_body(mgenc, True)
 
     def _result(self, mgenc):
+        # try to parse a `^ self` to emit RETURN_SELF
+        if (
+            not mgenc.is_block_method
+            and self._sym == Symbol.Identifier
+            and self._text == "self"
+        ):
+            self._peek_for_next_symbol_from_lexer_if_necessary()
+            if self._next_sym == Symbol.Period or self._next_sym == Symbol.EndTerm:
+                self._expect(Symbol.Identifier)
+
+                emit_return_self(mgenc)
+                mgenc.set_finished()
+
+                self._accept(Symbol.Period)
+                return
+
         self._expression(mgenc)
         self._accept(Symbol.Period)
 
@@ -139,10 +155,8 @@ class Parser(ParserBase):
         elif self._sym == Symbol.NewTerm:
             self._nested_term(mgenc)
         elif self._sym == Symbol.NewBlock:
-            bgenc = MethodGenerationContext(self.universe, mgenc)
-            bgenc.holder = mgenc.holder
-
-            self._nested_block(bgenc)
+            bgenc = MethodGenerationContext(self.universe, mgenc.holder, mgenc)
+            self.nested_block(bgenc)
 
             block_method = bgenc.assemble(None)
             mgenc.add_literal(block_method)
@@ -323,7 +337,7 @@ class Parser(ParserBase):
         )
         self._expect(Symbol.EndTerm)
 
-    def _nested_block(self, mgenc):
+    def nested_block(self, mgenc):
         self._nested_block_signature(mgenc)
         self._block_contents(mgenc)
 
@@ -332,9 +346,9 @@ class Parser(ParserBase):
         # a return
         if not mgenc.is_finished():
             if not mgenc.has_bytecode():
-                nil_sym = self.universe.sym_nil
-                mgenc.add_literal_if_absent(nil_sym)
-                emit_push_global(mgenc, nil_sym)
+                from som.vm.globals import nilObject
+
+                emit_push_constant(mgenc, nilObject)
             emit_return_local(mgenc)
             mgenc.set_finished()
 
