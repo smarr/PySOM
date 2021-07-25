@@ -12,7 +12,12 @@ from som.interpreter.bc.bytecodes import (
     POP_FIELD_BYTECODES,
 )
 from som.vmobjects.integer import int_0, int_1
-from som.vmobjects.method_trivial import LiteralReturn, GlobalRead, FieldRead
+from som.vmobjects.method_trivial import (
+    LiteralReturn,
+    GlobalRead,
+    FieldRead,
+    FieldWrite,
+)
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import (
     BcMethodNLR,
@@ -69,65 +74,25 @@ class MethodGenerationContext(MethodGenerationContextBase):
         return local
 
     def assemble_trivial_method(self):
-        from som.vm.globals import nilObject
+        return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
+        if return_candidate != Bytecodes.invalid:
+            push_candidate = self._last_bytecode_is_one_of(1, PUSH_CONST_BYTECODES)
+            if push_candidate != Bytecodes.invalid:
+                return self._assemble_literal_return(return_candidate, push_candidate)
 
-        if self.is_literal_return():
-            if len(self._literals) == 1:
-                return LiteralReturn(self._signature, self._literals[0])
-            if self._bytecode[0] == Bytecodes.push_0:
-                return LiteralReturn(self._signature, int_0)
-            if self._bytecode[0] == Bytecodes.push_1:
-                return LiteralReturn(self._signature, int_1)
-            if self._bytecode[0] == Bytecodes.push_nil:
+            push_candidate = self._last_bytecode_is(1, Bytecodes.push_global)
+            if push_candidate != Bytecodes.invalid:
+                return self._assemble_global_return(return_candidate, push_candidate)
 
-                return LiteralReturn(self._signature, nilObject)
-            raise NotImplementedError(
-                "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
-            )
-
-        if self.is_global_return():
-            if len(self._literals) == 1:
-                from som.vmobjects.symbol import Symbol
-                from som.vm.globals import trueObject, falseObject
-
-                global_name = self._literals[0]
-                assert isinstance(global_name, Symbol)
-
-                glob = global_name.get_embedded_string()
-                if glob == "true":
-                    return LiteralReturn(self._signature, trueObject)
-                if glob == "false":
-                    return LiteralReturn(self._signature, falseObject)
-                if glob == "nil":
-                    return LiteralReturn(self._signature, nilObject)
-
-                return GlobalRead(
-                    self._signature,
-                    global_name,
-                    self.get_max_context_level(),
-                    self.universe,
-                )
-
-            raise NotImplementedError(
-                "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
-            )
-
-        if self.is_field_getter():
             push_candidate = self._last_bytecode_is_one_of(1, PUSH_FIELD_BYTECODES)
-            if push_candidate == Bytecodes.push_field_0:
-                idx = 0
-                ctx = 0
-            elif push_candidate == Bytecodes.push_field_1:
-                idx = 1
-                ctx = 0
-            else:
-                idx = self._bytecode[-3]
-                ctx = self._bytecode[-2]
+            if push_candidate != Bytecodes.invalid:
+                return self._assemble_field_getter(return_candidate, push_candidate)
 
-            return FieldRead(self._signature, idx, ctx)
-
-        # if self.is_field_setter():
-        #     pass
+        # because we check for return_self here, we don't consider block methods
+        return_candidate = self._last_bytecode_is(0, Bytecodes.return_self)
+        if return_candidate != Bytecodes.invalid:
+            assert not self.is_block_method
+            return self._assemble_field_setter(return_candidate)
 
         return None
 
@@ -378,44 +343,110 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         return True
 
-    def is_literal_return(self):
-        return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
-        if return_candidate == Bytecodes.invalid:
-            return False
-
-        push_candidate = self._last_bytecode_is_one_of(1, PUSH_CONST_BYTECODES)
-        if push_candidate == Bytecodes.invalid:
-            return False
-
-        return len(self._bytecode) == (
+    def _assemble_literal_return(self, return_candidate, push_candidate):
+        if len(self._bytecode) != (
             bytecode_length(push_candidate) + bytecode_length(return_candidate)
+        ):
+            return None
+
+        if len(self._literals) == 1:
+            return LiteralReturn(self._signature, self._literals[0])
+        if self._bytecode[0] == Bytecodes.push_0:
+            return LiteralReturn(self._signature, int_0)
+        if self._bytecode[0] == Bytecodes.push_1:
+            return LiteralReturn(self._signature, int_1)
+        if self._bytecode[0] == Bytecodes.push_nil:
+            from som.vm.globals import nilObject
+
+            return LiteralReturn(self._signature, nilObject)
+        raise NotImplementedError(
+            "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
         )
 
-    def is_global_return(self):
-        return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
-        if return_candidate == Bytecodes.invalid:
-            return False
-
-        push_candidate = self._last_bytecode_is(1, Bytecodes.push_global)
-        if push_candidate == Bytecodes.invalid:
-            return False
-
-        return len(self._bytecode) == (
+    def _assemble_global_return(self, return_candidate, push_candidate):
+        if len(self._bytecode) != (
             bytecode_length(push_candidate) + bytecode_length(return_candidate)
+        ):
+            return None
+
+        if len(self._literals) == 1:
+            from som.vmobjects.symbol import Symbol
+            from som.vm.globals import trueObject, falseObject
+
+            global_name = self._literals[0]
+            assert isinstance(global_name, Symbol)
+
+            glob = global_name.get_embedded_string()
+            if glob == "true":
+                return LiteralReturn(self._signature, trueObject)
+            if glob == "false":
+                return LiteralReturn(self._signature, falseObject)
+            if glob == "nil":
+                from som.vm.globals import nilObject
+
+                return LiteralReturn(self._signature, nilObject)
+
+            return GlobalRead(
+                self._signature,
+                global_name,
+                self.get_max_context_level(),
+                self.universe,
+            )
+
+        raise NotImplementedError(
+            "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
         )
 
-    def is_field_getter(self):
-        return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
-        if return_candidate == Bytecodes.invalid:
-            return False
-
-        push_candidate = self._last_bytecode_is_one_of(1, PUSH_FIELD_BYTECODES)
-        if push_candidate == Bytecodes.invalid:
-            return False
-
-        return len(self._bytecode) == (
+    def _assemble_field_getter(self, return_candidate, push_candidate):
+        if len(self._bytecode) != (
             bytecode_length(push_candidate) + bytecode_length(return_candidate)
-        )
+        ):
+            return None
+
+        if push_candidate == Bytecodes.push_field_0:
+            idx = 0
+            ctx = 0
+        elif push_candidate == Bytecodes.push_field_1:
+            idx = 1
+            ctx = 0
+        else:
+            idx = self._bytecode[-3]
+            ctx = self._bytecode[-2]
+
+        return FieldRead(self._signature, idx, ctx)
+
+    def _assemble_field_setter(self, return_candidate):
+        pop_candidate = self._last_bytecode_is_one_of(1, POP_FIELD_BYTECODES)
+        if pop_candidate == Bytecodes.invalid:
+            return None
+
+        push_candidate = self._last_bytecode_is(2, Bytecodes.push_argument)
+        if push_candidate == Bytecodes.invalid:
+            return None
+
+        pop_len = bytecode_length(pop_candidate)
+        assert bytecode_length(Bytecodes.return_self) == 1
+        assert bytecode_length(return_candidate)
+        return_len = 1
+
+        if len(self._bytecode) != (
+            return_len + pop_len + bytecode_length(push_candidate)
+        ):
+            return None
+
+        if pop_candidate == Bytecodes.pop_field_0:
+            field_idx = 0
+        elif pop_candidate == Bytecodes.pop_field_1:
+            field_idx = 1
+        else:
+            assert pop_candidate == Bytecodes.pop_field
+            field_idx = self._bytecode[-3]
+
+            # context is 0, because we are in a normal method with return_self
+            assert self._bytecode[-2] == 0
+
+        arg_idx = self._bytecode[-(pop_len + return_len + 2)]
+        return FieldWrite(self._signature, field_idx, arg_idx)
 
 
 class FindVarResult(object):

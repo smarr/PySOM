@@ -132,3 +132,38 @@ class FieldRead(AbstractTrivialMethod):
             num_args,
             value,
         )
+
+
+class FieldWrite(AbstractTrivialMethod):
+    _immutable_fields_ = ["_field_idx", "_arg_idx"]
+
+    def __init__(self, signature, field_idx, arg_idx):
+        AbstractTrivialMethod.__init__(self, signature)
+        self._field_idx = field_idx
+        self._arg_idx = arg_idx
+
+    def invoke_1(self, _rcvr):
+        raise NotImplementedError(
+            "Not supported, should never be called. We need an argument"
+        )
+
+    def invoke_2(self, rcvr, arg1):
+        rcvr.set_field(self._field_idx, arg1)
+        return rcvr
+
+    def invoke_3(self, rcvr, arg1, arg2):
+        if self._arg_idx == 1:
+            return self.invoke_2(rcvr, arg1)
+        return self.invoke_2(rcvr, arg2)
+
+    def invoke_n(self, stack, stack_ptr):
+        num_args = self._signature.get_number_of_signature_arguments()
+        rcvr = stack[stack_ptr - (num_args - 1)]
+        arg = stack[stack_ptr - (num_args - self._arg_idx)]
+        self.invoke_2(rcvr, arg)
+        return stack_pop_old_arguments_and_push_result(
+            stack,
+            stack_ptr,
+            num_args,
+            rcvr,
+        )

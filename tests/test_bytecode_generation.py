@@ -9,7 +9,12 @@ from som.compiler.class_generation_context import ClassGenerationContext
 from som.interp_type import is_ast_interpreter
 from som.interpreter.bc.bytecodes import Bytecodes
 from som.vm.current import current_universe
-from som.vmobjects.method_trivial import LiteralReturn
+from som.vmobjects.method_trivial import (
+    LiteralReturn,
+    GlobalRead,
+    FieldRead,
+    FieldWrite,
+)
 
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
     is_ast_interpreter(), reason="Tests are specific to bytecode interpreter"
@@ -181,27 +186,30 @@ def test_send_dup_pop_field_return_local_period(cgenc, mgenc):
         ("#sym", "#sym"),
         ("1.1", "1.1"),
         ("-2342.234", "-2342.234"),
+        ("true", "true"),
+        ("false", "false"),
+        ("nil", "nil"),
     ],
 )
 def test_literal_return(mgenc, source, test_result):
     method_to_bytecodes(mgenc, "test = ( ^ " + source + " )")
-    assert mgenc.is_literal_return()
-
     m = mgenc.assemble(None)
     assert isinstance(m, LiteralReturn)
     assert str(m.invoke_1(None)) == test_result
 
 
-@pytest.mark.parametrize("source", ["Nil", "true", "system", "MyClassFooBar"])
+@pytest.mark.parametrize("source", ["Nil", "system", "MyClassFooBar"])
 def test_global_return(mgenc, source):
     method_to_bytecodes(mgenc, "test = ( ^ " + source + " )")
-    assert mgenc.is_global_return()
+    m = mgenc.assemble(None)
+    assert isinstance(m, GlobalRead)
 
 
 def test_field_getter_0(cgenc, mgenc):
     add_field(cgenc, "field")
     method_to_bytecodes(mgenc, "test = ( ^ field )")
-    assert mgenc.is_field_getter()
+    m = mgenc.assemble(None)
+    assert isinstance(m, FieldRead)
 
 
 def test_field_getter_n(cgenc, mgenc):
@@ -212,7 +220,27 @@ def test_field_getter_n(cgenc, mgenc):
     add_field(cgenc, "e")
     add_field(cgenc, "field")
     method_to_bytecodes(mgenc, "test = ( ^ field )")
-    assert mgenc.is_field_getter()
+    m = mgenc.assemble(None)
+    assert isinstance(m, FieldRead)
+
+
+def test_field_setter_0(cgenc, mgenc):
+    add_field(cgenc, "field")
+    method_to_bytecodes(mgenc, "test: val = ( field := val )")
+    m = mgenc.assemble(None)
+    assert isinstance(m, FieldWrite)
+
+
+def test_field_setter_n(cgenc, mgenc):
+    add_field(cgenc, "a")
+    add_field(cgenc, "b")
+    add_field(cgenc, "c")
+    add_field(cgenc, "d")
+    add_field(cgenc, "e")
+    add_field(cgenc, "field")
+    method_to_bytecodes(mgenc, "test: value = ( field := value )")
+    m = mgenc.assemble(None)
+    assert isinstance(m, FieldWrite)
 
 
 def test_block_dup_pop_argument_pop(bgenc):
@@ -288,11 +316,13 @@ def test_block_dup_pop_field_return_local_dot(cgenc, bgenc):
         ("#sym", "#sym"),
         ("1.1", "1.1"),
         ("-2342.234", "-2342.234"),
+        ("true", "true"),
+        ("false", "false"),
+        ("nil", "nil"),
     ],
 )
 def test_block_literal_return(bgenc, source, test_result):
     block_to_bytecodes(bgenc, "[ " + source + " ]")
-    assert bgenc.is_literal_return()
     m = bgenc.assemble(None)
     assert isinstance(m, LiteralReturn)
     assert str(m.invoke_1(None)) == test_result
