@@ -147,27 +147,24 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._finished = True
 
     def remove_last_pop_for_block_local_return(self):
-        # self._bytecode = self._bytecode[:-1]
-        if self._last_4_bytecodes[-1] == Bytecodes.pop:
+        if self._last_4_bytecodes[3] == Bytecodes.pop:
             del self._bytecode[-1]
             return
 
         if (
-            self._last_4_bytecodes[-1] in POP_X_BYTECODES
-            and self._last_4_bytecodes[-2] == Bytecodes.invalid
+            self._last_4_bytecodes[3] in POP_X_BYTECODES
+            and self._last_4_bytecodes[2] != Bytecodes.dup
         ):
             # we just removed the DUP and didn't emit the POP using optimizeDupPopPopSequence()
             # so, to make blocks work, we need to reintroduce the DUP
-            assert (
-                bytecode_length(Bytecodes.pop_field)
-                == bytecode_length(Bytecodes.pop_field)
-                == bytecode_length(Bytecodes.pop_argument)
-            )
-            assert bytecode_length(Bytecodes.pop_field) == 3
-            idx = len(self._bytecode) - 3
+            idx = len(self._bytecode) - bytecode_length(self._last_4_bytecodes[3])
             assert idx >= 0
             assert self._bytecode[idx] in POP_X_BYTECODES
             self._bytecode.insert(idx, Bytecodes.dup)
+
+            self._last_4_bytecodes[0] = self._last_4_bytecodes[1]
+            self._last_4_bytecodes[1] = self._last_4_bytecodes[2]
+            self._last_4_bytecodes[2] = Bytecodes.dup
 
         # TODO:
         #     } else if (last4Bytecodes[3] == INC_FIELD) {
@@ -300,8 +297,12 @@ class MethodGenerationContext(MethodGenerationContextBase):
         # if (POP_FIELD == popCandidate && optimizePushFieldIncDupPopField())
         #    return true;
         self._remove_last_bytecode_at(1)  # remove DUP bytecode
-        self._reset_last_bytecode_buffer()  # prevent subsequent optimizations
-        self._last_4_bytecodes[3] = pop_candidate
+
+        # adapt last 4 bytecodes
+        assert self._last_4_bytecodes[3] == pop_candidate
+        self._last_4_bytecodes[2] = self._last_4_bytecodes[1]
+        self._last_4_bytecodes[1] = self._last_4_bytecodes[0]
+        self._last_4_bytecodes[0] = Bytecodes.invalid
 
         return True
 
