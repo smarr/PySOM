@@ -146,6 +146,30 @@ def test_dup_pop_field_n_return_self(cgenc, mgenc):
     assert Bytecodes.return_self == bytecodes[6]
 
 
+def test_send_dup_pop_field_return_local(cgenc, mgenc):
+    add_field(cgenc, "field")
+    bytecodes = method_to_bytecodes(mgenc, "test = ( ^ field := self method )")
+
+    assert len(bytecodes) == 8
+    assert Bytecodes.push_argument == bytecodes[0]
+    assert Bytecodes.send_1 == bytecodes[3]
+    assert Bytecodes.dup == bytecodes[5]
+    assert Bytecodes.pop_field_0 == bytecodes[6]
+    assert Bytecodes.return_local == bytecodes[7]
+
+
+def test_send_dup_pop_field_return_local_period(cgenc, mgenc):
+    add_field(cgenc, "field")
+    bytecodes = method_to_bytecodes(mgenc, "test = ( ^ field := self method. )")
+
+    assert len(bytecodes) == 8
+    assert Bytecodes.push_argument == bytecodes[0]
+    assert Bytecodes.send_1 == bytecodes[3]
+    assert Bytecodes.dup == bytecodes[5]
+    assert Bytecodes.pop_field_0 == bytecodes[6]
+    assert Bytecodes.return_local == bytecodes[7]
+
+
 def test_block_dup_pop_argument_pop(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1. arg ]")
 
