@@ -9,7 +9,7 @@ from som.compiler.class_generation_context import ClassGenerationContext
 from som.interp_type import is_ast_interpreter
 from som.interpreter.bc.bytecodes import Bytecodes
 from som.vm.current import current_universe
-
+from som.vmobjects.method_trivial import LiteralReturn
 
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
     is_ast_interpreter(), reason="Tests are specific to bytecode interpreter"
@@ -170,6 +170,28 @@ def test_send_dup_pop_field_return_local_period(cgenc, mgenc):
     assert Bytecodes.return_local == bytecodes[7]
 
 
+@pytest.mark.parametrize(
+    "source,test_result",
+    [
+        ("0", "0"),
+        ("1", "1"),
+        ("-10", "-10"),
+        ("3333", "3333"),
+        ("'str'", '"str"'),
+        ("#sym", "#sym"),
+        ("1.1", "1.1"),
+        ("-2342.234", "-2342.234"),
+    ],
+)
+def test_literal_return(mgenc, source, test_result):
+    method_to_bytecodes(mgenc, "test = ( ^ " + source + " )")
+    assert mgenc.is_literal_return()
+
+    m = mgenc.assemble(None)
+    assert isinstance(m, LiteralReturn)
+    assert str(m.invoke_1(None)) == test_result
+
+
 def test_block_dup_pop_argument_pop(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1. arg ]")
 
@@ -230,3 +252,24 @@ def test_block_dup_pop_field_return_local_dot(cgenc, bgenc):
     assert Bytecodes.dup == bytecodes[1]
     assert Bytecodes.pop_field == bytecodes[2]
     assert Bytecodes.return_local == bytecodes[5]
+
+
+@pytest.mark.parametrize(
+    "source,test_result",
+    [
+        ("0", "0"),
+        ("1", "1"),
+        ("-10", "-10"),
+        ("3333", "3333"),
+        ("'str'", '"str"'),
+        ("#sym", "#sym"),
+        ("1.1", "1.1"),
+        ("-2342.234", "-2342.234"),
+    ],
+)
+def test_block_literal_return(bgenc, source, test_result):
+    block_to_bytecodes(bgenc, "[ " + source + " ]")
+    assert bgenc.is_literal_return()
+    m = bgenc.assemble(None)
+    assert isinstance(m, LiteralReturn)
+    assert str(m.invoke_1(None)) == test_result

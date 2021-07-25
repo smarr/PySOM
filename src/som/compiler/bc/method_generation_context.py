@@ -7,7 +7,10 @@ from som.interpreter.bc.bytecodes import (
     bytecode_length,
     Bytecodes,
     POP_X_BYTECODES,
+    PUSH_CONST_BYTECODES,
 )
+from som.vmobjects.integer import int_0, int_1
+from som.vmobjects.method_trivial import LiteralReturn
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import (
     BcMethodNLR,
@@ -66,6 +69,20 @@ class MethodGenerationContext(MethodGenerationContextBase):
     def assemble(self, _dummy):
         if self._primitive:
             return empty_primitive(self._signature.get_embedded_string(), self.universe)
+
+        if self.is_literal_return():
+            if len(self._literals) == 1:
+                return LiteralReturn(self._signature, self._literals[0])
+            if self._bytecode[0] == Bytecodes.push_0:
+                return LiteralReturn(self._signature, int_0)
+            if self._bytecode[0] == Bytecodes.push_1:
+                return LiteralReturn(self._signature, int_1)
+            if self._bytecode[0] == Bytecodes.push_nil:
+                from som.vm.globals import nilObject
+                return LiteralReturn(self._signature, nilObject)
+            raise NotImplementedError(
+                "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
+            )
 
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
@@ -305,6 +322,19 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._last_4_bytecodes[0] = Bytecodes.invalid
 
         return True
+
+    def is_literal_return(self):
+        return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
+        if return_candidate == Bytecodes.invalid:
+            return False
+
+        push_candidate = self._last_bytecode_is_one_of(1, PUSH_CONST_BYTECODES)
+        if push_candidate == Bytecodes.invalid:
+            return False
+
+        return len(self._bytecode) == (
+            bytecode_length(push_candidate) + bytecode_length(return_candidate)
+        )
 
 
 class FindVarResult(object):
