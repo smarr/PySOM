@@ -126,8 +126,8 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
             return FieldRead(self._signature, idx, ctx)
 
-        if self.is_field_setter():
-            pass
+        # if self.is_field_setter():
+        #     pass
 
         return None
 
