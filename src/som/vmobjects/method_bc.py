@@ -97,6 +97,7 @@ class BcAbstractMethod(AbstractMethod):
     def get_number_of_arguments(self):
         return self._number_of_arguments
 
+    @jit.elidable_promote("all")
     def get_number_of_signature_arguments(self):
         return self._number_of_arguments
 

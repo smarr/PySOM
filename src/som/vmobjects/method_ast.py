@@ -129,7 +129,7 @@ class AstMethod(AbstractMethod):
 
     @jit.elidable_promote("all")
     def get_number_of_arguments(self):
-        return self.get_signature().get_number_of_signature_arguments()
+        return self._signature.get_number_of_signature_arguments()
 
     def invoke_1(node, rcvr):  # pylint: disable=no-self-argument
         jitdriver_1.jit_merge_point(node=node, rcvr=rcvr)
