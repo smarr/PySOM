@@ -192,6 +192,29 @@ def test_literal_return(mgenc, source, test_result):
     assert str(m.invoke_1(None)) == test_result
 
 
+@pytest.mark.parametrize("source", ["Nil", "true", "system", "MyClassFooBar"])
+def test_global_return(mgenc, source):
+    method_to_bytecodes(mgenc, "test = ( ^ " + source + " )")
+    assert mgenc.is_global_return()
+
+
+def test_field_getter_0(cgenc, mgenc):
+    add_field(cgenc, "field")
+    method_to_bytecodes(mgenc, "test = ( ^ field )")
+    assert mgenc.is_field_getter()
+
+
+def test_field_getter_n(cgenc, mgenc):
+    add_field(cgenc, "a")
+    add_field(cgenc, "b")
+    add_field(cgenc, "c")
+    add_field(cgenc, "d")
+    add_field(cgenc, "e")
+    add_field(cgenc, "field")
+    method_to_bytecodes(mgenc, "test = ( ^ field )")
+    assert mgenc.is_field_getter()
+
+
 def test_block_dup_pop_argument_pop(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1. arg ]")
 

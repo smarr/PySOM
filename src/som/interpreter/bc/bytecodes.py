@@ -98,6 +98,18 @@ PUSH_CONST_BYTECODES = [
     Bytecodes.push_nil,
 ]
 
+PUSH_FIELD_BYTECODES = [
+    Bytecodes.push_field,
+    Bytecodes.push_field_0,
+    Bytecodes.push_field_1,
+]
+
+POP_FIELD_BYTECODES = [
+    Bytecodes.pop_field,
+    Bytecodes.pop_field_0,
+    Bytecodes.pop_field_1,
+]
+
 _BYTECODE_LENGTH = [
     1,  # halt
     1,  # dup

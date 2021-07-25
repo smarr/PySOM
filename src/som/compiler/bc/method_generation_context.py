@@ -8,9 +8,11 @@ from som.interpreter.bc.bytecodes import (
     Bytecodes,
     POP_X_BYTECODES,
     PUSH_CONST_BYTECODES,
+    PUSH_FIELD_BYTECODES,
+    POP_FIELD_BYTECODES,
 )
 from som.vmobjects.integer import int_0, int_1
-from som.vmobjects.method_trivial import LiteralReturn
+from som.vmobjects.method_trivial import LiteralReturn, GlobalRead, FieldRead
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import (
     BcMethodNLR,
@@ -66,9 +68,8 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._local_list.append(local)
         return local
 
-    def assemble(self, _dummy):
-        if self._primitive:
-            return empty_primitive(self._signature.get_embedded_string(), self.universe)
+    def assemble_trivial_method(self):
+        from som.vm.globals import nilObject
 
         if self.is_literal_return():
             if len(self._literals) == 1:
@@ -78,11 +79,65 @@ class MethodGenerationContext(MethodGenerationContextBase):
             if self._bytecode[0] == Bytecodes.push_1:
                 return LiteralReturn(self._signature, int_1)
             if self._bytecode[0] == Bytecodes.push_nil:
-                from som.vm.globals import nilObject
+
                 return LiteralReturn(self._signature, nilObject)
             raise NotImplementedError(
                 "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
             )
+
+        if self.is_global_return():
+            if len(self._literals) == 1:
+                from som.vmobjects.symbol import Symbol
+                from som.vm.globals import trueObject, falseObject
+
+                global_name = self._literals[0]
+                assert isinstance(global_name, Symbol)
+
+                glob = global_name.get_embedded_string()
+                if glob == "true":
+                    return LiteralReturn(self._signature, trueObject)
+                if glob == "false":
+                    return LiteralReturn(self._signature, falseObject)
+                if glob == "nil":
+                    return LiteralReturn(self._signature, nilObject)
+
+                return GlobalRead(
+                    self._signature,
+                    global_name,
+                    self.get_max_context_level(),
+                    self.universe,
+                )
+
+            raise NotImplementedError(
+                "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
+            )
+
+        if self.is_field_getter():
+            push_candidate = self._last_bytecode_is_one_of(1, PUSH_FIELD_BYTECODES)
+            if push_candidate == Bytecodes.push_field_0:
+                idx = 0
+                ctx = 0
+            elif push_candidate == Bytecodes.push_field_1:
+                idx = 1
+                ctx = 0
+            else:
+                idx = self._bytecode[-3]
+                ctx = self._bytecode[-2]
+
+            return FieldRead(self._signature, idx, ctx)
+
+        if self.is_field_setter():
+            pass
+
+        return None
+
+    def assemble(self, _dummy):
+        if self._primitive:
+            return empty_primitive(self._signature.get_embedded_string(), self.universe)
+
+        method = self.assemble_trivial_method()
+        if method is not None:
+            return method
 
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
@@ -329,6 +384,32 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return False
 
         push_candidate = self._last_bytecode_is_one_of(1, PUSH_CONST_BYTECODES)
+        if push_candidate == Bytecodes.invalid:
+            return False
+
+        return len(self._bytecode) == (
+            bytecode_length(push_candidate) + bytecode_length(return_candidate)
+        )
+
+    def is_global_return(self):
+        return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
+        if return_candidate == Bytecodes.invalid:
+            return False
+
+        push_candidate = self._last_bytecode_is(1, Bytecodes.push_global)
+        if push_candidate == Bytecodes.invalid:
+            return False
+
+        return len(self._bytecode) == (
+            bytecode_length(push_candidate) + bytecode_length(return_candidate)
+        )
+
+    def is_field_getter(self):
+        return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
+        if return_candidate == Bytecodes.invalid:
+            return False
+
+        push_candidate = self._last_bytecode_is_one_of(1, PUSH_FIELD_BYTECODES)
         if push_candidate == Bytecodes.invalid:
             return False
 
