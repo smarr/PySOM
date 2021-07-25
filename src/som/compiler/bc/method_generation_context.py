@@ -300,8 +300,12 @@ class MethodGenerationContext(MethodGenerationContextBase):
         # if (POP_FIELD == popCandidate && optimizePushFieldIncDupPopField())
         #    return true;
         self._remove_last_bytecode_at(1)  # remove DUP bytecode
-        self._reset_last_bytecode_buffer()  # prevent subsequent optimizations
-        self._last_4_bytecodes[3] = pop_candidate
+
+        # adapt last 4 bytecodes
+        assert self._last_4_bytecodes[3] == pop_candidate
+        self._last_4_bytecodes[2] = self._last_4_bytecodes[1]
+        self._last_4_bytecodes[1] = self._last_4_bytecodes[0]
+        self._last_4_bytecodes[0] = Bytecodes.invalid
 
         return True
 
