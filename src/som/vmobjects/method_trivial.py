@@ -40,6 +40,11 @@ class LiteralReturn(AbstractTrivialMethod):
         AbstractTrivialMethod.__init__(self, signature)
         self._value = value
 
+    def set_holder(self, value):
+        self._holder = value
+        if isinstance(self._value, AbstractMethod):
+            self._value.set_holder(value)
+
     def invoke_1(self, _rcvr):
         return self._value
 
@@ -61,9 +66,9 @@ class LiteralReturn(AbstractTrivialMethod):
 class GlobalRead(AbstractTrivialMethod):
     _immutable_fields_ = ["_assoc?", "_global_name", "_context_level", "universe"]
 
-    def __init__(self, signature, global_name, context_level, universe):
+    def __init__(self, signature, global_name, context_level, universe, assoc=None):
         AbstractTrivialMethod.__init__(self, signature)
-        self._assoc = None
+        self._assoc = assoc
         self._global_name = global_name
         self._context_level = context_level
 

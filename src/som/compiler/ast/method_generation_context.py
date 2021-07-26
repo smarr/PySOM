@@ -40,6 +40,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 method_body, method_body.source_section
             )
 
+        trivial_method = method_body.create_trivial_method(self._signature)
+        if trivial_method is not None:
+            return trivial_method
+
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
         # method_body = self._add_argument_initialization(method_body)

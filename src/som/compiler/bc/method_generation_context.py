@@ -100,9 +100,9 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if self._primitive:
             return empty_primitive(self._signature.get_embedded_string(), self.universe)
 
-        method = self.assemble_trivial_method()
-        if method is not None:
-            return method
+        trivial_method = self.assemble_trivial_method()
+        if trivial_method is not None:
+            return trivial_method
 
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 

@@ -1,4 +1,10 @@
-from som.interpreter.ast.frame import read_frame, read_inner, write_inner, write_frame
+from som.interpreter.ast.frame import (
+    read_frame,
+    read_inner,
+    write_inner,
+    write_frame,
+    FRAME_AND_INNER_RCVR_IDX,
+)
 from som.vmobjects.block_ast import AstBlock
 
 from som.interpreter.ast.nodes.contextual_node import ContextualNode
@@ -7,11 +13,11 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 class UninitializedReadNode(ExpressionNode):
 
-    _immutable_fields_ = ["_var", "_context_level"]
+    _immutable_fields_ = ["var", "_context_level"]
 
     def __init__(self, var, context_level, source_section):
         ExpressionNode.__init__(self, source_section)
-        self._var = var
+        self.var = var
         self._context_level = context_level
 
     def execute(self, frame):
@@ -19,9 +25,7 @@ class UninitializedReadNode(ExpressionNode):
 
     def _specialize(self):
         return self.replace(
-            self._var.get_initialized_read_node(
-                self._context_level, self.source_section
-            )
+            self.var.get_initialized_read_node(self._context_level, self.source_section)
         )
 
 
@@ -116,6 +120,9 @@ class LocalInnerVarWriteNode(_LocalVariableWriteNode):
 class LocalFrameVarReadNode(_LocalVariableNode):
     def execute(self, frame):
         return read_frame(frame, self._frame_idx)
+
+    def is_self(self):
+        return self._frame_idx == FRAME_AND_INNER_RCVR_IDX
 
 
 class LocalFrameVarWriteNode(_LocalVariableWriteNode):

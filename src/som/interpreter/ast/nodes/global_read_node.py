@@ -3,6 +3,7 @@ from som.interpreter.send import lookup_and_send_2
 from som.vm.globals import nilObject, trueObject, falseObject
 
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
+from som.vmobjects.method_trivial import GlobalRead
 
 
 def create_global_node(global_name, universe, mgenc, source_section):
@@ -48,6 +49,11 @@ class _UninitializedGlobalReadNode(ContextualNode):
         cached = _CachedGlobalReadNode(assoc, self.source_section)
         return self.replace(cached)
 
+    def create_trivial_method(self, signature):
+        return GlobalRead(
+            signature, self._global_name, self._context_level, self.universe
+        )
+
 
 class _CachedGlobalReadNode(ExpressionNode):
 
@@ -71,3 +77,5 @@ class _ConstantGlobalReadNode(ExpressionNode):
 
     def execute(self, _frame):
         return self._value
+    def create_trivial_method(self, signature):
+        return GlobalRead(signature, None, 0, None, self._assoc)
