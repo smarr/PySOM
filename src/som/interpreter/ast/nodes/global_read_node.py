@@ -1,18 +1,20 @@
 from som.interpreter.ast.nodes.contextual_node import ContextualNode
+from som.interpreter.ast.nodes.literal_node import LiteralNode
 from som.interpreter.send import lookup_and_send_2
 from som.vm.globals import nilObject, trueObject, falseObject
 
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
+from som.vmobjects.method_trivial import GlobalRead
 
 
 def create_global_node(global_name, universe, mgenc, source_section):
     glob = global_name.get_embedded_string()
     if glob == "true":
-        return _ConstantGlobalReadNode(trueObject, source_section)
+        return LiteralNode(trueObject, source_section)
     if glob == "false":
-        return _ConstantGlobalReadNode(falseObject, source_section)
+        return LiteralNode(falseObject, source_section)
     if glob == "nil":
-        return _ConstantGlobalReadNode(nilObject, source_section)
+        return LiteralNode(nilObject, source_section)
 
     assoc = universe.get_globals_association_or_none(global_name)
     if assoc is not None:
@@ -48,6 +50,11 @@ class _UninitializedGlobalReadNode(ContextualNode):
         cached = _CachedGlobalReadNode(assoc, self.source_section)
         return self.replace(cached)
 
+    def create_trivial_method(self, signature):
+        return GlobalRead(
+            signature, self._global_name, self._context_level, self.universe
+        )
+
 
 class _CachedGlobalReadNode(ExpressionNode):
 
@@ -60,14 +67,5 @@ class _CachedGlobalReadNode(ExpressionNode):
     def execute(self, _frame):
         return self._assoc.value
 
-
-class _ConstantGlobalReadNode(ExpressionNode):
-
-    _immutable_fields_ = ["_value"]
-
-    def __init__(self, value, source_section):
-        ExpressionNode.__init__(self, source_section)
-        self._value = value
-
-    def execute(self, _frame):
-        return self._value
+    def create_trivial_method(self, signature):
+        return GlobalRead(signature, None, 0, None, self._assoc)

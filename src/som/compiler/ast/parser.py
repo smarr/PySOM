@@ -6,7 +6,6 @@ from som.compiler.parser import ParserBase
 from som.compiler.symbol import Symbol
 
 from som.interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
-from som.interpreter.ast.nodes.global_read_node import create_global_node
 from som.interpreter.ast.nodes.literal_node import LiteralNode
 from som.interpreter.ast.nodes.message.super_node import (
     UnarySuper,
@@ -72,13 +71,9 @@ class Parser(ParserBase):
 
     def _create_sequence_node(self, coordinate, expressions):
         if not expressions:
-            nil_exp = create_global_node(
-                self.universe.sym_nil,
-                self.universe,
-                None,
-                self._get_source_section(coordinate),
-            )
-            return nil_exp
+            from som.vm.globals import nilObject
+
+            return LiteralNode(nilObject)
         if len(expressions) == 1:
             return expressions[0]
 

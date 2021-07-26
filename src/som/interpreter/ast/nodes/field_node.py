@@ -1,5 +1,8 @@
+from som.compiler.ast.variable import Argument
+from som.interpreter.ast.nodes.contextual_node import ContextualNode
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
-
+from som.interpreter.ast.nodes.variable_node import UninitializedReadNode
+from som.vmobjects.method_trivial import FieldRead, FieldWrite
 
 MAX_FIELD_ACCESS_CHAIN_LENGTH = 6
 
@@ -20,6 +23,13 @@ class FieldReadNode(_AbstractFieldNode):
         self_obj = self._self_exp.execute(frame)
         return self_obj.get_field(self._field_idx)
 
+    def create_trivial_method(self, signature):
+        if isinstance(self._self_exp, ContextualNode):
+            ctx_level = self._self_exp.get_context_level()
+        else:
+            ctx_level = 0
+        return FieldRead(signature, self._field_idx, ctx_level)
+
 
 class FieldWriteNode(_AbstractFieldNode):
 
@@ -35,6 +45,24 @@ class FieldWriteNode(_AbstractFieldNode):
         value = self._value_exp.execute(frame)
         self_obj.set_field(self._field_idx, value)
         return value
+
+    def create_trivial_method(self, signature):
+        if isinstance(self._self_exp, ContextualNode):
+            # block methods not currently supported
+            return None
+
+        val_exp = self._value_exp
+        if not isinstance(val_exp, UninitializedReadNode):
+            return None
+
+        var = val_exp.var
+        if isinstance(var, Argument):
+            arg_idx = var.idx
+            return FieldWrite(signature, self._field_idx, arg_idx)
+        return None
+
+    def is_trivial_in_sequence(self):  # pylint: disable=no-self-use
+        return True
 
 
 def create_read_node(self_exp, index, source_section=None):

@@ -14,6 +14,9 @@ class BlockNode(LiteralNode):
     def execute(self, _frame):
         return AstBlock(self._value, None)
 
+    def create_trivial_method(self, signature):
+        return None
+
 
 class BlockNodeWithContext(BlockNode):
     def __init__(self, value, universe, source_section=None):

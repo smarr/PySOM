@@ -10,7 +10,6 @@ from som.interp_type import is_ast_interpreter
 from som.interpreter.bc.bytecodes import Bytecodes
 from som.vm.current import current_universe
 
-
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
     is_ast_interpreter(), reason="Tests are specific to bytecode interpreter"
 )
@@ -26,7 +25,9 @@ def dump(mgenc):
 
 @pytest.fixture
 def cgenc():
-    return ClassGenerationContext(current_universe)
+    gen_c = ClassGenerationContext(current_universe)
+    gen_c.name = current_universe.symbol_for("Test")
+    return gen_c
 
 
 @pytest.fixture
