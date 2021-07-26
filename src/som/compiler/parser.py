@@ -29,7 +29,6 @@ class ParserBase(object):
         Symbol.Comma,
         Symbol.At,
         Symbol.Per,
-        Symbol.NONE,
     ]
 
     _binary_op_syms = [
@@ -50,7 +49,6 @@ class ParserBase(object):
         Symbol.Comma,
         Symbol.At,
         Symbol.Per,
-        Symbol.NONE,
     ]
 
     _keyword_selector_syms = [Symbol.Keyword, Symbol.KeywordSequence]
