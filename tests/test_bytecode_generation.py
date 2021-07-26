@@ -171,7 +171,7 @@ def test_send_dup_pop_field_return_local_period(cgenc, mgenc):
     assert Bytecodes.return_local == bytecodes[7]
 
 
-def test_block_dup_pop_argument_pop(bgenc):
+def test_block_dup_pop_argument_pop_return_arg(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1. arg ]")
 
     assert len(bytecodes) == 8
@@ -181,7 +181,7 @@ def test_block_dup_pop_argument_pop(bgenc):
     assert Bytecodes.return_local == bytecodes[7]
 
 
-def test_block_dup_pop_argument_pop_implicit_return_self(bgenc):
+def test_block_dup_pop_argument_pop_implicit_return(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1 ]")
 
     assert len(bytecodes) == 6
@@ -191,7 +191,7 @@ def test_block_dup_pop_argument_pop_implicit_return_self(bgenc):
     assert Bytecodes.return_local == bytecodes[5]
 
 
-def test_block_dup_pop_argument_pop_implicit_return_self_dot(bgenc):
+def test_block_dup_pop_argument_pop_implicit_return_dot(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1. ]")
 
     assert len(bytecodes) == 6
