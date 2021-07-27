@@ -5,6 +5,7 @@ from rlib import jit
 from rlib.string_stream import encode_to_bytes
 from rlib.exit import Exit
 from rlib.osext import path_split
+from rlib import rgc
 
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import block_evaluation_primitive
@@ -162,6 +163,12 @@ class Universe(object):
                 self._dump_bytecodes = True
             elif arguments[i] in ["-h", "--help", "-?"] and not saw_others:
                 self._print_usage_and_exit()
+            elif arguments[i] == "--no-gc" and not saw_others:
+                rgc.disable()
+                if rgc.isenabled() == 0:
+                    print("GC successfully disabled.")
+                else:
+                    print("GC still enabled.")
             else:
                 saw_others = True
                 remaining_args.append(arguments[i])
@@ -204,6 +211,8 @@ class Universe(object):
         std_println("        set search path for application classes")
         std_println("    -d  enable disassembling")
         std_println("    -h  print this help")
+        std_println("")
+        std_println("    --no-gc disable garbage collection")
 
         # Exit
         self.exit(0)
