@@ -177,10 +177,10 @@ class ParserBase(object):
             self._binary_pattern(mgenc)
 
     def _unary_pattern(self, mgenc):
-        mgenc.set_signature(self._unary_selector())
+        mgenc.signature = self._unary_selector()
 
     def _binary_pattern(self, mgenc):
-        mgenc.set_signature(self._binary_selector())
+        mgenc.signature = self._binary_selector()
         mgenc.add_argument_if_absent(self._argument())
 
     def _keyword_pattern(self, mgenc):
@@ -191,7 +191,7 @@ class ParserBase(object):
             keyword += self._keyword()
             mgenc.add_argument_if_absent(self._argument())
 
-        mgenc.set_signature(self.universe.symbol_for(keyword))
+        mgenc.signature = self.universe.symbol_for(keyword)
 
     def _unary_selector(self):
         return self.universe.symbol_for(self._identifier())
@@ -379,17 +379,6 @@ class ParserBase(object):
         if not self._lexer.peek_done:
             self._peek_for_next_symbol_from_lexer()
 
-    def _create_block_signature(self, mgenc):
-        block_sig = (
-            "$blockMethod@"
-            + str(self._lexer.line_number)
-            + "@"
-            + str(self._lexer.get_current_column())
-        )
-        arg_size = mgenc.get_number_of_arguments()
-        block_sig += ":" * (arg_size - 1)
-        return self.universe.symbol_for(block_sig)
-
     def _nested_block_signature(self, mgenc):
         self._expect(Symbol.NewBlock)
 
@@ -398,4 +387,6 @@ class ParserBase(object):
         if self._sym == Symbol.Colon:
             self._block_pattern(mgenc)
 
-        mgenc.set_signature(self._create_block_signature(mgenc))
+        mgenc.set_block_signature(
+            self._lexer.line_number, self._lexer.get_current_column()
+        )

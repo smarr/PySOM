@@ -42,6 +42,7 @@ def cgenc():
 def mgenc(cgenc):
     mgenc = MethodGenerationContext(current_universe, cgenc, None)
     mgenc.add_argument("self")
+    mgenc.signature = current_universe.symbol_for("test")
     return mgenc
 
 
