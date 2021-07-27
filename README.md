@@ -34,15 +34,18 @@ bytecode-based interpreter. One can choose between them with the `SOM_INTERP` en
 
 To check out the code, run:
 
-    git clone https://github.com/SOM-st/PySOM.git
+    git clone --recurse-submodules https://github.com/SOM-st/PySOM.git
+
+Note the `--recurse-submodules` option. It makes sure that the core library,
+i.e., the Smalltalk code is downloaded.
 
 PySOM's tests can be executed with:
 
-    ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+    SOM_INTERP=AST ./som.sh -cp Smalltalk TestSuite/TestHarness.som
    
 A simple Hello World program can be started with:
 
-    ./som.sh -cp Smalltalk Examples/Hello/Hello.som
+    SOM_INTERP=AST ./som.sh -cp Smalltalk Examples/Hello.som
 
 To compile PySOM, a recent PyPy is recommended and the RPython source
 code is required. The source distribution of PyPy 7.3 can be used like this:
