@@ -68,10 +68,11 @@ def emit_push_field(mgenc, field_name):
 
 
 def emit_push_global(mgenc, glob):
+    idx = mgenc.add_literal_if_absent(glob)
     # the block needs to be able to send #unknownGlobal: to self
     if not mgenc.is_global_known(glob):
         mgenc.mark_self_as_accessed_from_outer_context()
-    _emit2(mgenc, BC.push_global, mgenc.find_literal_index(glob))
+    _emit2(mgenc, BC.push_global, idx)
 
 
 def emit_pop_argument(mgenc, idx, ctx):

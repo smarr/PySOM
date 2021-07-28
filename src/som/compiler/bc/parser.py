@@ -314,7 +314,6 @@ class Parser(ParserBase):
         new_message = self.universe.symbol_for("new:")
         at_put_message = self.universe.symbol_for("at:put:")
 
-        mgenc.add_literal_if_absent(array_class_name)
         array_size_literal_idx = mgenc.add_literal(array_size_placeholder)
 
         # create empty array
@@ -376,7 +375,6 @@ class Parser(ParserBase):
                 mgenc.mark_self_as_accessed_from_outer_context()
             else:
                 globe = identifier
-                mgenc.add_literal_if_absent(globe)
                 emit_push_global(mgenc, globe)
 
     def _gen_pop_variable(self, mgenc, var):
