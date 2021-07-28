@@ -19,18 +19,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
     def add_embedded_block_method(self, block_method):
         self._embedded_block_methods.append(block_method)
 
-    @staticmethod
-    def _add_argument_initialization(method_body):
-        return method_body
-        # TODO: see whether that has any for of benefit, or whether that is
-        # really just for the partial evaluator, that knows a certain pattern
-
-        # writes = [LocalVariableWriteNode(arg.get_frame_idx(),
-        #                                  ArgumentReadNode(arg.get_frame_idx()))
-        #           for arg in self._arguments.values()]
-        # return ArgumentInitializationNode(writes, method_body,
-        #                                   method_body.get_source_section())
-
     def assemble(self, method_body):
         if self._primitive:
             return empty_primitive(self.signature.get_embedded_string(), self.universe)
@@ -46,7 +34,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
-        # method_body = self._add_argument_initialization(method_body)
         return AstMethod(
             self.signature,
             method_body,
