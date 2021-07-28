@@ -33,7 +33,7 @@ def cgenc():
 @pytest.fixture
 def mgenc(cgenc):
     mgenc = MethodGenerationContext(current_universe, cgenc, None)
-    mgenc.add_argument("self")
+    mgenc.add_argument("self", None, None)
     return mgenc
 
 
@@ -41,7 +41,6 @@ def mgenc(cgenc):
 def bgenc(cgenc, mgenc):
     mgenc.signature = current_universe.symbol_for("test")
     bgenc = MethodGenerationContext(current_universe, cgenc, mgenc)
-    bgenc.add_argument("$blockSelf")
     return bgenc
 
 

@@ -63,13 +63,13 @@ class MethodGenerationContext(MethodGenerationContextBase):
         # Get the constant associated to a given bytecode index
         return self._literals[self.get_bytecode(bytecode_index + 1)]
 
-    def add_argument(self, arg):
-        argument = MethodGenerationContextBase.add_argument(self, arg)
+    def add_argument(self, arg, source, parser):
+        argument = MethodGenerationContextBase.add_argument(self, arg, source, parser)
         self._arg_list.append(argument)
         return argument
 
-    def add_local(self, local):
-        local = MethodGenerationContextBase.add_local(self, local)
+    def add_local(self, local_name, source, parser):
+        local = MethodGenerationContextBase.add_local(self, local_name, source, parser)
         self._local_list.append(local)
         return local
 

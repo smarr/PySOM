@@ -1,5 +1,3 @@
-from rtruffle.source_section import SourceSection
-
 from som.compiler.ast.method_generation_context import MethodGenerationContext
 from som.compiler.parse_error import ParseError
 from som.compiler.parser import ParserBase
@@ -26,16 +24,6 @@ from som.vmobjects.string import String
 class Parser(ParserBase):
     def __init__(self, reader, file_name, universe):
         ParserBase.__init__(self, reader, file_name, universe)
-        self._source_reader = reader
-
-    def _get_source_section(self, coord):
-        return SourceSection(
-            self._source_reader,
-            "method",
-            coord,
-            self._lexer.get_number_of_characters_read(),
-            self._file_name,
-        )
 
     def _assign_source(self, node, coord):
         node.assign_source_section(self._get_source_section(coord))
