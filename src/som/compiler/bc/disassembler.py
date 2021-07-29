@@ -79,7 +79,12 @@ def dump_bytecode(m, b, indent=""):
         else:
             field_name = "Holder Not Set"
         error_println(
-            "(index: " + str(m.get_bytecode(b + 1)) + ") field: " + field_name
+            "(index: "
+            + str(m.get_bytecode(b + 1))
+            + ", context "
+            + str(m.get_bytecode(b + 2))
+            + ") field: "
+            + field_name
         )
     elif bytecode == Bytecodes.push_block:
         error_print("block: (index: " + str(m.get_bytecode(b + 1)) + ") ")
