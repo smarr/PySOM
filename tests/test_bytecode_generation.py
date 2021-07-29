@@ -57,6 +57,22 @@ def block_to_bytecodes(bgenc, source):
     return bgenc.get_bytecodes()
 
 
+@pytest.mark.parametrize(
+    "operator,bytecode",
+    [
+        ("+", Bytecodes.inc),
+        ("-", Bytecodes.dec),
+    ],
+)
+def test_inc_dec_bytecodes(mgenc, operator, bytecode):
+    bytecodes = method_to_bytecodes(mgenc, "test = ( 1 OP 1 )".replace("OP", operator))
+
+    assert len(bytecodes) == 3
+    assert bytecodes[0] == Bytecodes.push_1
+    assert bytecodes[1] == bytecode
+    assert bytecodes[2] == Bytecodes.return_self
+
+
 def test_empty_method_returns_self(mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test = ( )")
 
