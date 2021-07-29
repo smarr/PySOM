@@ -197,4 +197,4 @@ def _strip_colons_and_source_location(method_name):
 
     # replacing classic colons with triple colons to still indicate them without breaking
     # selector semantics based on colon counting
-    return name.replace(":", "⫶")
+    return name.replace(":", ";")
