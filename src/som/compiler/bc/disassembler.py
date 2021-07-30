@@ -100,9 +100,10 @@ def dump_bytecode(m, b, indent=""):
             "(index: "
             + str(m.get_bytecode(b + 1))
             + ") value: ("
+            + str(constant)
+            + " class: "
             + class_name
             + ") "
-            + str(constant)
         )
     elif bytecode == Bytecodes.push_global:
         error_println(
