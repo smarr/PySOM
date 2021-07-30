@@ -339,8 +339,6 @@ class BcMethod(BcAbstractMethod):
                 new_ctx_level = self.get_bytecode(i + 1) - 1
                 if new_ctx_level == 0:
                     emit_return_local(mgenc)
-                    # just padding to keep the same bytecode length
-                    emit1(mgenc, Bytecodes.halt)
                 else:
                     assert new_ctx_level == mgenc.get_max_context_level()
                     emit_return_non_local(mgenc)
