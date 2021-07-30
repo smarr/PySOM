@@ -809,8 +809,6 @@ def test_if_inline_and_constant_bc_length(mgenc):
         )""",
     )
 
-    dump(mgenc)
-
     assert Bytecodes.jump_on_true_top_nil == bytecodes[12]
     assert bytecodes[13] == 10, (
         "jump offset, should point to correct bytecode"
