@@ -629,77 +629,77 @@ def test_block_if_true_method_arg(mgenc, bgenc):
     assert Bytecodes.push_constant == bytecodes[13]
 
 
-def test_if_true_if_false_arg(mgenc):
-    bytecodes = method_to_bytecodes(
-        mgenc,
-        """
-        test: arg1 with: arg2 = (
-            #start.
-            self method ifTrue: [ arg1 ] ifFalse: [ arg2 ].
-            #end
-        )""",
-    )
-
-    dump(mgenc)
-    assert len(bytecodes) == 1
-
-
-def test_if_true_if_false_nlr_arg1(mgenc):
-    bytecodes = method_to_bytecodes(
-        mgenc,
-        """
-        test: arg1 with: arg2 = (
-            #start.
-            self method ifTrue: [ ^ arg1 ] ifFalse: [ arg2 ].
-            #end
-        )""",
-    )
-
-    dump(mgenc)
-    assert len(bytecodes) == 1
-
-
-def test_if_true_if_false_nlr_arg2(mgenc):
-    bytecodes = method_to_bytecodes(
-        mgenc,
-        """
-        test: arg1 with: arg2 = (
-            #start.
-            self method ifTrue: [ arg1 ] ifFalse: [ ^ arg2 ].
-            #end
-        )""",
-    )
-
-    dump(mgenc)
-    assert len(bytecodes) == 1
-
-
-def test_if_true_if_false_return(mgenc):
-    bytecodes = method_to_bytecodes(
-        mgenc,
-        """
-        test: arg1 with: arg2 = (
-            #start.
-            ^ self method ifTrue: [ ^ arg1 ] ifFalse: [ arg2 ]
-        )""",
-    )
-
-    dump(mgenc)
-    assert len(bytecodes) == 1
-
-
-def test_if_false_if_true_return(mgenc):
-    bytecodes = method_to_bytecodes(
-        mgenc,
-        """
-        test: arg1 with: arg2 = (
-            #start.
-            ^ self method ifFalse: [ ^ arg1 ] ifTrue: [ arg2 ]
-        )""",
-    )
-
-    dump(mgenc)
-    assert len(bytecodes) == 1
+# def test_if_true_if_false_arg(mgenc):
+#     bytecodes = method_to_bytecodes(
+#         mgenc,
+#         """
+#         test: arg1 with: arg2 = (
+#             #start.
+#             self method ifTrue: [ arg1 ] ifFalse: [ arg2 ].
+#             #end
+#         )""",
+#     )
+#
+#     dump(mgenc)
+#     assert len(bytecodes) == 1
+#
+#
+# def test_if_true_if_false_nlr_arg1(mgenc):
+#     bytecodes = method_to_bytecodes(
+#         mgenc,
+#         """
+#         test: arg1 with: arg2 = (
+#             #start.
+#             self method ifTrue: [ ^ arg1 ] ifFalse: [ arg2 ].
+#             #end
+#         )""",
+#     )
+#
+#     dump(mgenc)
+#     assert len(bytecodes) == 1
+#
+#
+# def test_if_true_if_false_nlr_arg2(mgenc):
+#     bytecodes = method_to_bytecodes(
+#         mgenc,
+#         """
+#         test: arg1 with: arg2 = (
+#             #start.
+#             self method ifTrue: [ arg1 ] ifFalse: [ ^ arg2 ].
+#             #end
+#         )""",
+#     )
+#
+#     dump(mgenc)
+#     assert len(bytecodes) == 1
+#
+#
+# def test_if_true_if_false_return(mgenc):
+#     bytecodes = method_to_bytecodes(
+#         mgenc,
+#         """
+#         test: arg1 with: arg2 = (
+#             #start.
+#             ^ self method ifTrue: [ ^ arg1 ] ifFalse: [ arg2 ]
+#         )""",
+#     )
+#
+#     dump(mgenc)
+#     assert len(bytecodes) == 1
+#
+#
+# def test_if_false_if_true_return(mgenc):
+#     bytecodes = method_to_bytecodes(
+#         mgenc,
+#         """
+#         test: arg1 with: arg2 = (
+#             #start.
+#             ^ self method ifFalse: [ ^ arg1 ] ifTrue: [ arg2 ]
+#         )""",
+#     )
+#
+#     dump(mgenc)
+#     assert len(bytecodes) == 1
 
 
 def test_if_push_constant_same(mgenc):
