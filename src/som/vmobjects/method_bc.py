@@ -1,19 +1,20 @@
 from __future__ import absolute_import
 
-from heapq import heappop, heappush
-
 from rlib import jit
+from rlib.min_heap_queue import heappush, heappop
 from som.compiler.bc.bytecode_generator import (
     emit1,
     emit3,
     emit_push_constant,
     emit_return_local,
     emit_return_non_local,
-    emit2,
     emit_send,
     emit_super_send,
     emit_push_global,
-    emit_push_block, emit_jump_with_dummy_offset, emit2_with_dummy,
+    emit_push_block,
+    emit2_with_dummy,
+    emit_push_field_with_index,
+    emit_pop_field_with_index,
 )
 from som.interpreter.ast.frame import (
     get_inner_as_context,
@@ -243,10 +244,10 @@ class BcMethod(BcAbstractMethod):
 
         i = 0
         while i < len(self._bytecodes):
-            while jumps and jumps[0].original_target <= i:
+            while jumps and jumps[0][0] <= i:
                 jump = heappop(jumps)
-                assert jump.original_target == i
-                mgenc.patch_jump_offset_to_point_to_next_instruction(jump.offset_idx, None)
+                assert jump[0] == i
+                mgenc.patch_jump_offset_to_point_to_next_instruction(jump[2], None)
 
             bytecode = self.get_bytecode(i)
             bc_length = bytecode_length(bytecode)
@@ -262,7 +263,12 @@ class BcMethod(BcAbstractMethod):
             ):
                 idx = self.get_bytecode(i + 1)
                 ctx_level = self.get_bytecode(i + 2)
-                emit3(mgenc, bytecode, idx, ctx_level - 1)
+                if bytecode == Bytecodes.push_field:
+                    emit_push_field_with_index(mgenc, idx, ctx_level - 1)
+                elif bytecode == Bytecodes.pop_field:
+                    emit_pop_field_with_index(mgenc, idx, ctx_level - 1)
+                else:
+                    emit3(mgenc, bytecode, idx, ctx_level - 1)
 
             elif bytecode == Bytecodes.push_local or bytecode == Bytecodes.pop_local:
                 idx = self.get_bytecode(i + 1)
@@ -353,7 +359,7 @@ class BcMethod(BcAbstractMethod):
                 # emit the jump, but instead of the offset, emit a dummy
                 idx = emit2_with_dummy(mgenc, bytecode)
                 offset = self.get_bytecode(i + 1)
-                heappush(jumps, _Jump(bytecode, i + offset, idx))
+                heappush(jumps, (i + offset, bytecode, idx))
 
             elif bytecode in RUN_TIME_ONLY_BYTECODES:
                 raise Exception(
@@ -478,17 +484,6 @@ class BcMethod(BcAbstractMethod):
 
         if removed_ctx_level == 1:
             self._lexical_scope.drop_inlined_scope()
-
-
-class _Jump(object):
-
-    def __init__(self, bytecode, target, offset_idx):
-        self.jump_bc = bytecode
-        self.original_target = target
-        self.offset_idx = offset_idx
-
-    def __lt__(self, other):
-        return self.original_target < other.original_target
 
 
 class BcMethodNLR(BcMethod):

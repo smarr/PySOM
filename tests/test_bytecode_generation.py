@@ -299,20 +299,16 @@ def test_if_true_and_inc_field(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 22
+    assert len(bytecodes) == 18
     assert Bytecodes.send_2 == bytecodes[6]
     assert Bytecodes.jump_on_false_top_nil == bytecodes[8]
-    assert bytecodes[9] == 10, "jump offset"
+    assert bytecodes[9] == 6, "jump offset"
 
-    assert Bytecodes.push_field == bytecodes[10]
-    assert bytecodes[11] == 0, "field idx"
-    assert bytecodes[12] == 0, "ctx level"
-    assert Bytecodes.inc == bytecodes[13]
-    assert Bytecodes.dup == bytecodes[14]
-    assert Bytecodes.pop_field == bytecodes[15]
-    assert bytecodes[16] == 0, "field idx"
-    assert bytecodes[17] == 0, "ctx level"
-    assert Bytecodes.pop == bytecodes[18]
+    assert Bytecodes.push_field_0 == bytecodes[10]
+    assert Bytecodes.inc == bytecodes[11]
+    assert Bytecodes.dup == bytecodes[12]
+    assert Bytecodes.pop_field_0 == bytecodes[13]
+    assert Bytecodes.pop == bytecodes[14]
 
 
 def test_if_true_and_inc_arg(mgenc):
@@ -385,20 +381,18 @@ def test_nested_ifs(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 18
+    assert len(bytecodes) == 16
     assert Bytecodes.push_global == bytecodes[0]
     assert Bytecodes.jump_on_false_top_nil == bytecodes[2]
-    assert bytecodes[3] == 15
+    assert bytecodes[3] == 13
     assert Bytecodes.jump_on_true_top_nil == bytecodes[6]
-    assert Bytecodes.push_field == bytecodes[8]
-    assert bytecodes[9] == 0, "field idx"
-    assert bytecodes[10] == 0, "ctx_level"
-    assert Bytecodes.push_argument == bytecodes[11]
-    assert bytecodes[12] == 1, "arg idx"
-    assert bytecodes[13] == 0, "ctx_level"
-    assert Bytecodes.send_2 == bytecodes[14]
-    assert Bytecodes.return_local == bytecodes[16]
-    assert Bytecodes.return_self == bytecodes[17]
+    assert Bytecodes.push_field_0 == bytecodes[8]
+    assert Bytecodes.push_argument == bytecodes[9]
+    assert bytecodes[10] == 1, "arg idx"
+    assert bytecodes[11] == 0, "ctx_level"
+    assert Bytecodes.send_2 == bytecodes[12]
+    assert Bytecodes.return_local == bytecodes[14]
+    assert Bytecodes.return_self == bytecodes[15]
 
 
 def test_nested_ifs_and_locals(cgenc, mgenc):
@@ -818,7 +812,10 @@ def test_if_inline_and_constant_bc_length(mgenc):
     dump(mgenc)
 
     assert Bytecodes.jump_on_true_top_nil == bytecodes[12]
-    assert bytecodes[13] == 10, "jump offset, should point to correct bytecode" + " and not be affected by changing length of bytecodes in the block"
+    assert bytecodes[13] == 10, (
+        "jump offset, should point to correct bytecode"
+        + " and not be affected by changing length of bytecodes in the block"
+    )
 
 
 def test_block_dup_pop_argument_pop_return_arg(bgenc):
