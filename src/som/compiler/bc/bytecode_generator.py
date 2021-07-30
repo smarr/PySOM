@@ -36,10 +36,11 @@ def emit_dup(mgenc):
 
 
 def emit_push_block(mgenc, block_method, with_ctx):
+    idx = mgenc.add_literal_if_absent(block_method)
     emit2(
         mgenc,
         BC.push_block if with_ctx else BC.push_block_no_ctx,
-        mgenc.find_literal_index(block_method),
+        idx,
     )
 
 

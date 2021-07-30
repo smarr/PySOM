@@ -159,7 +159,6 @@ class Parser(ParserBase):
             self.nested_block(bgenc)
 
             block_method = bgenc.assemble(None)
-            mgenc.add_literal(block_method)
             emit_push_block(mgenc, block_method, bgenc.requires_context())
         else:
             self._literal(mgenc)
