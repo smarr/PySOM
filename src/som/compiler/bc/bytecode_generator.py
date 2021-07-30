@@ -184,6 +184,11 @@ def emit2(mgenc, code, idx):
     mgenc.add_bytecode_argument(idx)
 
 
+def emit2_with_dummy(mgenc, code):
+    mgenc.add_bytecode(code)
+    return mgenc.add_bytecode_argument_and_get_index(0)
+
+
 def emit3(mgenc, code, idx, ctx):
     mgenc.add_bytecode(code)
     mgenc.add_bytecode_argument(idx)

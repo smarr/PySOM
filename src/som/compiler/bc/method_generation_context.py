@@ -515,7 +515,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._is_currently_inlining_a_block = True
         to_be_inlined.inline(self)
 
-        self._patch_jump_offset_to_point_to_next_instruction(
+        self.patch_jump_offset_to_point_to_next_instruction(
             jump_offset_idx_to_skip_true_branch, parser
         )
 
@@ -564,7 +564,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         jump_offset_idx_to_skip_false_branch = emit_jump_with_dummy_offset(self)
 
-        self._patch_jump_offset_to_point_to_next_instruction(
+        self.patch_jump_offset_to_point_to_next_instruction(
             jump_offset_idx_to_skip_true_branch, parser
         )
 
@@ -574,7 +574,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         to_be_inlined_2.inline(self)
         self._is_currently_inlining_a_block = False
 
-        self._patch_jump_offset_to_point_to_next_instruction(
+        self.patch_jump_offset_to_point_to_next_instruction(
             jump_offset_idx_to_skip_false_branch, parser
         )
 
@@ -583,7 +583,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         return True
 
-    def _patch_jump_offset_to_point_to_next_instruction(self, idx_of_offset, parser):
+    def patch_jump_offset_to_point_to_next_instruction(self, idx_of_offset, parser):
         instruction_start = idx_of_offset - 1
         bytecode = self._bytecode[instruction_start]
         assert is_one_of(bytecode, JUMP_BYTECODES)

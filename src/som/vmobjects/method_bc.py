@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from heapq import heappop, heappush
+
 from rlib import jit
 from som.compiler.bc.bytecode_generator import (
     emit1,
@@ -11,7 +13,7 @@ from som.compiler.bc.bytecode_generator import (
     emit_send,
     emit_super_send,
     emit_push_global,
-    emit_push_block,
+    emit_push_block, emit_jump_with_dummy_offset, emit2_with_dummy,
 )
 from som.interpreter.ast.frame import (
     get_inner_as_context,
@@ -237,8 +239,15 @@ class BcMethod(BcAbstractMethod):
         self._inline_into(mgenc)
 
     def _inline_into(self, mgenc):
+        jumps = []  # a sorted list/priority queue. sorted by original_target index
+
         i = 0
         while i < len(self._bytecodes):
+            while jumps and jumps[0].original_target <= i:
+                jump = heappop(jumps)
+                assert jump.original_target == i
+                mgenc.patch_jump_offset_to_point_to_next_instruction(jump.offset_idx, None)
+
             bytecode = self.get_bytecode(i)
             bc_length = bytecode_length(bytecode)
 
@@ -343,7 +352,10 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.jump_on_false_top_nil
                 or bytecode == Bytecodes.jump_on_false_pop
             ):
-                emit2(mgenc, bytecode, self.get_bytecode(i + 1))
+                # emit the jump, but instead of the offset, emit a dummy
+                idx = emit2_with_dummy(mgenc, bytecode)
+                offset = self.get_bytecode(i + 1)
+                heappush(jumps, _Jump(bytecode, i + offset, idx))
 
             elif bytecode in RUN_TIME_ONLY_BYTECODES:
                 raise Exception(
@@ -367,6 +379,8 @@ class BcMethod(BcAbstractMethod):
                 )
 
             i += bc_length
+
+        assert not jumps
 
     def adapt_after_inlining(self, removed_ctx_level, mgenc_with_inlined):
         i = 0
@@ -466,6 +480,17 @@ class BcMethod(BcAbstractMethod):
 
         if removed_ctx_level == 1:
             self._lexical_scope.drop_inlined_scope()
+
+
+class _Jump(object):
+
+    def __init__(self, bytecode, target, offset_idx):
+        self.jump_bc = bytecode
+        self.original_target = target
+        self.offset_idx = offset_idx
+
+    def __lt__(self, other):
+        return self.original_target < other.original_target
 
 
 class BcMethodNLR(BcMethod):
