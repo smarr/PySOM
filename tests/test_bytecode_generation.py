@@ -275,7 +275,6 @@ def test_keyword_if_true_arg(mgenc):
         )""",
     )
 
-    dump(mgenc)
     assert len(bytecodes) == 17
     assert Bytecodes.send_2 == bytecodes[6]
     assert Bytecodes.jump_on_false_top_nil == bytecodes[8]
@@ -360,7 +359,6 @@ def test_if_return_non_local(mgenc, if_selector, jump_bytecode):
         ),
     )
 
-    dump(mgenc)
     assert len(bytecodes) == 18
     assert Bytecodes.send_1 == bytecodes[5]
     assert jump_bytecode == bytecodes[7]
@@ -479,7 +477,6 @@ def test_nested_ifs_and_non_inlined_blocks(cgenc, mgenc):
         )""",
     )
 
-    dump(mgenc)
     assert len(bytecodes) == 35
     assert Bytecodes.push_global == bytecodes[4]
     assert Bytecodes.jump_on_false_top_nil == bytecodes[6]
@@ -534,7 +531,6 @@ def test_nested_non_inlined_blocks(cgenc, mgenc):
         )""",
     )
 
-    dump(mgenc)
     assert len(bytecodes) == 19
     assert Bytecodes.jump_on_true_top_nil == bytecodes[2]
     assert bytecodes[3] == 16, "jump offset"
@@ -599,7 +595,6 @@ def test_block_if_true_arg(bgenc):
         ]""",
     )
 
-    dump(bgenc)
     assert len(bytecodes) == 16
     assert Bytecodes.send_1 == bytecodes[5]
     assert Bytecodes.jump_on_false_top_nil == bytecodes[7]
@@ -623,7 +618,6 @@ def test_block_if_true_method_arg(mgenc, bgenc):
         ]""",
     )
 
-    dump(bgenc)
     assert len(bytecodes) == 16
     assert Bytecodes.jump_on_false_top_nil == bytecodes[7]
     assert bytecodes[8] == 5, "jump offset"
@@ -745,7 +739,6 @@ def test_if_push_constant_different(mgenc):
         )""",
     )
 
-    dump(mgenc)
     assert len(bytecodes) == 25
     assert Bytecodes.push_constant_0 == bytecodes[0]
     assert Bytecodes.push_constant_1 == bytecodes[2]
