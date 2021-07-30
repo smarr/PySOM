@@ -67,4 +67,4 @@ class StringStream(Stream):
         if self.pos == 0:
             self.pos = len(self._string)
             return self._string
-        return ""
+        return self.read(len(self._string) - self.pos)

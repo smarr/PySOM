@@ -1,7 +1,10 @@
+# coding: utf-8
 from collections import OrderedDict
 
 from som.compiler.ast.variable import Local, Argument
 from som.compiler.lexical_scope import LexicalScope
+from som.compiler.parse_error import ParseError
+from som.compiler.symbol import Symbol
 from som.interpreter.ast.frame import ARG_OFFSET, FRAME_AND_INNER_RCVR_IDX
 
 
@@ -13,7 +16,7 @@ class MethodGenerationContextBase(object):
         self._locals = OrderedDict()
         self.outer_genc = outer
         self.is_block_method = outer is not None
-        self._signature = None
+        self.signature = None
         self._primitive = False  # to be changed
 
         # does non-local return, directly or indirectly via a nested block
@@ -30,17 +33,14 @@ class MethodGenerationContextBase(object):
         if self.holder and self.holder.name:
             result += self.holder.name.get_embedded_string()
 
-        if self._signature:
-            result += ">>#" + self._signature.get_embedded_string()
+        if self.signature:
+            result += ">>#" + self.signature.get_embedded_string()
 
         result += ")"
         return result
 
     def set_primitive(self):
         self._primitive = True
-
-    def set_signature(self, sig):
-        self._signature = sig
 
     def has_field(self, field):
         return self.holder.has_field(field)
@@ -51,10 +51,12 @@ class MethodGenerationContextBase(object):
     def get_number_of_arguments(self):
         return len(self._arguments)
 
-    def get_signature(self):
-        return self._signature
+    def add_argument(self, arg, source, parser):
+        if arg in self._arguments:
+            raise ParseError(
+                "The argument " + arg + " was already defined.", Symbol.NONE, parser
+            )
 
-    def add_argument(self, arg):
         if (
             self.lexical_scope is None
             and (arg == "self" or arg == "$blockSelf")
@@ -63,28 +65,22 @@ class MethodGenerationContextBase(object):
             raise RuntimeError(
                 "The self argument always has to be the first argument of a method."
             )
-        argument = Argument(arg, len(self._arguments))
+        argument = Argument(arg, len(self._arguments), source)
         self._arguments[arg] = argument
         return argument
 
-    def add_argument_if_absent(self, arg):
-        if arg in self._arguments:
-            return
-        self.add_argument(arg)
+    def add_local(self, local_name, source, parser):
+        if local_name in self._locals:
+            raise ParseError(
+                "The local " + local_name + " was already defined.", Symbol.NONE, parser
+            )
 
-    def add_local(self, local):
         assert (
             self.lexical_scope is None
         ), "The lexical scope object was already constructed. Can't add another local"
-        result = Local(local, len(self._locals))
-        self._locals[local] = result
+        result = Local(local_name, len(self._locals), source)
+        self._locals[local_name] = result
         return result
-
-    def add_local_if_absent(self, local):
-        if local in self._locals:
-            return False
-        self.add_local(local)
-        return True
 
     def complete_lexical_scope(self):
         self.lexical_scope = LexicalScope(
@@ -177,3 +173,28 @@ class MethodGenerationContextBase(object):
             size_inner += 1 + 1  # OnStack marker and Receiver
 
         return arg_inner_access, size_frame, size_inner
+
+    def set_block_signature(self, line, column):
+        outer_method_name = self.outer_genc.signature.get_embedded_string()
+        outer_method_name = _strip_colons_and_source_location(outer_method_name)
+
+        num_args = self.get_number_of_arguments()
+        block_sig = "λ" + outer_method_name + "@" + str(line) + "@" + str(column)
+
+        for _ in range(num_args - 1):
+            block_sig += ":"
+
+        self.signature = self.universe.symbol_for(block_sig)
+
+
+def _strip_colons_and_source_location(method_name):
+    at_idx = method_name.find("@")
+
+    if at_idx >= 0:
+        name = method_name[:at_idx]
+    else:
+        name = method_name
+
+    # replacing classic colons with triple colons to still indicate them without breaking
+    # selector semantics based on colon counting
+    return name.replace(":", ";")

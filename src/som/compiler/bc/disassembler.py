@@ -79,18 +79,28 @@ def dump_bytecode(m, b, indent=""):
         else:
             field_name = "Holder Not Set"
         error_println(
-            "(index: " + str(m.get_bytecode(b + 1)) + ") field: " + field_name
+            "(index: "
+            + str(m.get_bytecode(b + 1))
+            + ", context "
+            + str(m.get_bytecode(b + 2))
+            + ") field: "
+            + field_name
         )
     elif bytecode == Bytecodes.push_block:
         error_print("block: (index: " + str(m.get_bytecode(b + 1)) + ") ")
         dump_method(m.get_constant(b), indent + "\t")
     elif bytecode == Bytecodes.push_constant:
         constant = m.get_constant(b)
+        constant_class = constant.get_class(current_universe)
+        if constant_class:
+            class_name = str(constant_class.get_name())
+        else:
+            class_name = "not yet supported"
         error_println(
             "(index: "
             + str(m.get_bytecode(b + 1))
             + ") value: ("
-            + str(constant.get_class(current_universe).get_name())
+            + class_name
             + ") "
             + str(constant)
         )

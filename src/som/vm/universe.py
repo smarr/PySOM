@@ -63,6 +63,10 @@ class Universe(object):
         "double_layout?",
         "_symbol_table",
         "_globals",
+        "start_time",
+        "sym_plus",
+        "sym_minus",
+        "sym_nil",
         "_object_system_initialized",
     ]
 
@@ -94,9 +98,9 @@ class Universe(object):
         self.double_class = None
         self.double_layout = None
 
-        self.sym_nil = None
-        self.sym_plus = None
-        self.sym_minus = None
+        self.sym_nil = self.symbol_for("nil")
+        self.sym_plus = self.symbol_for("+")
+        self.sym_minus = self.symbol_for("-")
 
         self._last_exit_code = 0
         self._avoid_exit = avoid_exit
@@ -297,10 +301,6 @@ class Universe(object):
         # Load the system class and create an instance of it
         self.system_class = self.load_class(self.symbol_for("System"))
         system_object = self.new_instance(self.system_class)
-
-        self.sym_nil = self.symbol_for("nil")
-        self.sym_plus = self.symbol_for("+")
-        self.sym_minus = self.symbol_for("+")
 
         # Put special objects and classes into the dictionary of globals
         self.set_global(self.sym_nil, nilObject)

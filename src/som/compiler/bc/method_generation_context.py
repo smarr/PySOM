@@ -63,13 +63,13 @@ class MethodGenerationContext(MethodGenerationContextBase):
         # Get the constant associated to a given bytecode index
         return self._literals[self.get_bytecode(bytecode_index + 1)]
 
-    def add_argument(self, arg):
-        argument = MethodGenerationContextBase.add_argument(self, arg)
+    def add_argument(self, arg, source, parser):
+        argument = MethodGenerationContextBase.add_argument(self, arg, source, parser)
         self._arg_list.append(argument)
         return argument
 
-    def add_local(self, local):
-        local = MethodGenerationContextBase.add_local(self, local)
+    def add_local(self, local_name, source, parser):
+        local = MethodGenerationContextBase.add_local(self, local_name, source, parser)
         self._local_list.append(local)
         return local
 
@@ -98,7 +98,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def assemble(self, _dummy):
         if self._primitive:
-            return empty_primitive(self._signature.get_embedded_string(), self.universe)
+            return empty_primitive(self.signature.get_embedded_string(), self.universe)
 
         trivial_method = self.assemble_trivial_method()
         if trivial_method is not None:
@@ -128,7 +128,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
             num_locals,
             max_stack_size,
             len(self._bytecode),
-            self._signature,
+            self.signature,
             arg_inner_access,
             size_frame,
             size_inner,
@@ -350,15 +350,15 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return None
 
         if len(self._literals) == 1:
-            return LiteralReturn(self._signature, self._literals[0])
+            return LiteralReturn(self.signature, self._literals[0])
         if self._bytecode[0] == Bytecodes.push_0:
-            return LiteralReturn(self._signature, int_0)
+            return LiteralReturn(self.signature, int_0)
         if self._bytecode[0] == Bytecodes.push_1:
-            return LiteralReturn(self._signature, int_1)
+            return LiteralReturn(self.signature, int_1)
         if self._bytecode[0] == Bytecodes.push_nil:
             from som.vm.globals import nilObject
 
-            return LiteralReturn(self._signature, nilObject)
+            return LiteralReturn(self.signature, nilObject)
         raise NotImplementedError(
             "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
         )
@@ -378,16 +378,16 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
             glob = global_name.get_embedded_string()
             if glob == "true":
-                return LiteralReturn(self._signature, trueObject)
+                return LiteralReturn(self.signature, trueObject)
             if glob == "false":
-                return LiteralReturn(self._signature, falseObject)
+                return LiteralReturn(self.signature, falseObject)
             if glob == "nil":
                 from som.vm.globals import nilObject
 
-                return LiteralReturn(self._signature, nilObject)
+                return LiteralReturn(self.signature, nilObject)
 
             return GlobalRead(
-                self._signature,
+                self.signature,
                 global_name,
                 self.get_max_context_level(),
                 self.universe,
@@ -413,7 +413,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
             idx = self._bytecode[-3]
             ctx = self._bytecode[-2]
 
-        return FieldRead(self._signature, idx, ctx)
+        return FieldRead(self.signature, idx, ctx)
 
     def _assemble_field_setter(self, return_candidate):
         pop_candidate = self._last_bytecode_is_one_of(1, POP_FIELD_BYTECODES)
@@ -446,7 +446,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
             assert self._bytecode[-2] == 0
 
         arg_idx = self._bytecode[-(pop_len + return_len + 2)]
-        return FieldWrite(self._signature, field_idx, arg_idx)
+        return FieldWrite(self.signature, field_idx, arg_idx)
 
 
 class FindVarResult(object):

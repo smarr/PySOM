@@ -14,9 +14,10 @@ from som.interpreter.bc.bytecodes import Bytecodes
 
 class _Variable(object):
 
-    _immutable_fields_ = ["idx", "access_idx"]
+    _immutable_fields_ = ["idx", "access_idx", "source"]
 
-    def __init__(self, name, idx):
+    def __init__(self, name, idx, source):
+        self.source = source
         self._name = name
         self._is_accessed = False
         self._is_accessed_out_of_context = False
@@ -109,8 +110,8 @@ class _Variable(object):
 
 
 class Argument(_Variable):
-    def __init__(self, name, idx):
-        _Variable.__init__(self, name, idx)
+    def __init__(self, name, idx, source):
+        _Variable.__init__(self, name, idx, source)
         assert name == "self" or name == "$blockSelf" or idx >= 0
 
     def is_self(self):

@@ -33,19 +33,19 @@ def cgenc():
 @pytest.fixture
 def mgenc(cgenc):
     mgenc = MethodGenerationContext(current_universe, cgenc, None)
-    mgenc.add_argument("self")
+    mgenc.add_argument("self", None, None)
     return mgenc
 
 
 @pytest.fixture
 def bgenc(cgenc, mgenc):
+    mgenc.signature = current_universe.symbol_for("test")
     bgenc = MethodGenerationContext(current_universe, cgenc, mgenc)
-    bgenc.add_argument("$blockSelf")
     return bgenc
 
 
 def method_to_bytecodes(mgenc, source):
-    parser = Parser(StringStream(source), "test", current_universe)
+    parser = Parser(StringStream(source.strip()), "test", current_universe)
     parser.method(mgenc)
     return mgenc.get_bytecodes()
 
@@ -55,6 +55,22 @@ def block_to_bytecodes(bgenc, source):
 
     parser.nested_block(bgenc)
     return bgenc.get_bytecodes()
+
+
+@pytest.mark.parametrize(
+    "operator,bytecode",
+    [
+        ("+", Bytecodes.inc),
+        ("-", Bytecodes.dec),
+    ],
+)
+def test_inc_dec_bytecodes(mgenc, operator, bytecode):
+    bytecodes = method_to_bytecodes(mgenc, "test = ( 1 OP 1 )".replace("OP", operator))
+
+    assert len(bytecodes) == 3
+    assert bytecodes[0] == Bytecodes.push_1
+    assert bytecodes[1] == bytecode
+    assert bytecodes[2] == Bytecodes.return_self
 
 
 def test_empty_method_returns_self(mgenc):
@@ -171,7 +187,7 @@ def test_send_dup_pop_field_return_local_period(cgenc, mgenc):
     assert Bytecodes.return_local == bytecodes[7]
 
 
-def test_block_dup_pop_argument_pop(bgenc):
+def test_block_dup_pop_argument_pop_return_arg(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1. arg ]")
 
     assert len(bytecodes) == 8
@@ -181,7 +197,7 @@ def test_block_dup_pop_argument_pop(bgenc):
     assert Bytecodes.return_local == bytecodes[7]
 
 
-def test_block_dup_pop_argument_pop_implicit_return_self(bgenc):
+def test_block_dup_pop_argument_pop_implicit_return(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1 ]")
 
     assert len(bytecodes) == 6
@@ -191,7 +207,7 @@ def test_block_dup_pop_argument_pop_implicit_return_self(bgenc):
     assert Bytecodes.return_local == bytecodes[5]
 
 
-def test_block_dup_pop_argument_pop_implicit_return_self_dot(bgenc):
+def test_block_dup_pop_argument_pop_implicit_return_dot(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1. ]")
 
     assert len(bytecodes) == 6

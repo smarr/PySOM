@@ -1,3 +1,4 @@
+from rtruffle.source_section import SourceSection
 from rlib.arithmetic import string_to_int, bigint_from_str, ParseStringOverflowError
 
 from som.compiler.lexer import Lexer
@@ -29,7 +30,6 @@ class ParserBase(object):
         Symbol.Comma,
         Symbol.At,
         Symbol.Per,
-        Symbol.NONE,
     ]
 
     _binary_op_syms = [
@@ -50,7 +50,6 @@ class ParserBase(object):
         Symbol.Comma,
         Symbol.At,
         Symbol.Per,
-        Symbol.NONE,
     ]
 
     _keyword_selector_syms = [Symbol.Keyword, Symbol.KeywordSequence]
@@ -58,12 +57,24 @@ class ParserBase(object):
     def __init__(self, reader, file_name, universe):
         self.universe = universe
         self._file_name = file_name
+
         self._lexer = Lexer(reader)
+        self._source_reader = reader
+
         self._sym = Symbol.NONE
         self._text = None
         self._next_sym = Symbol.NONE
         self._get_symbol_from_lexer()
         self._super_send = False
+
+    def _get_source_section(self, coord):
+        return SourceSection(
+            self._source_reader,
+            "method",
+            coord,
+            self._lexer.get_number_of_characters_read(),
+            self._file_name,
+        )
 
     def classdef(self, cgenc):
         cgenc.name = self.universe.symbol_for(self._text)
@@ -81,8 +92,9 @@ class ParserBase(object):
             or self._sym == Symbol.OperatorSequence
             or self._sym_in(self._binary_op_syms)
         ):
+            coord = self._lexer.get_source_coordinate()
             mgenc = MethodGenerationContext(self.universe, cgenc, None)
-            mgenc.add_argument("self")
+            mgenc.add_argument("self", self._get_source_section(coord), self)
 
             cgenc.add_instance_method(mgenc.assemble(self.method(mgenc)))
 
@@ -96,8 +108,9 @@ class ParserBase(object):
                 or self._sym == Symbol.OperatorSequence
                 or self._sym_in(self._binary_op_syms)
             ):
+                coord = self._lexer.get_source_coordinate()
                 mgenc = MethodGenerationContext(self.universe, cgenc, None)
-                mgenc.add_argument("self")
+                mgenc.add_argument("self", self._get_source_section(coord), self)
 
                 cgenc.add_class_method(mgenc.assemble(self.method(mgenc)))
 
@@ -179,21 +192,24 @@ class ParserBase(object):
             self._binary_pattern(mgenc)
 
     def _unary_pattern(self, mgenc):
-        mgenc.set_signature(self._unary_selector())
+        mgenc.signature = self._unary_selector()
 
     def _binary_pattern(self, mgenc):
-        mgenc.set_signature(self._binary_selector())
-        mgenc.add_argument_if_absent(self._argument())
+        mgenc.signature = self._binary_selector()
+        coord = self._lexer.get_source_coordinate()
+        mgenc.add_argument(self._argument(), self._get_source_section(coord), self)
 
     def _keyword_pattern(self, mgenc):
         keyword = self._keyword()
-        mgenc.add_argument_if_absent(self._argument())
+        coord = self._lexer.get_source_coordinate()
+        mgenc.add_argument(self._argument(), self._get_source_section(coord), self)
 
         while self._sym == Symbol.Keyword:
             keyword += self._keyword()
-            mgenc.add_argument_if_absent(self._argument())
+            coord = self._lexer.get_source_coordinate()
+            mgenc.add_argument(self._argument(), self._get_source_section(coord), self)
 
-        mgenc.set_signature(self.universe.symbol_for(keyword))
+        mgenc.signature = self.universe.symbol_for(keyword)
 
     def _unary_selector(self):
         return self.universe.symbol_for(self._identifier())
@@ -235,7 +251,10 @@ class ParserBase(object):
 
     def _locals(self, mgenc):
         while self._sym_is_identifier():
-            mgenc.add_local_if_absent(self._variable())
+            coordinate = self._lexer.get_source_coordinate()
+            mgenc.add_local(
+                self._variable(), self._get_source_section(coordinate), self
+            )
 
     def _variable(self):
         return self._identifier()
@@ -338,11 +357,13 @@ class ParserBase(object):
 
     def _block_arguments(self, mgenc):
         self._expect(Symbol.Colon)
-        mgenc.add_argument_if_absent(self._argument())
+        coord = self._lexer.get_source_coordinate()
+        mgenc.add_argument(self._argument(), self._get_source_section(coord), self)
 
         while self._sym == Symbol.Colon:
             self._accept(Symbol.Colon)
-            mgenc.add_argument_if_absent(self._argument())
+            coord = self._lexer.get_source_coordinate()
+            mgenc.add_argument(self._argument(), self._get_source_section(coord), self)
 
     def method(self, mgenc):
         self._pattern(mgenc)
@@ -381,23 +402,15 @@ class ParserBase(object):
         if not self._lexer.peek_done:
             self._peek_for_next_symbol_from_lexer()
 
-    def _create_block_signature(self, mgenc):
-        block_sig = (
-            "$blockMethod@"
-            + str(self._lexer.line_number)
-            + "@"
-            + str(self._lexer.get_current_column())
-        )
-        arg_size = mgenc.get_number_of_arguments()
-        block_sig += ":" * (arg_size - 1)
-        return self.universe.symbol_for(block_sig)
-
     def _nested_block_signature(self, mgenc):
+        coord = self._lexer.get_source_coordinate()
         self._expect(Symbol.NewBlock)
 
-        mgenc.add_argument_if_absent("$blockSelf")
+        mgenc.add_argument("$blockSelf", self._get_source_section(coord), self)
 
         if self._sym == Symbol.Colon:
             self._block_pattern(mgenc)
 
-        mgenc.set_signature(self._create_block_signature(mgenc))
+        mgenc.set_block_signature(
+            self._lexer.line_number, self._lexer.get_current_column()
+        )

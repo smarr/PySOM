@@ -19,36 +19,23 @@ class MethodGenerationContext(MethodGenerationContextBase):
     def add_embedded_block_method(self, block_method):
         self._embedded_block_methods.append(block_method)
 
-    @staticmethod
-    def _add_argument_initialization(method_body):
-        return method_body
-        # TODO: see whether that has any for of benefit, or whether that is
-        # really just for the partial evaluator, that knows a certain pattern
-
-        # writes = [LocalVariableWriteNode(arg.get_frame_idx(),
-        #                                  ArgumentReadNode(arg.get_frame_idx()))
-        #           for arg in self._arguments.values()]
-        # return ArgumentInitializationNode(writes, method_body,
-        #                                   method_body.get_source_section())
-
     def assemble(self, method_body):
         if self._primitive:
-            return empty_primitive(self._signature.get_embedded_string(), self.universe)
+            return empty_primitive(self.signature.get_embedded_string(), self.universe)
 
         if self.needs_to_catch_non_local_returns:
             method_body = CatchNonLocalReturnNode(
                 method_body, method_body.source_section
             )
 
-        trivial_method = method_body.create_trivial_method(self._signature)
+        trivial_method = method_body.create_trivial_method(self.signature)
         if trivial_method is not None:
             return trivial_method
 
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
-        # method_body = self._add_argument_initialization(method_body)
         return AstMethod(
-            self._signature,
+            self.signature,
             method_body,
             arg_inner_access,
             size_frame,
@@ -65,7 +52,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
             identifier="%s>>#%s"
             % (
                 self.holder.name.get_embedded_string(),
-                self._signature.get_embedded_string(),
+                self.signature.get_embedded_string(),
             ),
             source_section=src_body,
         )
