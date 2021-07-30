@@ -247,9 +247,12 @@ class Parser(ParserBase):
             self._formula(mgenc)
 
         if not is_super_send and (
-            keyword == "ifTrue:"
-            and mgenc.inline_if_true_or_if_false(self, True)
+            (keyword == "ifTrue:" and mgenc.inline_if_true_or_if_false(self, True))
             or (keyword == "ifFalse:" and mgenc.inline_if_true_or_if_false(self, False))
+            or (keyword == "ifTrue:ifFalse:" and mgenc.inline_if_true_false(self, True))
+            or (
+                keyword == "ifFalse:ifTrue:" and mgenc.inline_if_true_false(self, False)
+            )
         ):
             return
 

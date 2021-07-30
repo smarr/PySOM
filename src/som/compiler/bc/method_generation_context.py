@@ -1,5 +1,8 @@
 from rlib.debug import make_sure_not_resized
-from som.compiler.bc.bytecode_generator import emit_jump_on_bool_with_dummy_offset
+from som.compiler.bc.bytecode_generator import (
+    emit_jump_on_bool_with_dummy_offset,
+    emit_jump_with_dummy_offset,
+)
 
 from som.compiler.method_generation_context import MethodGenerationContextBase
 from som.compiler.parse_error import ParseError
@@ -338,6 +341,18 @@ class MethodGenerationContext(MethodGenerationContextBase):
         assert bc_offset >= 0
         del self._bytecode[bc_offset : bc_offset + bc_length]
 
+    def _remove_last_bytecodes(self, num_bytecodes):
+        bytes_to_remove = 0
+
+        for idx_from_end in range(num_bytecodes):
+            bytes_to_remove += bytecode_length(
+                self._last_4_bytecodes[_NUM_LAST_BYTECODES - 1 - idx_from_end]
+            )
+
+        offset = len(self._bytecode) - bytes_to_remove
+        assert offset >= 0
+        del self._bytecode[offset:]
+
     def _reset_last_bytecode_buffer(self):
         self._last_4_bytecodes[0] = Bytecodes.invalid
         self._last_4_bytecodes[1] = Bytecodes.invalid
@@ -488,7 +503,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         assert bytecode_length(push_block_candidate) == 2
         block_literal_idx = self._bytecode[-1]
 
-        self._remove_last_bytecode_at(0)  # remove push_block*
+        self._remove_last_bytecodes(1)  # remove push_block*
 
         jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
             self, is_if_true, False
@@ -506,6 +521,64 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         # with the jumping, it's best to prevent any subsequent optimizations here
         # otherwise we may not have the correct jump target
+        self._reset_last_bytecode_buffer()
+
+        return True
+
+    def _has_two_literal_block_arguments(self):
+        if self._last_bytecode_is_one_of(0, PUSH_BLOCK_BYTECODES) == Bytecodes.invalid:
+            return False
+
+        return (
+            self._last_bytecode_is_one_of(1, PUSH_BLOCK_BYTECODES) != Bytecodes.invalid
+        )
+
+    def inline_if_true_false(self, parser, is_if_true):
+        # HACK: We do assume that the receiver on the stack is a boolean,
+        # HACK: similar to the IfTrueIfFalseNode.
+        # HACK: We don't support anything but booleans at the moment.
+
+        if not self._has_two_literal_block_arguments():
+            return False
+
+        assert (
+            bytecode_length(Bytecodes.push_block) == 2
+            and bytecode_length(Bytecodes.push_block_no_ctx) == 2
+        )
+
+        block_1_lit_idx = self._bytecode[-3]
+        block_2_lit_idx = self._bytecode[-1]
+
+        # grab the blocks' methods for inlining
+        to_be_inlined_1 = self._literals[block_1_lit_idx]
+        to_be_inlined_2 = self._literals[block_2_lit_idx]
+
+        self._remove_last_bytecodes(2)
+
+        jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
+            self, is_if_true, True
+        )
+
+        self._is_currently_inlining_a_block = True
+        to_be_inlined_1.inline(self)
+
+        jump_offset_idx_to_skip_false_branch = emit_jump_with_dummy_offset(self)
+
+        self._patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_skip_true_branch, parser
+        )
+
+        # prevent optimizations between blocks to avoid issues with jump targets
+        self._reset_last_bytecode_buffer()
+
+        to_be_inlined_2.inline(self)
+        self._is_currently_inlining_a_block = False
+
+        self._patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_skip_false_branch, parser
+        )
+
+        # prevent optimizations messing with the final jump target
         self._reset_last_bytecode_buffer()
 
         return True

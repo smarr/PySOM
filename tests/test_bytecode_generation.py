@@ -629,77 +629,124 @@ def test_block_if_true_method_arg(mgenc, bgenc):
     assert Bytecodes.push_constant == bytecodes[13]
 
 
-# def test_if_true_if_false_arg(mgenc):
-#     bytecodes = method_to_bytecodes(
-#         mgenc,
-#         """
-#         test: arg1 with: arg2 = (
-#             #start.
-#             self method ifTrue: [ arg1 ] ifFalse: [ arg2 ].
-#             #end
-#         )""",
-#     )
-#
-#     dump(mgenc)
-#     assert len(bytecodes) == 1
-#
-#
-# def test_if_true_if_false_nlr_arg1(mgenc):
-#     bytecodes = method_to_bytecodes(
-#         mgenc,
-#         """
-#         test: arg1 with: arg2 = (
-#             #start.
-#             self method ifTrue: [ ^ arg1 ] ifFalse: [ arg2 ].
-#             #end
-#         )""",
-#     )
-#
-#     dump(mgenc)
-#     assert len(bytecodes) == 1
-#
-#
-# def test_if_true_if_false_nlr_arg2(mgenc):
-#     bytecodes = method_to_bytecodes(
-#         mgenc,
-#         """
-#         test: arg1 with: arg2 = (
-#             #start.
-#             self method ifTrue: [ arg1 ] ifFalse: [ ^ arg2 ].
-#             #end
-#         )""",
-#     )
-#
-#     dump(mgenc)
-#     assert len(bytecodes) == 1
-#
-#
-# def test_if_true_if_false_return(mgenc):
-#     bytecodes = method_to_bytecodes(
-#         mgenc,
-#         """
-#         test: arg1 with: arg2 = (
-#             #start.
-#             ^ self method ifTrue: [ ^ arg1 ] ifFalse: [ arg2 ]
-#         )""",
-#     )
-#
-#     dump(mgenc)
-#     assert len(bytecodes) == 1
-#
-#
-# def test_if_false_if_true_return(mgenc):
-#     bytecodes = method_to_bytecodes(
-#         mgenc,
-#         """
-#         test: arg1 with: arg2 = (
-#             #start.
-#             ^ self method ifFalse: [ ^ arg1 ] ifTrue: [ arg2 ]
-#         )""",
-#     )
-#
-#     dump(mgenc)
-#     assert len(bytecodes) == 1
+def test_if_true_if_false_arg(mgenc):
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test: arg1 with: arg2 = (
+            #start.
+            self method ifTrue: [ arg1 ] ifFalse: [ arg2 ].
+            #end
+        )""",
+    )
+
+    assert len(bytecodes) == 21
+    assert Bytecodes.jump_on_false_pop == bytecodes[7]
+    assert bytecodes[8] == 7, "jump offset"
+
+    assert Bytecodes.push_argument == bytecodes[9]
+    assert bytecodes[10] == 1, "arg1 idx"
+    assert bytecodes[11] == 0, "arg1 ctx level"
+
+    assert Bytecodes.jump == bytecodes[12]
+    assert bytecodes[13] == 5, "jump offset"
+
+    assert Bytecodes.push_argument == bytecodes[14]
+    assert bytecodes[15] == 2, "arg1 idx"
+    assert bytecodes[16] == 0, "arg1 ctx level"
+
+    assert Bytecodes.pop == bytecodes[17]
+
+
+def test_if_true_if_false_nlr_arg1(mgenc):
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test: arg1 with: arg2 = (
+            #start.
+            self method ifTrue: [ ^ arg1 ] ifFalse: [ arg2 ].
+            #end
+        )""",
+    )
+
+    assert len(bytecodes) == 23
+    assert Bytecodes.jump_on_false_pop == bytecodes[7]
+    assert bytecodes[8] == 9, "jump offset"
+
+    assert Bytecodes.push_argument == bytecodes[9]
+    assert bytecodes[10] == 1, "arg1 idx"
+    assert bytecodes[11] == 0, "arg1 ctx level"
+
+    assert Bytecodes.return_local == bytecodes[12]
+    assert Bytecodes.halt == bytecodes[13]
+
+    assert Bytecodes.jump == bytecodes[14]
+    assert bytecodes[15] == 5, "jump offset"
+
+    assert Bytecodes.push_argument == bytecodes[16]
+    assert bytecodes[17] == 2, "arg1 idx"
+    assert bytecodes[18] == 0, "arg1 ctx level"
+
+    assert Bytecodes.pop == bytecodes[19]
+
+
+def test_if_true_if_false_nlr_arg2(mgenc):
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test: arg1 with: arg2 = (
+            #start.
+            self method ifTrue: [ arg1 ] ifFalse: [ ^ arg2 ].
+            #end
+        )""",
+    )
+
+    assert len(bytecodes) == 23
+    assert Bytecodes.jump_on_false_pop == bytecodes[7]
+    assert bytecodes[8] == 7, "jump offset"
+
+    assert Bytecodes.push_argument == bytecodes[9]
+    assert bytecodes[10] == 1, "arg1 idx"
+    assert bytecodes[11] == 0, "arg1 ctx level"
+
+    assert Bytecodes.jump == bytecodes[12]
+    assert bytecodes[13] == 7, "jump offset"
+
+    assert Bytecodes.push_argument == bytecodes[14]
+    assert bytecodes[15] == 2, "arg1 idx"
+    assert bytecodes[16] == 0, "arg1 ctx level"
+
+    assert Bytecodes.return_local == bytecodes[17]
+    assert Bytecodes.pop == bytecodes[19]
+
+
+@pytest.mark.parametrize(
+    "sel1,sel2,jump_bytecode",
+    [
+        ("ifTrue:", "ifFalse:", Bytecodes.jump_on_false_pop),
+        ("ifFalse:", "ifTrue:", Bytecodes.jump_on_true_pop),
+    ],
+)
+def test_if_true_if_false_return(mgenc, sel1, sel2, jump_bytecode):
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test: arg1 with: arg2 = (
+            #start.
+            ^ self method SEL1 [ ^ arg1 ] SEL2 [ arg2 ]
+        )""".replace(
+            "SEL1", sel1
+        ).replace(
+            "SEL2", sel2
+        ),
+    )
+
+    assert len(bytecodes) == 20
+    assert jump_bytecode == bytecodes[7]
+    assert bytecodes[8] == 9, "jump offset"
+
+    assert Bytecodes.jump == bytecodes[14]
+    assert bytecodes[15] == 5, "jump offset"
 
 
 def test_if_push_constant_same(mgenc):

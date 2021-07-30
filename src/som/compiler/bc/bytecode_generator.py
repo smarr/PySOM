@@ -169,6 +169,12 @@ def emit_jump_on_bool_with_dummy_offset(mgenc, is_if_true, needs_pop):
     return idx
 
 
+def emit_jump_with_dummy_offset(mgenc):
+    emit1(mgenc, BC.jump)
+    idx = mgenc.add_bytecode_argument_and_get_index(0)
+    return idx
+
+
 def emit1(mgenc, code):
     mgenc.add_bytecode(code)
 
