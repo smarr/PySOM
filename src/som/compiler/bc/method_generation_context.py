@@ -167,9 +167,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return self.outer_genc.get_local(index, context - 1)
         return self._local_list[index]
 
-    def get_inlined_local_idx(self, var):
+    def get_inlined_local_idx(self, var, ctx_level):
         for i in range(len(self._local_list) - 1, -1, -1):
             if self._local_list[i].source is var.source:
+                self._local_list[i].mark_accessed(ctx_level)
                 return i
         raise Exception(
             "Unexpected issue trying to find an inlined variable. "

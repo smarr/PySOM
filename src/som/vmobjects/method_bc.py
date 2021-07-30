@@ -262,7 +262,7 @@ class BcMethod(BcAbstractMethod):
                     # these have been inlined into the outer context already
                     # so, we need to look up the right one
                     var = self._lexical_scope.get_local(idx, 0)
-                    idx = mgenc.get_inlined_local_idx(var)
+                    idx = mgenc.get_inlined_local_idx(var, 0)
                 else:
                     ctx_level -= 1
                 emit3(mgenc, bytecode, idx, ctx_level)
@@ -430,7 +430,9 @@ class BcMethod(BcAbstractMethod):
                     # at this point, the lexical scope has not been changed
                     # so, we should still be able to find the right one
                     old_var = self._lexical_scope.get_local(idx, ctx_level)
-                    new_idx = mgenc_with_inlined.get_inlined_local_idx(old_var)
+                    new_idx = mgenc_with_inlined.get_inlined_local_idx(
+                        old_var, ctx_level
+                    )
                     self.set_bytecode(i + 1, new_idx)
                 elif ctx_level > removed_ctx_level:
                     self.set_bytecode(i + 2, ctx_level - 1)
