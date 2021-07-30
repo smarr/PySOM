@@ -598,7 +598,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
     def _check_jump_offset(parser, jump_offset, bytecode):
         from som.compiler.symbol import Symbol
 
-        if not -128 <= jump_offset <= 127:
+        if not 0 <= jump_offset < 256:
             raise ParseError(
                 "The jump_offset for the "
                 + bytecode_as_str(bytecode)
