@@ -82,6 +82,20 @@ class MethodGenerationContextBase(object):
         self._locals[local_name] = result
         return result
 
+    def inline_locals(self, local_vars):
+        fresh_copies = []
+        for local in local_vars:
+            fresh_copy = local.copy_for_inlining(len(self._locals))
+            if fresh_copy:
+                # fresh_copy can be None, because we don't need the $blockSelf
+                name = local.get_qualified_name()
+                assert name not in self._locals
+                self._locals[name] = fresh_copy
+                fresh_copies.append(fresh_copy)
+
+        self.lexical_scope.add_inlined_locals(fresh_copies)
+        return fresh_copies
+
     def complete_lexical_scope(self):
         self.lexical_scope = LexicalScope(
             self.outer_genc.lexical_scope if self.outer_genc else None,

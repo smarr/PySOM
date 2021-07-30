@@ -1,4 +1,5 @@
 from rlib.jit import elidable_promote, unroll_safe
+from som.compiler.bc.bytecode_generator import emit_push_constant, emit_push_global
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.bc.frame import stack_pop_old_arguments_and_push_result
 from som.interpreter.send import lookup_and_send_2
@@ -62,6 +63,9 @@ class LiteralReturn(AbstractTrivialMethod):
             self._value,
         )
 
+    def inline(self, mgenc):
+        emit_push_constant(mgenc, self._value)
+
 
 class GlobalRead(AbstractTrivialMethod):
     _immutable_fields_ = ["_assoc?", "_global_name", "_context_level", "universe"]
@@ -104,6 +108,9 @@ class GlobalRead(AbstractTrivialMethod):
             num_args,
             value,
         )
+
+    def inline(self, mgenc):
+        emit_push_global(mgenc, self._global_name)
 
 
 class FieldRead(AbstractTrivialMethod):

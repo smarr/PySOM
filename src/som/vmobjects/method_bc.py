@@ -1,6 +1,18 @@
 from __future__ import absolute_import
 
 from rlib import jit
+from som.compiler.bc.bytecode_generator import (
+    emit1,
+    emit3,
+    emit_push_constant,
+    emit_return_local,
+    emit_return_non_local,
+    emit2,
+    emit_send,
+    emit_super_send,
+    emit_push_global,
+    emit_push_block,
+)
 from som.interpreter.ast.frame import (
     get_inner_as_context,
     mark_as_no_longer_on_stack,
@@ -8,7 +20,13 @@ from som.interpreter.ast.frame import (
     create_frame_1,
     create_frame_2,
 )
-from som.interpreter.bc.bytecodes import Bytecodes
+from som.interpreter.bc.bytecodes import (
+    Bytecodes,
+    bytecode_length,
+    RUN_TIME_ONLY_BYTECODES,
+    bytecode_as_str,
+    NOT_EXPECTED_IN_BLOCK_BYTECODES,
+)
 
 from som.interpreter.bc.frame import (
     create_frame,
@@ -214,6 +232,239 @@ class BcMethod(BcAbstractMethod):
             stack, stack_ptr, self._number_of_arguments, result
         )
 
+    def inline(self, mgenc):
+        mgenc.merge_into_scope(self._lexical_scope)
+        self._inline_into(mgenc)
+
+    def _inline_into(self, mgenc):
+        i = 0
+        while i < len(self._bytecodes):
+            bytecode = self.get_bytecode(i)
+            bc_length = bytecode_length(bytecode)
+
+            if bytecode == Bytecodes.halt or bytecode == Bytecodes.dup:
+                emit1(mgenc, bytecode)
+
+            elif (
+                bytecode == Bytecodes.push_field
+                or bytecode == Bytecodes.pop_field
+                or bytecode == Bytecodes.push_argument
+                or bytecode == Bytecodes.pop_argument
+            ):
+                idx = self.get_bytecode(i + 1)
+                ctx_level = self.get_bytecode(i + 2)
+                emit3(mgenc, bytecode, idx, ctx_level - 1)
+
+            elif bytecode == Bytecodes.push_local or bytecode == Bytecodes.pop_local:
+                idx = self.get_bytecode(i + 1)
+                ctx_level = self.get_bytecode(i + 2)
+                if ctx_level == 0:
+                    # these have been inlined into the outer context already
+                    # so, we need to look up the right one
+                    var = self._lexical_scope.get_local(idx, 0)
+                    idx = mgenc.get_inlined_local_idx(var)
+                else:
+                    ctx_level -= 1
+                emit3(mgenc, bytecode, idx, ctx_level)
+
+            elif bytecode == Bytecodes.push_block:
+                literal_idx = self.get_bytecode(i + 1)
+                block_method = self._literals[literal_idx]
+                block_method.adapt_after_inlining(1, mgenc)
+                emit_push_block(mgenc, block_method, True)
+
+            elif bytecode == Bytecodes.push_block_no_ctx:
+                literal_idx = self.get_bytecode(i + 1)
+                block_method = self._literals[literal_idx]
+                emit_push_block(mgenc, block_method, False)
+
+            elif bytecode == Bytecodes.push_constant:
+                literal_idx = self.get_bytecode(i + 1)
+                literal = self._literals[literal_idx]
+                emit_push_constant(mgenc, literal)
+
+            elif (
+                bytecode == Bytecodes.push_constant_0
+                or bytecode == Bytecodes.push_constant_1
+                or bytecode == Bytecodes.push_constant_2
+            ):
+                literal_idx = bytecode - Bytecodes.push_constant_0
+                literal = self._literals[literal_idx]
+                emit_push_constant(mgenc, literal)
+
+            elif (
+                bytecode == Bytecodes.push_0
+                or bytecode == Bytecodes.push_1
+                or bytecode == Bytecodes.push_nil
+                or bytecode == Bytecodes.pop
+                or bytecode == Bytecodes.inc
+                or bytecode == Bytecodes.dec
+            ):
+                emit1(mgenc, bytecode)
+
+            elif bytecode == Bytecodes.push_global:
+                literal_idx = self.get_bytecode(i + 1)
+                sym = self._literals[literal_idx]
+                emit_push_global(mgenc, sym)
+
+            elif (
+                bytecode == Bytecodes.send_1
+                or bytecode == Bytecodes.send_2
+                or bytecode == Bytecodes.send_3
+                or bytecode == Bytecodes.send_n
+            ):
+                literal_idx = self.get_bytecode(i + 1)
+                sym = self._literals[literal_idx]
+                emit_send(mgenc, sym)
+
+            elif bytecode == Bytecodes.super_send:
+                literal_idx = self.get_bytecode(i + 1)
+                sym = self._literals[literal_idx]
+                emit_super_send(mgenc, sym)
+
+            elif bytecode == Bytecodes.return_local:
+                # NO OP, doesn't need to be translated
+                pass
+
+            elif bytecode == Bytecodes.return_non_local:
+                new_ctx_level = self.get_bytecode(i + 1) - 1
+                if new_ctx_level == 0:
+                    emit_return_local(mgenc)
+                    # just padding to keep the same bytecode length
+                    emit1(mgenc, Bytecodes.halt)
+                else:
+                    assert new_ctx_level == mgenc.get_max_context_level()
+                    emit_return_non_local(mgenc)
+
+            elif (
+                bytecode == Bytecodes.jump
+                or bytecode == Bytecodes.jump_on_true_top_nil
+                or bytecode == Bytecodes.jump_on_true_pop
+                or bytecode == Bytecodes.jump_on_false_top_nil
+                or bytecode == Bytecodes.jump_on_false_pop
+            ):
+                emit2(mgenc, bytecode, self.get_bytecode(i + 1))
+
+            elif bytecode in RUN_TIME_ONLY_BYTECODES:
+                raise Exception(
+                    "Found an unexpected bytecode. i: "
+                    + str(i)
+                    + " bytecode: "
+                    + bytecode_as_str(bytecode)
+                )
+
+            elif bytecode in NOT_EXPECTED_IN_BLOCK_BYTECODES:
+                raise Exception(
+                    "Found "
+                    + bytecode_as_str(bytecode)
+                    + " bytecode, but it's not expected in a block method"
+                )
+            else:
+                raise Exception(
+                    "Found "
+                    + bytecode_as_str(bytecode)
+                    + " bytecode, but inlining does not handle it yet."
+                )
+
+            i += bc_length
+
+    def adapt_after_inlining(self, removed_ctx_level, mgenc_with_inlined):
+        i = 0
+        while i < len(self._bytecodes):
+            bytecode = self.get_bytecode(i)
+            bc_length = bytecode_length(bytecode)
+
+            if (
+                bytecode == Bytecodes.halt
+                or bytecode == Bytecodes.dup
+                or bytecode == Bytecodes.push_block_no_ctx
+                or bytecode == Bytecodes.push_constant
+                or bytecode == Bytecodes.push_constant_0
+                or bytecode == Bytecodes.push_constant_1
+                or bytecode == Bytecodes.push_constant_2
+                or bytecode == Bytecodes.push_0
+                or bytecode == Bytecodes.push_1
+                or bytecode == Bytecodes.push_nil
+                or bytecode == Bytecodes.push_global
+                or bytecode == Bytecodes.pop  # push_global doesn't encode context
+                or bytecode == Bytecodes.send_1
+                or bytecode == Bytecodes.send_2
+                or bytecode == Bytecodes.send_3
+                or bytecode == Bytecodes.send_n
+                or bytecode == Bytecodes.super_send
+                or bytecode == Bytecodes.return_local
+                or bytecode == Bytecodes.inc
+                or bytecode == Bytecodes.dec
+                or bytecode == Bytecodes.jump
+                or bytecode == Bytecodes.jump_on_true_top_nil
+                or bytecode == Bytecodes.jump_on_true_pop
+                or bytecode == Bytecodes.jump_on_false_top_nil
+                or bytecode == Bytecodes.jump_on_false_pop
+            ):
+                # don't use context
+                pass
+
+            elif (
+                bytecode == Bytecodes.push_field
+                or bytecode == Bytecodes.pop_field
+                or bytecode == Bytecodes.push_argument
+                or bytecode == Bytecodes.pop_argument
+            ):
+                ctx_level = self.get_bytecode(i + 2)
+                if ctx_level > removed_ctx_level:
+                    self.set_bytecode(i + 2, ctx_level - 1)
+
+            elif bytecode == Bytecodes.push_block:
+                literal_idx = self.get_bytecode(i + 1)
+                block_method = self._literals[literal_idx]
+                block_method.adapt_after_inlining(
+                    removed_ctx_level + 1, mgenc_with_inlined
+                )
+
+            elif bytecode == Bytecodes.push_local or bytecode == Bytecodes.pop_local:
+                ctx_level = self.get_bytecode(i + 2)
+                if ctx_level == removed_ctx_level:
+                    idx = self.get_bytecode(i + 1)
+                    # locals have been inlined into the outer context already
+                    # so, we need to look up the right one and fix up the index
+                    # at this point, the lexical scope has not been changed
+                    # so, we should still be able to find the right one
+                    old_var = self._lexical_scope.get_local(idx, ctx_level)
+                    new_idx = mgenc_with_inlined.get_inlined_local_idx(old_var)
+                    self.set_bytecode(i + 1, new_idx)
+                elif ctx_level > removed_ctx_level:
+                    self.set_bytecode(i + 2, ctx_level - 1)
+
+            elif bytecode == Bytecodes.return_non_local:
+                ctx_level = self.get_bytecode(i + 1)
+                self.set_bytecode(i + 1, ctx_level - 1)
+
+            elif bytecode in RUN_TIME_ONLY_BYTECODES:
+                raise Exception(
+                    "Found an unexpected bytecode. i: "
+                    + str(i)
+                    + " bytecode: "
+                    + bytecode_as_str(bytecode)
+                )
+
+            elif bytecode in NOT_EXPECTED_IN_BLOCK_BYTECODES:
+                raise Exception(
+                    "Found "
+                    + bytecode_as_str(bytecode)
+                    + " bytecode, but it's not expected in a block method"
+                )
+            else:
+                raise Exception(
+                    "Found "
+                    + bytecode_as_str(bytecode)
+                    + " bytecode, but adapt_after_inlining does not handle it yet."
+                )
+
+            i += bc_length
+
+        if removed_ctx_level == 1:
+            self._lexical_scope.drop_inlined_scope()
+
 
 class BcMethodNLR(BcMethod):
     def invoke_1(self, rcvr):
@@ -266,3 +517,9 @@ class BcMethodNLR(BcMethod):
                     stack, stack_ptr, self._number_of_arguments, e.get_result()
                 )
             raise e
+
+    def inline(self, mgenc):
+        raise Exception(
+            "Blocks should never handle non-local returns. "
+            "So, this should not happen."
+        )

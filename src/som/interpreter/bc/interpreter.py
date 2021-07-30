@@ -13,7 +13,7 @@ from som.interpreter.bc.frame import (
 )
 from som.interpreter.control_flow import ReturnException
 from som.interpreter.send import lookup_and_send_2, lookup_and_send_3
-from som.vm.globals import nilObject
+from som.vm.globals import nilObject, trueObject, falseObject
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import BcBlock
 from som.vmobjects.integer import int_0, int_1
@@ -469,6 +469,37 @@ def interpret(method, frame, max_stack_size):
             else:
                 return _not_yet_implemented()
             stack[stack_ptr] = result
+
+        elif bytecode == Bytecodes.jump:
+            next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
+
+        elif bytecode == Bytecodes.jump_on_true_top_nil:
+            val = stack[stack_ptr]
+            if val is trueObject:
+                next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
+                stack[stack_ptr] = nilObject
+            else:
+                stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump_on_false_top_nil:
+            val = stack[stack_ptr]
+            if val is falseObject:
+                next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
+                stack[stack_ptr] = nilObject
+            else:
+                stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump_on_true_pop:
+            val = stack[stack_ptr]
+            if val is trueObject:
+                next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
+            stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump_on_false_pop:
+            val = stack[stack_ptr]
+            if val is falseObject:
+                next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
+            stack_ptr -= 1
 
         elif bytecode == Bytecodes.q_super_send_1:
             invokable = method.get_inline_cache_invokable(current_bc_idx)

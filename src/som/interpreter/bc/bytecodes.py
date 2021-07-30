@@ -65,7 +65,13 @@ class Bytecodes(object):
     inc = return_self + 1
     dec = inc + 1
 
-    q_super_send_1 = dec + 1
+    jump = dec + 1
+    jump_on_true_top_nil = jump + 1
+    jump_on_false_top_nil = jump_on_true_top_nil + 1
+    jump_on_true_pop = jump_on_false_top_nil + 1
+    jump_on_false_pop = jump_on_true_pop + 1
+
+    q_super_send_1 = jump_on_false_pop + 1
     q_super_send_2 = q_super_send_1 + 1
     q_super_send_3 = q_super_send_2 + 1
     q_super_send_n = q_super_send_3 + 1
@@ -78,6 +84,13 @@ class Bytecodes(object):
     invalid = pop_argument + 1
 
 
+def is_one_of(bytecode, candidates):
+    for c in candidates:
+        if c == bytecode:
+            return True
+    return False
+
+
 _NUM_BYTECODES = Bytecodes.pop_argument + 1
 
 POP_X_BYTECODES = [
@@ -87,6 +100,8 @@ POP_X_BYTECODES = [
     Bytecodes.pop_field_0,
     Bytecodes.pop_field_1,
 ]
+
+PUSH_BLOCK_BYTECODES = [Bytecodes.push_block, Bytecodes.push_block_no_ctx]
 
 PUSH_CONST_BYTECODES = [
     Bytecodes.push_constant,
@@ -108,6 +123,44 @@ POP_FIELD_BYTECODES = [
     Bytecodes.pop_field,
     Bytecodes.pop_field_0,
     Bytecodes.pop_field_1,
+]
+
+JUMP_BYTECODES = [
+    Bytecodes.jump,
+    Bytecodes.jump_on_true_top_nil,
+    Bytecodes.jump_on_true_pop,
+    Bytecodes.jump_on_false_pop,
+    Bytecodes.jump_on_false_top_nil,
+]
+
+RUN_TIME_ONLY_BYTECODES = [
+    Bytecodes.push_frame,
+    Bytecodes.push_frame_0,
+    Bytecodes.push_frame_1,
+    Bytecodes.push_frame_2,
+    Bytecodes.push_inner,
+    Bytecodes.push_inner_1,
+    Bytecodes.push_inner_2,
+    Bytecodes.pop_frame,
+    Bytecodes.pop_frame_1,
+    Bytecodes.pop_frame_2,
+    Bytecodes.pop_inner,
+    Bytecodes.pop_inner_0,
+    Bytecodes.pop_inner_1,
+    Bytecodes.pop_inner_2,
+    Bytecodes.q_super_send_1,
+    Bytecodes.q_super_send_2,
+    Bytecodes.q_super_send_3,
+    Bytecodes.q_super_send_n,
+]
+
+NOT_EXPECTED_IN_BLOCK_BYTECODES = [
+    Bytecodes.halt,
+    Bytecodes.push_field_0,
+    Bytecodes.push_field_1,
+    Bytecodes.pop_field_0,
+    Bytecodes.pop_field_1,
+    Bytecodes.return_self,
 ]
 
 _BYTECODE_LENGTH = [
@@ -150,12 +203,17 @@ _BYTECODE_LENGTH = [
     2,  # send_2
     2,  # send_3
     2,  # send_n
-    2,  # super_send_1
+    2,  # super_send
     1,  # return_local
     2,  # return_non_local
     1,  # return_self
     1,  # inc
     1,  # dec
+    2,  # jump
+    2,  # jump_on_true_top_nil
+    2,  # jump_on_false_top_nil
+    2,  # jump_on_true_pop
+    2,  # jump_on_false_pop
     2,  # q_super_send_1
     2,  # q_super_send_2
     2,  # q_super_send_3
@@ -216,6 +274,11 @@ _BYTECODE_STACK_EFFECT = [
     0,  # return_self
     0,  # inc
     0,  # dec
+    0,  # jump
+    0,  # jump_on_true_top_nil
+    0,  # jump_on_false_top_nil
+    -1,  # jump_on_true_pop
+    -1,  # jump_on_false_pop
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_1
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_2
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_3

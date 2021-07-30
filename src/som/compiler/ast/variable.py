@@ -108,6 +108,15 @@ class _Variable(object):
                 return Bytecodes.pop_frame_2
         return Bytecodes.pop_frame
 
+    def get_qualified_name(self):
+        return (
+            self._name
+            + ":"
+            + str(self.source.coord.start_line)
+            + ":"
+            + str(self.source.coord.start_column)
+        )
+
 
 class Argument(_Variable):
     def __init__(self, name, idx, source):
@@ -136,6 +145,18 @@ class Argument(_Variable):
             return LocalFrameVarReadNode(FRAME_AND_INNER_RCVR_IDX, source_section)
         return _Variable.get_initialized_read_node(self, context_level, source_section)
 
+    def copy_for_inlining(self, idx):
+        if self._name == "$blockSelf":
+            return None
+        return Argument(self._name, idx, self.source)
+
+    def __str__(self):
+        return "Argument(" + self._name + " idx: " + str(self.idx) + ")"
+
 
 class Local(_Variable):
-    pass
+    def copy_for_inlining(self, idx):
+        return Local(self._name, idx, self.source)
+
+    def __str__(self):
+        return "Local(" + self._name + " idx: " + str(self.idx) + ")"

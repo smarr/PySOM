@@ -1,6 +1,8 @@
 from rlib.debug import make_sure_not_resized
+from som.compiler.bc.bytecode_generator import emit_jump_on_bool_with_dummy_offset
 
 from som.compiler.method_generation_context import MethodGenerationContextBase
+from som.compiler.parse_error import ParseError
 from som.interpreter.bc.bytecodes import (
     bytecode_stack_effect,
     bytecode_stack_effect_depends_on_send,
@@ -10,6 +12,10 @@ from som.interpreter.bc.bytecodes import (
     PUSH_CONST_BYTECODES,
     PUSH_FIELD_BYTECODES,
     POP_FIELD_BYTECODES,
+    PUSH_BLOCK_BYTECODES,
+    bytecode_as_str,
+    is_one_of,
+    JUMP_BYTECODES,
 )
 from som.vmobjects.integer import int_0, int_1
 from som.vmobjects.method_trivial import (
@@ -41,6 +47,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._local_list = []
 
         self._last_4_bytecodes = [Bytecodes.invalid] * _NUM_LAST_BYTECODES
+        self._is_currently_inlining_a_block = False
 
     def get_number_of_locals(self):
         return len(self._local_list)
@@ -72,6 +79,12 @@ class MethodGenerationContext(MethodGenerationContextBase):
         local = MethodGenerationContextBase.add_local(self, local_name, source, parser)
         self._local_list.append(local)
         return local
+
+    def inline_locals(self, local_vars):
+        fresh_copies = MethodGenerationContextBase.inline_locals(self, local_vars)
+        if fresh_copies:
+            self._local_list.extend(fresh_copies)
+        return fresh_copies
 
     def assemble_trivial_method(self):
         return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
@@ -153,6 +166,16 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if context > 0:
             return self.outer_genc.get_local(index, context - 1)
         return self._local_list[index]
+
+    def get_inlined_local_idx(self, var):
+        for i in range(len(self._local_list) - 1, -1, -1):
+            if self._local_list[i].source is var.source:
+                return i
+        raise Exception(
+            "Unexpected issue trying to find an inlined variable. "
+            + str(var)
+            + " could not be found."
+        )
 
     def _compute_stack_depth(self):
         depth = 0
@@ -261,6 +284,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def add_bytecode_argument(self, bytecode):
         self._bytecode.append(bytecode)
+
+    def add_bytecode_argument_and_get_index(self, bytecode):
+        idx = len(self._bytecode)
+        self._bytecode.append(bytecode)
+        return idx
 
     def has_bytecode(self):
         return len(self._bytecode) > 0
@@ -447,6 +475,68 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         arg_idx = self._bytecode[-(pop_len + return_len + 2)]
         return FieldWrite(self.signature, field_idx, arg_idx)
+
+    def inline_if_true_or_if_false(self, parser, is_if_true):
+        # HACK: We do assume that the receiver on the stack is a boolean,
+        # HACK: similar to the IfTrueIfFalseNode.
+        # HACK: We don't support anything but booleans at the moment.
+        push_block_candidate = self._last_bytecode_is_one_of(0, PUSH_BLOCK_BYTECODES)
+        if push_block_candidate == Bytecodes.invalid:
+            return False
+
+        assert bytecode_length(push_block_candidate) == 2
+        block_literal_idx = self._bytecode[-1]
+
+        self._remove_last_bytecode_at(0)  # remove push_block*
+
+        jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
+            self, is_if_true, False
+        )
+
+        # TODO: remove the block from the literal list
+        to_be_inlined = self._literals[block_literal_idx]
+
+        self._is_currently_inlining_a_block = True
+        to_be_inlined.inline(self)
+
+        self._patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_skip_true_branch, parser
+        )
+
+        # with the jumping, it's best to prevent any subsequent optimizations here
+        # otherwise we may not have the correct jump target
+        self._reset_last_bytecode_buffer()
+
+        return True
+
+    def _patch_jump_offset_to_point_to_next_instruction(self, idx_of_offset, parser):
+        instruction_start = idx_of_offset - 1
+        bytecode = self._bytecode[instruction_start]
+        assert is_one_of(bytecode, JUMP_BYTECODES)
+
+        jump_offset = len(self._bytecode) - instruction_start
+
+        self._check_jump_offset(parser, jump_offset, bytecode)
+
+        self._bytecode[idx_of_offset] = jump_offset
+
+    @staticmethod
+    def _check_jump_offset(parser, jump_offset, bytecode):
+        if not -128 <= jump_offset <= 127:
+            raise ParseError(
+                "The jump_offset for the "
+                + bytecode_as_str(bytecode)
+                + " bytecode is out of range: "
+                + str(jump_offset),
+                None,
+                parser,
+            )
+
+    def merge_into_scope(self, scope_to_be_inlined):
+        assert len(scope_to_be_inlined.arguments) == 1
+        local_vars = scope_to_be_inlined.locals
+        if local_vars:
+            self.inline_locals(local_vars)
 
 
 class FindVarResult(object):

@@ -155,6 +155,20 @@ def emit_push_constant_index(mgenc, lit_index):
     emit2(mgenc, BC.push_constant, lit_index)
 
 
+def emit_jump_on_bool_with_dummy_offset(mgenc, is_if_true, needs_pop):
+    # Remember: true and false seem flipped here.
+    # This is because if the test passes, the block is inlined directly.
+    # But if the test fails, we need to jump.
+    # Thus, an  `#ifTrue:` needs to generated a jump_on_false.
+    if is_if_true:
+        emit1(mgenc, BC.jump_on_false_pop if needs_pop else BC.jump_on_false_top_nil)
+    else:
+        emit1(mgenc, BC.jump_on_true_pop if needs_pop else BC.jump_on_true_top_nil)
+
+    idx = mgenc.add_bytecode_argument_and_get_index(0)
+    return idx
+
+
 def emit1(mgenc, code):
     mgenc.add_bytecode(code)
 

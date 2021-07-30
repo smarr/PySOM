@@ -246,6 +246,13 @@ class Parser(ParserBase):
             keyword += self._keyword()
             self._formula(mgenc)
 
+        if not is_super_send and (
+            keyword == "ifTrue:"
+            and mgenc.inline_if_true_or_if_false(self, True)
+            or (keyword == "ifFalse:" and mgenc.inline_if_true_or_if_false(self, False))
+        ):
+            return
+
         msg = self.universe.symbol_for(keyword)
 
         if is_super_send:
