@@ -263,6 +263,7 @@ class BcMethod(BcAbstractMethod):
             ):
                 idx = self.get_bytecode(i + 1)
                 ctx_level = self.get_bytecode(i + 2)
+                assert ctx_level > 0
                 if bytecode == Bytecodes.push_field:
                     emit_push_field_with_index(mgenc, idx, ctx_level - 1)
                 elif bytecode == Bytecodes.pop_field:
@@ -285,7 +286,7 @@ class BcMethod(BcAbstractMethod):
             elif bytecode == Bytecodes.push_block:
                 literal_idx = self.get_bytecode(i + 1)
                 block_method = self._literals[literal_idx]
-                block_method.adapt_after_inlining(1, mgenc)
+                block_method.adapt_after_outer_inlined(1, mgenc)
                 emit_push_block(mgenc, block_method, True)
 
             elif bytecode == Bytecodes.push_block_no_ctx:
@@ -386,7 +387,7 @@ class BcMethod(BcAbstractMethod):
 
         assert not jumps
 
-    def adapt_after_inlining(self, removed_ctx_level, mgenc_with_inlined):
+    def adapt_after_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
         i = 0
         while i < len(self._bytecodes):
             bytecode = self.get_bytecode(i)
@@ -435,7 +436,7 @@ class BcMethod(BcAbstractMethod):
             elif bytecode == Bytecodes.push_block:
                 literal_idx = self.get_bytecode(i + 1)
                 block_method = self._literals[literal_idx]
-                block_method.adapt_after_inlining(
+                block_method.adapt_after_outer_inlined(
                     removed_ctx_level + 1, mgenc_with_inlined
                 )
 
@@ -477,7 +478,7 @@ class BcMethod(BcAbstractMethod):
                 raise Exception(
                     "Found "
                     + bytecode_as_str(bytecode)
-                    + " bytecode, but adapt_after_inlining does not handle it yet."
+                    + " bytecode, but adapt_after_outer_inlined does not handle it yet."
                 )
 
             i += bc_length

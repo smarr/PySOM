@@ -43,6 +43,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
             # copy list to make it immutable for RPython
             self._embedded_block_methods[:],
             self._get_source_section_for_method(method_body),
+            self.lexical_scope,
         )
 
     def _get_source_section_for_method(self, expr):

@@ -239,12 +239,14 @@ class Parser(ParserBase):
         is_super_send = self._super_send
         self._super_send = False
 
-        keyword = self._keyword()
+        keyword_parts = [self._keyword()]
         self._formula(mgenc)
 
         while self._sym == Symbol.Keyword:
-            keyword += self._keyword()
+            keyword_parts.append(self._keyword())
             self._formula(mgenc)
+
+        keyword = "".join(keyword_parts)
 
         if not is_super_send and (
             (keyword == "ifTrue:" and mgenc.inline_if_true_or_if_false(self, True))

@@ -16,6 +16,10 @@ from som.interpreter.ast.nodes.message.uninitialized_node import (
 )
 from som.interpreter.ast.nodes.return_non_local_node import ReturnNonLocalNode
 from som.interpreter.ast.nodes.sequence_node import SequenceNode
+from som.interpreter.ast.nodes.specialized.literal_if import (
+    IfInlinedNode,
+    IfElseInlinedNode,
+)
 
 from som.vmobjects.array import Array
 from som.vmobjects.string import String
@@ -210,18 +214,71 @@ class Parser(ParserBase):
 
         return operand
 
+    @staticmethod
+    def _try_inlining_if(if_true, receiver, arguments, source, mgenc):
+        arg = arguments[0]
+        if not isinstance(arg, BlockNode):
+            return None
+
+        method = arg.get_method()
+        body_expr = method.inline(mgenc)
+        return IfInlinedNode(receiver, body_expr, if_true, source)
+
+    @staticmethod
+    def _try_inlining_if_else(if_true, receiver, arguments, source, mgenc):
+        arg1 = arguments[0]
+        if not isinstance(arg1, BlockNode):
+            return None
+
+        arg2 = arguments[1]
+        if not isinstance(arg2, BlockNode):
+            return None
+
+        true_expr = arg1.get_method().inline(mgenc)
+        false_expr = arg2.get_method().inline(mgenc)
+        return IfElseInlinedNode(receiver, true_expr, false_expr, if_true, source)
+
     def _keyword_message(self, mgenc, receiver):
         is_super_send = self._super_send
 
         coord = self._lexer.get_source_coordinate()
         arguments = []
-        keyword = []
+        keyword_parts = []
 
         while self._sym == Symbol.Keyword:
-            keyword.append(self._keyword())
+            keyword_parts.append(self._keyword())
             arguments.append(self._formula(mgenc))
 
-        selector = self.universe.symbol_for("".join(keyword))
+        keyword = "".join(keyword_parts)
+        source = self._get_source_section(coord)
+
+        if not is_super_send:
+            if keyword == "ifTrue:":
+                inlined = self._try_inlining_if(
+                    True, receiver, arguments, source, mgenc
+                )
+                if inlined is not None:
+                    return inlined
+            elif keyword == "ifFalse:":
+                inlined = self._try_inlining_if(
+                    False, receiver, arguments, source, mgenc
+                )
+                if inlined is not None:
+                    return inlined
+            elif keyword == "ifTrue:ifFalse:":
+                inlined = self._try_inlining_if_else(
+                    True, receiver, arguments, source, mgenc
+                )
+                if inlined is not None:
+                    return inlined
+            elif keyword == "ifFalse:ifTrue:":
+                inlined = self._try_inlining_if_else(
+                    False, receiver, arguments, source, mgenc
+                )
+                if inlined is not None:
+                    return inlined
+
+        selector = self.universe.symbol_for(keyword)
 
         if is_super_send:
             num_args = len(arguments) + 1

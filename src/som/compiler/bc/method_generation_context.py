@@ -608,12 +608,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 parser,
             )
 
-    def merge_into_scope(self, scope_to_be_inlined):
-        assert len(scope_to_be_inlined.arguments) == 1
-        local_vars = scope_to_be_inlined.locals
-        if local_vars:
-            self.inline_locals(local_vars)
-
 
 class FindVarResult(object):
     def __init__(self, var, context, is_argument):

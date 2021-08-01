@@ -1,5 +1,4 @@
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
-from som.vmobjects.method_trivial import LiteralReturn
 
 
 class LiteralNode(ExpressionNode):
@@ -14,4 +13,6 @@ class LiteralNode(ExpressionNode):
         return self._value
 
     def create_trivial_method(self, signature):
+        from som.vmobjects.method_trivial import LiteralReturn
+
         return LiteralReturn(signature, self._value)

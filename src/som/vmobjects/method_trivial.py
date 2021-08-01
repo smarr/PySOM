@@ -1,5 +1,6 @@
 from rlib.jit import elidable_promote, unroll_safe
 from som.compiler.bc.bytecode_generator import emit_push_constant, emit_push_global
+from som.interp_type import is_ast_interpreter
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.bc.frame import stack_pop_old_arguments_and_push_result
 from som.interpreter.send import lookup_and_send_2
@@ -63,8 +64,17 @@ class LiteralReturn(AbstractTrivialMethod):
             self._value,
         )
 
-    def inline(self, mgenc):
-        emit_push_constant(mgenc, self._value)
+    if is_ast_interpreter():
+
+        def inline(self, _mgenc):
+            from som.interpreter.ast.nodes.literal_node import LiteralNode
+
+            return LiteralNode(self._value)
+
+    else:
+
+        def inline(self, mgenc):
+            emit_push_constant(mgenc, self._value)
 
 
 class GlobalRead(AbstractTrivialMethod):
@@ -109,8 +119,17 @@ class GlobalRead(AbstractTrivialMethod):
             value,
         )
 
-    def inline(self, mgenc):
-        emit_push_global(mgenc, self._global_name)
+    if is_ast_interpreter():
+
+        def inline(self, mgenc):
+            from som.interpreter.ast.nodes.global_read_node import create_global_node
+
+            return create_global_node(self._global_name, self.universe, mgenc, None)
+
+    else:
+
+        def inline(self, mgenc):
+            emit_push_global(mgenc, self._global_name)
 
 
 class FieldRead(AbstractTrivialMethod):
