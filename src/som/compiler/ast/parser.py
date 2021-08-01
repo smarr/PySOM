@@ -20,6 +20,7 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
     IfInlinedNode,
     IfElseInlinedNode,
 )
+from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
 
 from som.vmobjects.array import Array
 from som.vmobjects.string import String
@@ -238,6 +239,18 @@ class Parser(ParserBase):
         false_expr = arg2.get_method().inline(mgenc)
         return IfElseInlinedNode(receiver, true_expr, false_expr, if_true, source)
 
+    @staticmethod
+    def _try_inlining_while(while_true, receiver, arguments, source, mgenc):
+        if not isinstance(receiver, BlockNode):
+            return None
+
+        if not isinstance(arguments[0], BlockNode):
+            return None
+
+        cond_expr = receiver.get_method().inline(mgenc)
+        body_expr = arguments[0].get_method().inline(mgenc)
+        return WhileInlinedNode(cond_expr, body_expr, while_true, source)
+
     def _keyword_message(self, mgenc, receiver):
         is_super_send = self._super_send
 
@@ -252,31 +265,47 @@ class Parser(ParserBase):
         keyword = "".join(keyword_parts)
         source = self._get_source_section(coord)
 
+        num_args = len(arguments)
+
         if not is_super_send:
-            if keyword == "ifTrue:":
-                inlined = self._try_inlining_if(
-                    True, receiver, arguments, source, mgenc
-                )
-                if inlined is not None:
-                    return inlined
-            elif keyword == "ifFalse:":
-                inlined = self._try_inlining_if(
-                    False, receiver, arguments, source, mgenc
-                )
-                if inlined is not None:
-                    return inlined
-            elif keyword == "ifTrue:ifFalse:":
-                inlined = self._try_inlining_if_else(
-                    True, receiver, arguments, source, mgenc
-                )
-                if inlined is not None:
-                    return inlined
-            elif keyword == "ifFalse:ifTrue:":
-                inlined = self._try_inlining_if_else(
-                    False, receiver, arguments, source, mgenc
-                )
-                if inlined is not None:
-                    return inlined
+            if num_args == 1:
+                if keyword == "ifTrue:":
+                    inlined = self._try_inlining_if(
+                        True, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "ifFalse:":
+                    inlined = self._try_inlining_if(
+                        False, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "whileTrue:":
+                    inlined = self._try_inlining_while(
+                        True, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "whileFalse:":
+                    inlined = self._try_inlining_while(
+                        False, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+            elif num_args == 2:
+                if keyword == "ifTrue:ifFalse:":
+                    inlined = self._try_inlining_if_else(
+                        True, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "ifFalse:ifTrue:":
+                    inlined = self._try_inlining_if_else(
+                        False, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
 
         selector = self.universe.symbol_for(keyword)
 
