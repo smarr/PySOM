@@ -96,6 +96,7 @@ class AstMethod(AbstractMethod):
         "_size_inner",
         "_embedded_block_methods",
         "source_section",
+        "_lexical_scope",
     ]
 
     def __init__(
@@ -107,6 +108,7 @@ class AstMethod(AbstractMethod):
         size_inner,
         embedded_block_methods,
         source_section,
+        lexical_scope,
     ):
         AbstractMethod.__init__(self, signature)
 
@@ -121,6 +123,8 @@ class AstMethod(AbstractMethod):
         self.source_section = source_section
 
         self.invokable = _Invokable(expr_or_sequence)
+
+        self._lexical_scope = lexical_scope
 
     def set_holder(self, value):
         self._holder = value
@@ -176,3 +180,15 @@ class AstMethod(AbstractMethod):
             node._size_inner,
         )
         return node.invokable.expr_or_sequence.execute(frame)
+
+    def inline(self, mgenc):
+        mgenc.merge_into_scope(self._lexical_scope)
+        self.invokable.expr_or_sequence.adapt_after_inlining(mgenc)
+        return self.invokable.expr_or_sequence
+
+    def adapt_after_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
+        self.invokable.expr_or_sequence.adapt_after_outer_inlined(
+            removed_ctx_level, mgenc_with_inlined
+        )
+        if removed_ctx_level == 1:
+            self._lexical_scope.drop_inlined_scope()

@@ -55,6 +55,9 @@ class _UninitializedGlobalReadNode(ContextualNode):
             signature, self._global_name, self._context_level, self.universe
         )
 
+    def handle_inlining(self, mgenc):
+        self._context_level -= 1
+
 
 class _CachedGlobalReadNode(ExpressionNode):
 

@@ -82,6 +82,31 @@ class MethodGenerationContextBase(object):
         self._locals[local_name] = result
         return result
 
+    def inline_locals(self, local_vars):
+        fresh_copies = []
+        for local in local_vars:
+            fresh_copy = local.copy_for_inlining(len(self._locals))
+            if fresh_copy:
+                # fresh_copy can be None, because we don't need the $blockSelf
+                name = local.get_qualified_name()
+                assert name not in self._locals
+                self._locals[name] = fresh_copy
+                fresh_copies.append(fresh_copy)
+
+        self.lexical_scope.add_inlined_locals(fresh_copies)
+        return fresh_copies
+
+    def get_inlined_local(self, var, ctx_level):
+        for local in self._locals.values():
+            if local.source is var.source:
+                local.mark_accessed(ctx_level)
+                return local
+        raise Exception(
+            "Unexpected issue trying to find an inlined variable. "
+            + str(var)
+            + " could not be found."
+        )
+
     def complete_lexical_scope(self):
         self.lexical_scope = LexicalScope(
             self.outer_genc.lexical_scope if self.outer_genc else None,
@@ -185,6 +210,12 @@ class MethodGenerationContextBase(object):
             block_sig += ":"
 
         self.signature = self.universe.symbol_for(block_sig)
+
+    def merge_into_scope(self, scope_to_be_inlined):
+        assert len(scope_to_be_inlined.arguments) == 1
+        local_vars = scope_to_be_inlined.locals
+        if local_vars:
+            self.inline_locals(local_vars)
 
 
 def _strip_colons_and_source_location(method_name):

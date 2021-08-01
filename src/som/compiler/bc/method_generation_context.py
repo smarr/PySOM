@@ -1,6 +1,11 @@
 from rlib.debug import make_sure_not_resized
+from som.compiler.bc.bytecode_generator import (
+    emit_jump_on_bool_with_dummy_offset,
+    emit_jump_with_dummy_offset,
+)
 
 from som.compiler.method_generation_context import MethodGenerationContextBase
+from som.compiler.parse_error import ParseError
 from som.interpreter.bc.bytecodes import (
     bytecode_stack_effect,
     bytecode_stack_effect_depends_on_send,
@@ -10,6 +15,10 @@ from som.interpreter.bc.bytecodes import (
     PUSH_CONST_BYTECODES,
     PUSH_FIELD_BYTECODES,
     POP_FIELD_BYTECODES,
+    PUSH_BLOCK_BYTECODES,
+    bytecode_as_str,
+    is_one_of,
+    JUMP_BYTECODES,
 )
 from som.vmobjects.integer import int_0, int_1
 from som.vmobjects.method_trivial import (
@@ -41,6 +50,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._local_list = []
 
         self._last_4_bytecodes = [Bytecodes.invalid] * _NUM_LAST_BYTECODES
+        self._is_currently_inlining_a_block = False
 
     def get_number_of_locals(self):
         return len(self._local_list)
@@ -72,6 +82,12 @@ class MethodGenerationContext(MethodGenerationContextBase):
         local = MethodGenerationContextBase.add_local(self, local_name, source, parser)
         self._local_list.append(local)
         return local
+
+    def inline_locals(self, local_vars):
+        fresh_copies = MethodGenerationContextBase.inline_locals(self, local_vars)
+        if fresh_copies:
+            self._local_list.extend(fresh_copies)
+        return fresh_copies
 
     def assemble_trivial_method(self):
         return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
@@ -153,6 +169,17 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if context > 0:
             return self.outer_genc.get_local(index, context - 1)
         return self._local_list[index]
+
+    def get_inlined_local_idx(self, var, ctx_level):
+        for i in range(len(self._local_list) - 1, -1, -1):
+            if self._local_list[i].source is var.source:
+                self._local_list[i].mark_accessed(ctx_level)
+                return i
+        raise Exception(
+            "Unexpected issue trying to find an inlined variable. "
+            + str(var)
+            + " could not be found."
+        )
 
     def _compute_stack_depth(self):
         depth = 0
@@ -262,6 +289,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
     def add_bytecode_argument(self, bytecode):
         self._bytecode.append(bytecode)
 
+    def add_bytecode_argument_and_get_index(self, bytecode):
+        idx = len(self._bytecode)
+        self._bytecode.append(bytecode)
+        return idx
+
     def has_bytecode(self):
         return len(self._bytecode) > 0
 
@@ -308,6 +340,18 @@ class MethodGenerationContext(MethodGenerationContextBase):
         assert bc_length > 0
         assert bc_offset >= 0
         del self._bytecode[bc_offset : bc_offset + bc_length]
+
+    def _remove_last_bytecodes(self, num_bytecodes):
+        bytes_to_remove = 0
+
+        for idx_from_end in range(num_bytecodes):
+            bytes_to_remove += bytecode_length(
+                self._last_4_bytecodes[_NUM_LAST_BYTECODES - 1 - idx_from_end]
+            )
+
+        offset = len(self._bytecode) - bytes_to_remove
+        assert offset >= 0
+        del self._bytecode[offset:]
 
     def _reset_last_bytecode_buffer(self):
         self._last_4_bytecodes[0] = Bytecodes.invalid
@@ -447,6 +491,122 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         arg_idx = self._bytecode[-(pop_len + return_len + 2)]
         return FieldWrite(self.signature, field_idx, arg_idx)
+
+    def inline_if_true_or_if_false(self, parser, is_if_true):
+        # HACK: We do assume that the receiver on the stack is a boolean,
+        # HACK: similar to the IfTrueIfFalseNode.
+        # HACK: We don't support anything but booleans at the moment.
+        push_block_candidate = self._last_bytecode_is_one_of(0, PUSH_BLOCK_BYTECODES)
+        if push_block_candidate == Bytecodes.invalid:
+            return False
+
+        assert bytecode_length(push_block_candidate) == 2
+        block_literal_idx = self._bytecode[-1]
+
+        self._remove_last_bytecodes(1)  # remove push_block*
+
+        jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
+            self, is_if_true, False
+        )
+
+        # TODO: remove the block from the literal list
+        to_be_inlined = self._literals[block_literal_idx]
+
+        self._is_currently_inlining_a_block = True
+        to_be_inlined.inline(self)
+
+        self.patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_skip_true_branch, parser
+        )
+
+        # with the jumping, it's best to prevent any subsequent optimizations here
+        # otherwise we may not have the correct jump target
+        self._reset_last_bytecode_buffer()
+
+        return True
+
+    def _has_two_literal_block_arguments(self):
+        if self._last_bytecode_is_one_of(0, PUSH_BLOCK_BYTECODES) == Bytecodes.invalid:
+            return False
+
+        return (
+            self._last_bytecode_is_one_of(1, PUSH_BLOCK_BYTECODES) != Bytecodes.invalid
+        )
+
+    def inline_if_true_false(self, parser, is_if_true):
+        # HACK: We do assume that the receiver on the stack is a boolean,
+        # HACK: similar to the IfTrueIfFalseNode.
+        # HACK: We don't support anything but booleans at the moment.
+
+        if not self._has_two_literal_block_arguments():
+            return False
+
+        assert (
+            bytecode_length(Bytecodes.push_block) == 2
+            and bytecode_length(Bytecodes.push_block_no_ctx) == 2
+        )
+
+        block_1_lit_idx = self._bytecode[-3]
+        block_2_lit_idx = self._bytecode[-1]
+
+        # grab the blocks' methods for inlining
+        to_be_inlined_1 = self._literals[block_1_lit_idx]
+        to_be_inlined_2 = self._literals[block_2_lit_idx]
+
+        self._remove_last_bytecodes(2)
+
+        jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
+            self, is_if_true, True
+        )
+
+        self._is_currently_inlining_a_block = True
+        to_be_inlined_1.inline(self)
+
+        jump_offset_idx_to_skip_false_branch = emit_jump_with_dummy_offset(self)
+
+        self.patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_skip_true_branch, parser
+        )
+
+        # prevent optimizations between blocks to avoid issues with jump targets
+        self._reset_last_bytecode_buffer()
+
+        to_be_inlined_2.inline(self)
+        self._is_currently_inlining_a_block = False
+
+        self.patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_skip_false_branch, parser
+        )
+
+        # prevent optimizations messing with the final jump target
+        self._reset_last_bytecode_buffer()
+
+        return True
+
+    def patch_jump_offset_to_point_to_next_instruction(self, idx_of_offset, parser):
+        instruction_start = idx_of_offset - 1
+        bytecode = self._bytecode[instruction_start]
+        assert is_one_of(bytecode, JUMP_BYTECODES)
+
+        jump_offset = len(self._bytecode) - instruction_start
+
+        self._check_jump_offset(parser, jump_offset, bytecode)
+
+        self._bytecode[idx_of_offset] = jump_offset
+
+    @staticmethod
+    def _check_jump_offset(parser, jump_offset, bytecode):
+        from som.compiler.symbol import Symbol
+
+        if not 0 <= jump_offset < 256:
+            raise ParseError(
+                "The jump_offset for the "
+                + bytecode_as_str(bytecode)
+                + " bytecode is out of range: "
+                + str(jump_offset),
+                Symbol.NONE,
+                parser,
+            )
 
 
 class FindVarResult(object):

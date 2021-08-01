@@ -159,7 +159,6 @@ class Parser(ParserBase):
             self.nested_block(bgenc)
 
             block_method = bgenc.assemble(None)
-            mgenc.add_literal(block_method)
             emit_push_block(mgenc, block_method, bgenc.requires_context())
         else:
             self._literal(mgenc)
@@ -240,12 +239,24 @@ class Parser(ParserBase):
         is_super_send = self._super_send
         self._super_send = False
 
-        keyword = self._keyword()
+        keyword_parts = [self._keyword()]
         self._formula(mgenc)
 
         while self._sym == Symbol.Keyword:
-            keyword += self._keyword()
+            keyword_parts.append(self._keyword())
             self._formula(mgenc)
+
+        keyword = "".join(keyword_parts)
+
+        if not is_super_send and (
+            (keyword == "ifTrue:" and mgenc.inline_if_true_or_if_false(self, True))
+            or (keyword == "ifFalse:" and mgenc.inline_if_true_or_if_false(self, False))
+            or (keyword == "ifTrue:ifFalse:" and mgenc.inline_if_true_false(self, True))
+            or (
+                keyword == "ifFalse:ifTrue:" and mgenc.inline_if_true_false(self, False)
+            )
+        ):
+            return
 
         msg = self.universe.symbol_for(keyword)
 

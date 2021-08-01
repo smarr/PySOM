@@ -1,6 +1,12 @@
 from som.vm.current import current_universe
 from som.vm.universe import error_print, error_println
-from som.interpreter.bc.bytecodes import bytecode_as_str, bytecode_length, Bytecodes
+from som.interpreter.bc.bytecodes import (
+    bytecode_as_str,
+    bytecode_length,
+    Bytecodes,
+    is_one_of,
+    JUMP_BYTECODES,
+)
 
 
 def dump(clazz):
@@ -100,9 +106,10 @@ def dump_bytecode(m, b, indent=""):
             "(index: "
             + str(m.get_bytecode(b + 1))
             + ") value: ("
+            + str(constant)
+            + " class: "
             + class_name
             + ") "
-            + str(constant)
         )
     elif bytecode == Bytecodes.push_global:
         error_println(
@@ -141,6 +148,13 @@ def dump_bytecode(m, b, indent=""):
             + str(m.get_bytecode(b + 1))
             + ", context "
             + str(m.get_bytecode(b + 2))
+        )
+    elif bytecode == Bytecodes.return_non_local:
+        error_println("context: " + str(m.get_bytecode(b + 1)))
+    elif is_one_of(bytecode, JUMP_BYTECODES):
+        offset = m.get_bytecode(b + 1)
+        error_println(
+            "(jump offset: " + str(offset) + " -> jump target: " + str(b + offset) + ")"
         )
     else:
         error_println("<incorrect bytecode>")
