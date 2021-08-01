@@ -1,5 +1,8 @@
 # Verbatim copy basic heapq operations, only change is inlining <
 # This is the version of Python 2.7
+# https://github.com/python/cpython/blob/8d21aa21f2cbc6d50aab3f420bb23be1d081dac4/Lib/heapq.py
+# For the license of this file, see Python License v2
+# https://github.com/python/cpython/blob/main/LICENSE
 
 
 def heappush(heap, item):
