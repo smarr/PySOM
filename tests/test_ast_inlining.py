@@ -18,6 +18,7 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
     IfInlinedNode,
     IfElseInlinedNode,
 )
+from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
 from som.interpreter.ast.nodes.variable_node import (
     UninitializedReadNode,
     LocalFrameVarReadNode,
@@ -27,7 +28,7 @@ from som.vm.current import current_universe
 from som.vm.globals import trueObject, falseObject
 
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
-    is_bytecode_interpreter(), reason="Tests are specific to bytecode interpreter"
+    is_bytecode_interpreter(), reason="Tests are specific to AST interpreter"
 )
 
 
@@ -423,6 +424,30 @@ def test_if_true_if_false_return(mgenc, sel1, sel2, expected_bool, unexpected_bo
     if_node = seq._exprs[1]
     assert if_node._expected_bool is expected_bool
     assert if_node._not_expected_bool is unexpected_bool
+
+
+@pytest.mark.parametrize(
+    "while_sel,expected_bool,unexpected_bool",
+    [
+        ("whileTrue:", trueObject, falseObject),
+        ("whileFalse:", falseObject, trueObject),
+    ],
+)
+def test_while_inlining(mgenc, while_sel, expected_bool, unexpected_bool):
+    seq = parse_method(
+        mgenc,
+        """
+        test: arg1 with: arg2 = (
+            [ arg1 ] WHILE [ arg2 ]
+        )""".replace(
+            "WHILE", while_sel
+        ),
+    )
+
+    assert isinstance(seq._exprs[0], WhileInlinedNode)
+    while_node = seq._exprs[0]
+    assert while_node._expected_bool is expected_bool
+    assert while_node._not_expected_bool is unexpected_bool
 
 
 def test_block_block_inlined_self(cgenc, mgenc):

@@ -70,8 +70,15 @@ class Bytecodes(object):
     jump_on_false_top_nil = jump_on_true_top_nil + 1
     jump_on_true_pop = jump_on_false_top_nil + 1
     jump_on_false_pop = jump_on_true_pop + 1
+    jump_backward = jump_on_false_pop + 1
+    jump2 = jump_backward + 1
+    jump2_on_true_top_nil = jump2 + 1
+    jump2_on_false_top_nil = jump2_on_true_top_nil + 1
+    jump2_on_true_pop = jump2_on_false_top_nil + 1
+    jump2_on_false_pop = jump2_on_true_pop + 1
+    jump2_backward = jump2_on_false_pop + 1
 
-    q_super_send_1 = jump_on_false_pop + 1
+    q_super_send_1 = jump2_backward + 1
     q_super_send_2 = q_super_send_1 + 1
     q_super_send_3 = q_super_send_2 + 1
     q_super_send_n = q_super_send_3 + 1
@@ -131,7 +138,17 @@ JUMP_BYTECODES = [
     Bytecodes.jump_on_true_pop,
     Bytecodes.jump_on_false_pop,
     Bytecodes.jump_on_false_top_nil,
+    Bytecodes.jump_backward,
+    Bytecodes.jump2,
+    Bytecodes.jump2_on_true_top_nil,
+    Bytecodes.jump2_on_true_pop,
+    Bytecodes.jump2_on_false_pop,
+    Bytecodes.jump2_on_false_top_nil,
+    Bytecodes.jump2_backward,
 ]
+
+FIRST_DOUBLE_BYTE_JUMP_BYTECODE = Bytecodes.jump2
+NUM_SINGLE_BYTE_JUMP_BYTECODES = len(JUMP_BYTECODES) / 2
 
 RUN_TIME_ONLY_BYTECODES = [
     Bytecodes.push_frame,
@@ -209,11 +226,18 @@ _BYTECODE_LENGTH = [
     1,  # return_self
     1,  # inc
     1,  # dec
-    2,  # jump
-    2,  # jump_on_true_top_nil
-    2,  # jump_on_false_top_nil
-    2,  # jump_on_true_pop
-    2,  # jump_on_false_pop
+    3,  # jump
+    3,  # jump_on_true_top_nil
+    3,  # jump_on_false_top_nil
+    3,  # jump_on_true_pop
+    3,  # jump_on_false_pop
+    3,  # jump_backward
+    3,  # jump2
+    3,  # jump2_on_true_top_nil
+    3,  # jump2_on_false_top_nil
+    3,  # jump2_on_true_pop
+    3,  # jump2_on_false_pop
+    3,  # jump2_backward
     2,  # q_super_send_1
     2,  # q_super_send_2
     2,  # q_super_send_3
@@ -279,6 +303,13 @@ _BYTECODE_STACK_EFFECT = [
     0,  # jump_on_false_top_nil
     -1,  # jump_on_true_pop
     -1,  # jump_on_false_pop
+    0,  # jump_backward
+    0,  # jump2
+    0,  # jump2_on_true_top_nil
+    0,  # jump2_on_false_top_nil
+    -1,  # jump2_on_true_pop
+    -1,  # jump2_on_false_pop
+    0,  # jump2_backward
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_1
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_2
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_3

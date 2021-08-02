@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+from collections import deque
 import pytest
 from rlib.string_stream import StringStream
 
@@ -7,7 +8,7 @@ from som.compiler.bc.method_generation_context import MethodGenerationContext
 from som.compiler.bc.parser import Parser
 from som.compiler.class_generation_context import ClassGenerationContext
 from som.interp_type import is_ast_interpreter
-from som.interpreter.bc.bytecodes import Bytecodes, bytecode_length
+from som.interpreter.bc.bytecodes import Bytecodes, bytecode_length, bytecode_as_str
 from som.vm.current import current_universe
 
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
@@ -57,6 +58,76 @@ def block_to_bytecodes(bgenc, source):
     return bgenc.get_bytecodes()
 
 
+class BC(object):
+    def __init__(self, bytecode, arg1=None, arg2=None, note=None):
+        self.bytecode = bytecode
+        self.arg1 = arg1
+        self.arg2 = arg2
+        self.note = note
+
+
+def check(actual, expected):
+    expected_q = deque(expected)
+    i = 0
+    while i < len(actual) and expected_q:
+        actual_bc = actual[i]
+        bc_length = bytecode_length(actual_bc)
+
+        expected_bc = expected_q[0]
+        if isinstance(expected_bc, tuple):
+            if expected_bc[0] == i:
+                expected_bc = expected_bc[1]
+            else:
+                assert expected_bc[0] > i
+                i += bc_length
+                continue
+
+        if isinstance(expected_bc, BC):
+            assert actual_bc == expected_bc.bytecode, (
+                "Bytecode "
+                + str(i)
+                + " expected "
+                + bytecode_as_str(expected_bc.bytecode)
+                + " but got "
+                + bytecode_as_str(actual_bc)
+            )
+            if expected_bc.arg1 is not None:
+                assert actual[i + 1] == expected_bc.arg1, (
+                    "Bytecode "
+                    + str(i)
+                    + " expected "
+                    + bytecode_as_str(expected_bc.bytecode)
+                    + "("
+                    + str(expected_bc.arg1)
+                    + ", "
+                    + str(expected_bc.arg2)
+                    + ")"
+                    + " but got "
+                    + bytecode_as_str(actual_bc)
+                    + "("
+                    + str(actual[i + 1])
+                    + ", "
+                    + str(actual[i + 2])
+                    + ")"
+                )
+            if expected_bc.arg2 is not None:
+                assert actual[i + 2] == expected_bc.arg2
+        else:
+            assert actual_bc == expected_bc, (
+                "Bytecode "
+                + str(i)
+                + " expected "
+                + bytecode_as_str(expected_bc)
+                + " but got "
+                + bytecode_as_str(actual_bc)
+            )
+        expected_q.popleft()
+
+        i += bc_length
+
+    assert len(expected_q) == 0
+
+
 @pytest.mark.parametrize(
     "operator,bytecode",
     [
@@ -68,41 +139,35 @@ def test_inc_dec_bytecodes(mgenc, operator, bytecode):
     bytecodes = method_to_bytecodes(mgenc, "test = ( 1 OP 1 )".replace("OP", operator))
 
     assert len(bytecodes) == 3
-    assert bytecodes[0] == Bytecodes.push_1
-    assert bytecodes[1] == bytecode
-    assert bytecodes[2] == Bytecodes.return_self
+    check(bytecodes, [Bytecodes.push_1, bytecode, Bytecodes.return_self])
 
 
 def test_empty_method_returns_self(mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test = ( )")
 
     assert len(bytecodes) == 1
-    assert bytecodes[0] == Bytecodes.return_self
+    check(bytecodes, [Bytecodes.return_self])
 
 
 def test_explicit_return_self(mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test = ( ^ self )")
 
     assert len(bytecodes) == 1
-    assert bytecodes[0] == Bytecodes.return_self
+    check(bytecodes, [Bytecodes.return_self])
 
 
 def test_dup_pop_argument_pop(mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test: arg = ( arg := 1. ^ self )")
 
     assert len(bytecodes) == 5
-    assert Bytecodes.push_1 == bytecodes[0]
-    assert Bytecodes.pop_argument == bytecodes[1]
-    assert Bytecodes.return_self == bytecodes[4]
+    check(bytecodes, [Bytecodes.push_1, Bytecodes.pop_argument, Bytecodes.return_self])
 
 
 def test_dup_pop_argument_pop_implicit_return_self(mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test: arg = ( arg := 1 )")
 
     assert len(bytecodes) == 5
-    assert Bytecodes.push_1 == bytecodes[0]
-    assert Bytecodes.pop_argument == bytecodes[1]
-    assert Bytecodes.return_self == bytecodes[4]
+    check(bytecodes, [Bytecodes.push_1, Bytecodes.pop_argument, Bytecodes.return_self])
 
 
 def test_dup_pop_local_pop(mgenc):
@@ -133,9 +198,7 @@ def test_dup_pop_field_pop(cgenc, mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test = ( field := 1. ^ self )")
 
     assert len(bytecodes) == 5
-    assert Bytecodes.push_1 == bytecodes[0]
-    assert Bytecodes.pop_field == bytecodes[1]
-    assert Bytecodes.return_self == bytecodes[4]
+    check(bytecodes, [Bytecodes.push_1, Bytecodes.pop_field, Bytecodes.return_self])
 
 
 def test_dup_pop_field_return_self(cgenc, mgenc):
@@ -143,9 +206,10 @@ def test_dup_pop_field_return_self(cgenc, mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test: val = ( field := val )")
 
     assert len(bytecodes) == 5
-    assert Bytecodes.push_argument == bytecodes[0]
-    assert Bytecodes.pop_field_0 == bytecodes[3]
-    assert Bytecodes.return_self == bytecodes[4]
+    check(
+        bytecodes,
+        [Bytecodes.push_argument, Bytecodes.pop_field_0, Bytecodes.return_self],
+    )
 
 
 def test_dup_pop_field_n_return_self(cgenc, mgenc):
@@ -158,9 +222,9 @@ def test_dup_pop_field_n_return_self(cgenc, mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test: value = ( field := value )")
 
     assert len(bytecodes) == 7
-    assert Bytecodes.push_argument == bytecodes[0]
-    assert Bytecodes.pop_field == bytecodes[3]
-    assert Bytecodes.return_self == bytecodes[6]
+    check(
+        bytecodes, [Bytecodes.push_argument, Bytecodes.pop_field, Bytecodes.return_self]
+    )
 
 
 def test_send_dup_pop_field_return_local(cgenc, mgenc):
@@ -168,11 +232,16 @@ def test_send_dup_pop_field_return_local(cgenc, mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test = ( ^ field := self method )")
 
     assert len(bytecodes) == 8
-    assert Bytecodes.push_argument == bytecodes[0]
-    assert Bytecodes.send_1 == bytecodes[3]
-    assert Bytecodes.dup == bytecodes[5]
-    assert Bytecodes.pop_field_0 == bytecodes[6]
-    assert Bytecodes.return_local == bytecodes[7]
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_argument,
+            Bytecodes.send_1,
+            Bytecodes.dup,
+            Bytecodes.pop_field_0,
+            Bytecodes.return_local,
+        ],
+    )
 
 
 def test_send_dup_pop_field_return_local_period(cgenc, mgenc):
@@ -180,11 +249,16 @@ def test_send_dup_pop_field_return_local_period(cgenc, mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test = ( ^ field := self method. )")
 
     assert len(bytecodes) == 8
-    assert Bytecodes.push_argument == bytecodes[0]
-    assert Bytecodes.send_1 == bytecodes[3]
-    assert Bytecodes.dup == bytecodes[5]
-    assert Bytecodes.pop_field_0 == bytecodes[6]
-    assert Bytecodes.return_local == bytecodes[7]
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_argument,
+            Bytecodes.send_1,
+            Bytecodes.dup,
+            Bytecodes.pop_field_0,
+            Bytecodes.return_local,
+        ],
+    )
 
 
 @pytest.mark.parametrize(
@@ -217,15 +291,18 @@ def test_if_true_with_literal_return(mgenc, literal, bytecode):
 
     length = bytecode_length(bytecode)
 
-    assert len(bytecodes) == 9 + length
-    assert Bytecodes.push_argument == bytecodes[0]
-    assert Bytecodes.send_1 == bytecodes[3]
-    assert Bytecodes.jump_on_false_top_nil == bytecodes[5]
-
-    assert bytecode == bytecodes[7]
-
-    assert Bytecodes.pop == bytecodes[7 + length]
-    assert Bytecodes.return_self == bytecodes[7 + length + 1]
+    assert len(bytecodes) == 10 + length
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_argument,
+            Bytecodes.send_1,
+            Bytecodes.jump_on_false_top_nil,
+            bytecode,
+            Bytecodes.pop,
+            Bytecodes.return_self,
+        ],
+    )
 
 
 @pytest.mark.parametrize(
@@ -248,20 +325,21 @@ def test_if_arg(mgenc, if_selector, jump_bytecode):
         ),
     )
 
-    assert len(bytecodes) == 16
-    assert Bytecodes.push_constant_0 == bytecodes[0]
-    assert Bytecodes.pop == bytecodes[1]
-    assert Bytecodes.push_argument == bytecodes[2]
-    assert Bytecodes.send_1 == bytecodes[5]
-    assert jump_bytecode == bytecodes[7]
-    assert bytecodes[8] == 5, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[9]
-    assert bytecodes[10] == 1, "arg idx"
-    assert bytecodes[11] == 0, "ctx level"
-    assert Bytecodes.pop == bytecodes[12]
-    assert Bytecodes.push_constant == bytecodes[13]
-    assert Bytecodes.return_self == bytecodes[15]
+    assert len(bytecodes) == 17
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_constant_0,
+            Bytecodes.pop,
+            Bytecodes.push_argument,
+            Bytecodes.send_1,
+            BC(jump_bytecode, 6, note="jump offset"),
+            BC(Bytecodes.push_argument, 1, 0),
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+            Bytecodes.return_self,
+        ],
+    )
 
 
 def test_keyword_if_true_arg(mgenc):
@@ -275,16 +353,17 @@ def test_keyword_if_true_arg(mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 17
-    assert Bytecodes.send_2 == bytecodes[6]
-    assert Bytecodes.jump_on_false_top_nil == bytecodes[8]
-    assert bytecodes[9] == 5, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[10]
-    assert bytecodes[11] == 1, "arg idx"
-    assert bytecodes[12] == 0, "ctx level"
-    assert Bytecodes.pop == bytecodes[13]
-    assert Bytecodes.push_constant == bytecodes[14]
+    assert len(bytecodes) == 18
+    check(
+        bytecodes,
+        [
+            (6, Bytecodes.send_2),
+            BC(Bytecodes.jump_on_false_top_nil, 6, note="jump offset"),
+            BC(Bytecodes.push_argument, 1, 0),
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+        ],
+    )
 
 
 def test_if_true_and_inc_field(cgenc, mgenc):
@@ -299,16 +378,20 @@ def test_if_true_and_inc_field(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 18
-    assert Bytecodes.send_2 == bytecodes[6]
-    assert Bytecodes.jump_on_false_top_nil == bytecodes[8]
-    assert bytecodes[9] == 6, "jump offset"
-
-    assert Bytecodes.push_field_0 == bytecodes[10]
-    assert Bytecodes.inc == bytecodes[11]
-    assert Bytecodes.dup == bytecodes[12]
-    assert Bytecodes.pop_field_0 == bytecodes[13]
-    assert Bytecodes.pop == bytecodes[14]
+    assert len(bytecodes) == 19
+    check(
+        bytecodes,
+        [
+            (6, Bytecodes.send_2),
+            BC(Bytecodes.jump_on_false_top_nil, 7, note="jump offset"),
+            Bytecodes.push_field_0,
+            Bytecodes.inc,
+            Bytecodes.dup,
+            Bytecodes.pop_field_0,
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+        ],
+    )
 
 
 def test_if_true_and_inc_arg(mgenc):
@@ -322,17 +405,18 @@ def test_if_true_and_inc_arg(mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 18
-    assert Bytecodes.send_2 == bytecodes[6]
-    assert Bytecodes.jump_on_false_top_nil == bytecodes[8]
-    assert bytecodes[9] == 6, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[10]
-    assert bytecodes[11] == 1, "arg idx"
-    assert bytecodes[12] == 0, "ctx level"
-    assert Bytecodes.inc == bytecodes[13]
-    assert Bytecodes.pop == bytecodes[14]
-    assert Bytecodes.push_constant == bytecodes[15]
+    assert len(bytecodes) == 19
+    check(
+        bytecodes,
+        [
+            (6, Bytecodes.send_2),
+            BC(Bytecodes.jump_on_false_top_nil, 7, note="jump offset"),
+            BC(Bytecodes.push_argument, 1, 0),
+            Bytecodes.inc,
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+        ],
+    )
 
 
 @pytest.mark.parametrize(
@@ -355,16 +439,17 @@ def test_if_return_non_local(mgenc, if_selector, jump_bytecode):
         ),
     )
 
-    assert len(bytecodes) == 17
-    assert Bytecodes.send_1 == bytecodes[5]
-    assert jump_bytecode == bytecodes[7]
-    assert bytecodes[8] == 6, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[9]
-    assert bytecodes[10] == 1, "arg idx"
-    assert bytecodes[11] == 0, "ctx level"
-    assert Bytecodes.return_local == bytecodes[12]
-    assert Bytecodes.pop == bytecodes[13]
+    assert len(bytecodes) == 18
+    check(
+        bytecodes,
+        [
+            (5, Bytecodes.send_1),
+            BC(jump_bytecode, 7, note="jump offset"),
+            BC(Bytecodes.push_argument, 1, 0),
+            Bytecodes.return_local,
+            Bytecodes.pop,
+        ],
+    )
 
 
 def test_nested_ifs(cgenc, mgenc):
@@ -381,18 +466,20 @@ def test_nested_ifs(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 16
-    assert Bytecodes.push_global == bytecodes[0]
-    assert Bytecodes.jump_on_false_top_nil == bytecodes[2]
-    assert bytecodes[3] == 13
-    assert Bytecodes.jump_on_true_top_nil == bytecodes[6]
-    assert Bytecodes.push_field_0 == bytecodes[8]
-    assert Bytecodes.push_argument == bytecodes[9]
-    assert bytecodes[10] == 1, "arg idx"
-    assert bytecodes[11] == 0, "ctx_level"
-    assert Bytecodes.send_2 == bytecodes[12]
-    assert Bytecodes.return_local == bytecodes[14]
-    assert Bytecodes.return_self == bytecodes[15]
+    assert len(bytecodes) == 18
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_global,
+            BC(Bytecodes.jump_on_false_top_nil, 15, note="jump offset"),
+            (7, Bytecodes.jump_on_true_top_nil),
+            Bytecodes.push_field_0,
+            BC(Bytecodes.push_argument, 1, 0),
+            Bytecodes.send_2,
+            Bytecodes.return_local,
+            Bytecodes.return_self,
+        ],
+    )
 
 
 def test_nested_ifs_and_locals(cgenc, mgenc):
@@ -413,36 +500,20 @@ def test_nested_ifs_and_locals(cgenc, mgenc):
               ^ i - j - f - g - d ] ] )""",
     )
 
-    assert len(bytecodes) == 53
-    assert Bytecodes.push_local == bytecodes[0]
-    assert bytecodes[1] == 1
-    assert bytecodes[2] == 0
-
-    assert Bytecodes.pop_local == bytecodes[3]
-    assert bytecodes[4] == 0
-    assert bytecodes[5] == 0
-
-    assert Bytecodes.jump_on_false_top_nil == bytecodes[8]
-    assert bytecodes[9] == 44, "jump offset"
-
-    assert Bytecodes.pop_local == bytecodes[12]
-    assert bytecodes[13] == 4
-    assert bytecodes[14] == 0
-
-    assert Bytecodes.pop_local == bytecodes[17]
-    assert bytecodes[18] == 2
-    assert bytecodes[19] == 0
-
-    assert Bytecodes.jump_on_true_top_nil == bytecodes[22]
-    assert bytecodes[23] == 30, "jump offset"
-
-    assert Bytecodes.pop_local == bytecodes[25]
-    assert bytecodes[26] == 7
-    assert bytecodes[27] == 0
-
-    assert Bytecodes.push_local == bytecodes[46]
-    assert bytecodes[47] == 3
-    assert bytecodes[48] == 0
+    assert len(bytecodes) == 55
+    check(
+        bytecodes,
+        [
+            BC(Bytecodes.push_local, 1, 0),
+            BC(Bytecodes.pop_local, 0, 0),
+            (8, BC(Bytecodes.jump_on_false_top_nil, 46)),
+            (13, BC(Bytecodes.pop_local, 4, 0)),
+            (18, BC(Bytecodes.pop_local, 2, 0)),
+            (23, BC(Bytecodes.jump_on_true_top_nil, 31)),
+            (27, BC(Bytecodes.pop_local, 7, 0)),
+            (48, BC(Bytecodes.push_local, 3, 0)),
+        ],
+    )
 
 
 def test_nested_ifs_and_non_inlined_blocks(cgenc, mgenc):
@@ -467,43 +538,36 @@ def test_nested_ifs_and_non_inlined_blocks(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 34
-    assert Bytecodes.push_global == bytecodes[4]
-    assert Bytecodes.jump_on_false_top_nil == bytecodes[6]
-    assert bytecodes[7] == 24, "jump offset"
-    assert Bytecodes.pop_local == bytecodes[9]
-    assert bytecodes[10] == 1, "e var idx"
-    assert bytecodes[11] == 0, "e ctx idx"
+    assert len(bytecodes) == 36
+    check(
+        bytecodes,
+        [
+            (4, Bytecodes.push_global),
+            BC(Bytecodes.jump_on_false_top_nil, 26),
+            (10, BC(Bytecodes.pop_local, 1, 0, note="local e")),
+            (18, BC(Bytecodes.jump_on_true_top_nil, 14)),
+            (22, BC(Bytecodes.pop_local, 2, 0, note="local h")),
+        ],
+    )
 
-    block_method = mgenc.get_constant(12)
-    assert block_method.get_bytecode(1) == Bytecodes.pop_local
-    assert block_method.get_bytecode(2) == 0, "a var idx"
-    assert block_method.get_bytecode(3) == 1, "a ctx level"
+    check(
+        mgenc.get_constant(13).get_bytecodes(),
+        [(1, BC(Bytecodes.pop_local, 0, 1, note="local a"))],
+    )
 
-    assert Bytecodes.jump_on_true_top_nil == bytecodes[17]
-    assert bytecodes[18] == 13, "jump offset"
+    check(
+        mgenc.get_constant(25).get_bytecodes(),
+        [
+            BC(Bytecodes.push_local, 2, 1, note="local h"),
+            BC(Bytecodes.push_local, 0, 1, note="local a"),
+            (8, BC(Bytecodes.push_local, 1, 1, note="local e")),
+        ],
+    )
 
-    assert Bytecodes.pop_local == bytecodes[20]
-    assert bytecodes[21] == 2, "h var idx"
-    assert bytecodes[22] == 0, "h ctx idx"
-
-    block_method = mgenc.get_constant(23)
-    assert block_method.get_bytecode(0) == Bytecodes.push_local
-    assert block_method.get_bytecode(1) == 2, "h var idx"
-    assert block_method.get_bytecode(2) == 1, "h ctx level"
-
-    assert block_method.get_bytecode(3) == Bytecodes.push_local
-    assert block_method.get_bytecode(4) == 0, "a var idx"
-    assert block_method.get_bytecode(5) == 1, "a ctx level"
-
-    assert block_method.get_bytecode(8) == Bytecodes.push_local
-    assert block_method.get_bytecode(9) == 1, "e var idx"
-    assert block_method.get_bytecode(10) == 1, "e ctx level"
-
-    block_method = mgenc.get_constant(31)
-    assert block_method.get_bytecode(0) == Bytecodes.push_local
-    assert block_method.get_bytecode(1) == 0, "a var idx"
-    assert block_method.get_bytecode(2) == 1, "a ctx level"
+    check(
+        mgenc.get_constant(33).get_bytecodes(),
+        [BC(Bytecodes.push_local, 0, 1, note="local a")],
+    )
 
 
 def test_nested_non_inlined_blocks(cgenc, mgenc):
@@ -521,58 +585,39 @@ def test_nested_non_inlined_blocks(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 19
-    assert Bytecodes.jump_on_true_top_nil == bytecodes[2]
-    assert bytecodes[3] == 16, "jump offset"
-    assert Bytecodes.push_argument == bytecodes[4]
-    assert bytecodes[5] == 1, "a var idx"
-    assert bytecodes[6] == 0, "a ctx idx"
+    assert len(bytecodes) == 20
+    check(
+        bytecodes,
+        [
+            (2, BC(Bytecodes.jump_on_true_top_nil, 17)),
+            BC(Bytecodes.push_argument, 1, 0, note="arg a"),
+            (9, BC(Bytecodes.push_local, 0, 0, note="local b")),
+            (13, BC(Bytecodes.push_local, 1, 0, note="local c")),
+        ],
+    )
 
-    assert Bytecodes.push_local == bytecodes[8]
-    assert bytecodes[9] == 0, "b var idx"
-    assert bytecodes[10] == 0, "b ctx idx"
-
-    assert Bytecodes.push_local == bytecodes[12]
-    assert bytecodes[13] == 1, "c var idx"
-    assert bytecodes[14] == 0, "c ctx idx"
-
-    block_method = mgenc.get_constant(16)
-    assert block_method.get_bytecode(0) == Bytecodes.push_argument
-    assert block_method.get_bytecode(1) == 1, "a var idx"
-    assert block_method.get_bytecode(2) == 1, "a ctx level"
-
-    assert block_method.get_bytecode(4) == Bytecodes.push_local
-    assert block_method.get_bytecode(5) == 0, "b var idx"
-    assert block_method.get_bytecode(6) == 1, "b ctx level"
-
-    assert block_method.get_bytecode(8) == Bytecodes.push_local
-    assert block_method.get_bytecode(9) == 1, "c var idx"
-    assert block_method.get_bytecode(10) == 1, "c ctx level"
-
-    assert block_method.get_bytecode(12) == Bytecodes.push_argument
-    assert block_method.get_bytecode(13) == 1, "d var idx"
-    assert block_method.get_bytecode(14) == 0, "d ctx level"
+    block_method = mgenc.get_constant(17)
+    check(
+        block_method.get_bytecodes(),
+        [
+            BC(Bytecodes.push_argument, 1, 1, note="arg a"),
+            (4, BC(Bytecodes.push_local, 0, 1, note="local b")),
+            (8, BC(Bytecodes.push_local, 1, 1, note="local c")),
+            (12, BC(Bytecodes.push_argument, 1, 0, note="arg d")),
+        ],
+    )
 
     block_method = block_method.get_constant(16)
-    assert block_method.get_bytecode(0) == Bytecodes.push_argument
-    assert block_method.get_bytecode(1) == 1, "a var idx"
-    assert block_method.get_bytecode(2) == 2, "a ctx level"
-
-    assert block_method.get_bytecode(4) == Bytecodes.push_local
-    assert block_method.get_bytecode(5) == 0, "b var idx"
-    assert block_method.get_bytecode(6) == 2, "b ctx level"
-
-    assert block_method.get_bytecode(8) == Bytecodes.push_local
-    assert block_method.get_bytecode(9) == 1, "c var idx"
-    assert block_method.get_bytecode(10) == 2, "c ctx level"
-
-    assert block_method.get_bytecode(12) == Bytecodes.push_argument
-    assert block_method.get_bytecode(13) == 1, "d var idx"
-    assert block_method.get_bytecode(14) == 1, "d ctx level"
-
-    assert block_method.get_bytecode(16) == Bytecodes.push_argument
-    assert block_method.get_bytecode(17) == 1, "e var idx"
-    assert block_method.get_bytecode(18) == 0, "e ctx level"
+    check(
+        block_method.get_bytecodes(),
+        [
+            BC(Bytecodes.push_argument, 1, 2, note="arg a"),
+            (4, BC(Bytecodes.push_local, 0, 2, note="local b")),
+            (8, BC(Bytecodes.push_local, 1, 2, note="local c")),
+            (12, BC(Bytecodes.push_argument, 1, 1, note="arg d")),
+            (16, BC(Bytecodes.push_argument, 1, 0, note="arg e")),
+        ],
+    )
 
 
 def test_block_if_true_arg(bgenc):
@@ -585,16 +630,17 @@ def test_block_if_true_arg(bgenc):
         ]""",
     )
 
-    assert len(bytecodes) == 16
-    assert Bytecodes.send_1 == bytecodes[5]
-    assert Bytecodes.jump_on_false_top_nil == bytecodes[7]
-    assert bytecodes[8] == 5, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[9]
-    assert bytecodes[10] == 1, "arg idx"
-    assert bytecodes[11] == 0, "ctx level"
-    assert Bytecodes.pop == bytecodes[12]
-    assert Bytecodes.push_constant == bytecodes[13]
+    assert len(bytecodes) == 17
+    check(
+        bytecodes,
+        [
+            (5, Bytecodes.send_1),
+            BC(Bytecodes.jump_on_false_top_nil, 6),
+            BC(Bytecodes.push_argument, 1, 0),
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+        ],
+    )
 
 
 def test_block_if_true_method_arg(mgenc, bgenc):
@@ -608,15 +654,16 @@ def test_block_if_true_method_arg(mgenc, bgenc):
         ]""",
     )
 
-    assert len(bytecodes) == 16
-    assert Bytecodes.jump_on_false_top_nil == bytecodes[7]
-    assert bytecodes[8] == 5, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[9]
-    assert bytecodes[10] == 1, "arg idx"
-    assert bytecodes[11] == 1, "ctx level"
-    assert Bytecodes.pop == bytecodes[12]
-    assert Bytecodes.push_constant == bytecodes[13]
+    assert len(bytecodes) == 17
+    check(
+        bytecodes,
+        [
+            (7, BC(Bytecodes.jump_on_false_top_nil, 6)),
+            BC(Bytecodes.push_argument, 1, 1),
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+        ],
+    )
 
 
 def test_if_true_if_false_arg(mgenc):
@@ -630,22 +677,17 @@ def test_if_true_if_false_arg(mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 21
-    assert Bytecodes.jump_on_false_pop == bytecodes[7]
-    assert bytecodes[8] == 7, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[9]
-    assert bytecodes[10] == 1, "arg1 idx"
-    assert bytecodes[11] == 0, "arg1 ctx level"
-
-    assert Bytecodes.jump == bytecodes[12]
-    assert bytecodes[13] == 5, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[14]
-    assert bytecodes[15] == 2, "arg1 idx"
-    assert bytecodes[16] == 0, "arg1 ctx level"
-
-    assert Bytecodes.pop == bytecodes[17]
+    assert len(bytecodes) == 23
+    check(
+        bytecodes,
+        [
+            (7, BC(Bytecodes.jump_on_false_pop, 9)),
+            BC(Bytecodes.push_argument, 1, 0),
+            BC(Bytecodes.jump, 6),
+            BC(Bytecodes.push_argument, 2, 0),
+            Bytecodes.pop,
+        ],
+    )
 
 
 def test_if_true_if_false_nlr_arg1(mgenc):
@@ -659,24 +701,18 @@ def test_if_true_if_false_nlr_arg1(mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 22
-    assert Bytecodes.jump_on_false_pop == bytecodes[7]
-    assert bytecodes[8] == 8, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[9]
-    assert bytecodes[10] == 1, "arg1 idx"
-    assert bytecodes[11] == 0, "arg1 ctx level"
-
-    assert Bytecodes.return_local == bytecodes[12]
-
-    assert Bytecodes.jump == bytecodes[13]
-    assert bytecodes[14] == 5, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[15]
-    assert bytecodes[16] == 2, "arg1 idx"
-    assert bytecodes[17] == 0, "arg1 ctx level"
-
-    assert Bytecodes.pop == bytecodes[18]
+    assert len(bytecodes) == 24
+    check(
+        bytecodes,
+        [
+            (7, BC(Bytecodes.jump_on_false_pop, 10)),
+            BC(Bytecodes.push_argument, 1, 0),
+            Bytecodes.return_local,
+            BC(Bytecodes.jump, 6),
+            BC(Bytecodes.push_argument, 2, 0),
+            Bytecodes.pop,
+        ],
+    )
 
 
 def test_if_true_if_false_nlr_arg2(mgenc):
@@ -690,23 +726,18 @@ def test_if_true_if_false_nlr_arg2(mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 22
-    assert Bytecodes.jump_on_false_pop == bytecodes[7]
-    assert bytecodes[8] == 7, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[9]
-    assert bytecodes[10] == 1, "arg1 idx"
-    assert bytecodes[11] == 0, "arg1 ctx level"
-
-    assert Bytecodes.jump == bytecodes[12]
-    assert bytecodes[13] == 6, "jump offset"
-
-    assert Bytecodes.push_argument == bytecodes[14]
-    assert bytecodes[15] == 2, "arg1 idx"
-    assert bytecodes[16] == 0, "arg1 ctx level"
-
-    assert Bytecodes.return_local == bytecodes[17]
-    assert Bytecodes.pop == bytecodes[18]
+    assert len(bytecodes) == 24
+    check(
+        bytecodes,
+        [
+            (7, BC(Bytecodes.jump_on_false_pop, 9)),
+            BC(Bytecodes.push_argument, 1, 0),
+            BC(Bytecodes.jump, 7),
+            BC(Bytecodes.push_argument, 2, 0),
+            Bytecodes.return_local,
+            Bytecodes.pop,
+        ],
+    )
 
 
 @pytest.mark.parametrize(
@@ -730,12 +761,14 @@ def test_if_true_if_false_return(mgenc, sel1, sel2, jump_bytecode):
         ),
     )
 
-    assert len(bytecodes) == 19
-    assert jump_bytecode == bytecodes[7]
-    assert bytecodes[8] == 8, "jump offset"
-
-    assert Bytecodes.jump == bytecodes[13]
-    assert bytecodes[14] == 5, "jump offset"
+    assert len(bytecodes) == 21
+    check(
+        bytecodes,
+        [
+            (7, BC(jump_bytecode, 10)),
+            (14, BC(Bytecodes.jump, 6)),
+        ],
+    )
 
 
 def test_if_push_constant_same(mgenc):
@@ -748,21 +781,21 @@ def test_if_push_constant_same(mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 22
-    assert Bytecodes.push_constant_0 == bytecodes[0]
-    assert Bytecodes.push_constant_1 == bytecodes[2]
-    assert Bytecodes.push_constant_2 == bytecodes[4]
-    assert Bytecodes.push_constant == bytecodes[6]
-    assert bytecodes[7] == 3, "const idx"
-
-    assert Bytecodes.jump_on_true_top_nil == bytecodes[11]
-    assert bytecodes[12] == 10, "jump offset"
-
-    assert Bytecodes.push_constant_0 == bytecodes[13]
-    assert Bytecodes.push_constant_1 == bytecodes[15]
-    assert Bytecodes.push_constant_2 == bytecodes[17]
-    assert Bytecodes.push_constant == bytecodes[19]
-    assert bytecodes[20] == 3, "const idx"
+    assert len(bytecodes) == 23
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_constant_0,
+            (2, Bytecodes.push_constant_1),
+            (4, Bytecodes.push_constant_2),
+            (6, BC(Bytecodes.push_constant, 3)),
+            (11, BC(Bytecodes.jump_on_true_top_nil, 11)),
+            (14, Bytecodes.push_constant_0),
+            (16, Bytecodes.push_constant_1),
+            (18, Bytecodes.push_constant_2),
+            (20, BC(Bytecodes.push_constant, 3)),
+        ],
+    )
 
 
 def test_if_push_constant_different(mgenc):
@@ -775,27 +808,21 @@ def test_if_push_constant_different(mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 25
-    assert Bytecodes.push_constant_0 == bytecodes[0]
-    assert Bytecodes.push_constant_1 == bytecodes[2]
-    assert Bytecodes.push_constant_2 == bytecodes[4]
-    assert Bytecodes.push_constant == bytecodes[6]
-    assert bytecodes[7] == 3, "const idx"
-
-    assert Bytecodes.jump_on_true_top_nil == bytecodes[11]
-    assert bytecodes[12] == 13, "jump offset"
-
-    assert Bytecodes.push_constant == bytecodes[13]
-    assert bytecodes[14] == 6, "const idx"
-
-    assert Bytecodes.push_constant == bytecodes[16]
-    assert bytecodes[17] == 7, "const idx"
-
-    assert Bytecodes.push_constant == bytecodes[19]
-    assert bytecodes[20] == 8, "const idx"
-
-    assert Bytecodes.push_constant == bytecodes[22]
-    assert bytecodes[23] == 9, "const idx"
+    assert len(bytecodes) == 26
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_constant_0,
+            (2, Bytecodes.push_constant_1),
+            (4, Bytecodes.push_constant_2),
+            (6, BC(Bytecodes.push_constant, 3)),
+            (11, BC(Bytecodes.jump_on_true_top_nil, 14)),
+            (14, BC(Bytecodes.push_constant, 6)),
+            (17, BC(Bytecodes.push_constant, 7)),
+            (20, BC(Bytecodes.push_constant, 8)),
+            (23, BC(Bytecodes.push_constant, 9)),
+        ],
+    )
 
 
 def test_if_inline_and_constant_bc_length(mgenc):
@@ -809,8 +836,8 @@ def test_if_inline_and_constant_bc_length(mgenc):
         )""",
     )
 
-    assert Bytecodes.jump_on_true_top_nil == bytecodes[12]
-    assert bytecodes[13] == 10, (
+    assert Bytecodes.jump_on_true_top_nil == bytecodes[13]
+    assert bytecodes[14] == 11, (
         "jump offset, should point to correct bytecode"
         + " and not be affected by changing length of bytecodes in the block"
     )
@@ -820,40 +847,55 @@ def test_block_dup_pop_argument_pop_return_arg(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1. arg ]")
 
     assert len(bytecodes) == 8
-    assert Bytecodes.push_1 == bytecodes[0]
-    assert Bytecodes.pop_argument == bytecodes[1]
-    assert Bytecodes.push_argument == bytecodes[4]
-    assert Bytecodes.return_local == bytecodes[7]
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_1,
+            Bytecodes.pop_argument,
+            (4, Bytecodes.push_argument),
+            Bytecodes.return_local,
+        ],
+    )
 
 
 def test_block_dup_pop_argument_pop_implicit_return(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1 ]")
 
     assert len(bytecodes) == 6
-    assert Bytecodes.push_1 == bytecodes[0]
-    assert Bytecodes.dup == bytecodes[1]
-    assert Bytecodes.pop_argument == bytecodes[2]
-    assert Bytecodes.return_local == bytecodes[5]
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_1,
+            Bytecodes.dup,
+            Bytecodes.pop_argument,
+            Bytecodes.return_local,
+        ],
+    )
 
 
 def test_block_dup_pop_argument_pop_implicit_return_dot(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[:arg | arg := 1. ]")
 
     assert len(bytecodes) == 6
-    assert Bytecodes.push_1 == bytecodes[0]
-    assert Bytecodes.dup == bytecodes[1]
-    assert Bytecodes.pop_argument == bytecodes[2]
-    assert Bytecodes.return_local == bytecodes[5]
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_1,
+            Bytecodes.dup,
+            Bytecodes.pop_argument,
+            Bytecodes.return_local,
+        ],
+    )
 
 
 def test_block_dup_pop_local_return_local(bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[| local | local := 1 ]")
 
     assert len(bytecodes) == 6
-    assert Bytecodes.push_1 == bytecodes[0]
-    assert Bytecodes.dup == bytecodes[1]
-    assert Bytecodes.pop_local == bytecodes[2]
-    assert Bytecodes.return_local == bytecodes[5]
+    check(
+        bytecodes,
+        [Bytecodes.push_1, Bytecodes.dup, Bytecodes.pop_local, Bytecodes.return_local],
+    )
 
 
 def test_block_dup_pop_field_return_local(cgenc, bgenc):
@@ -861,10 +903,10 @@ def test_block_dup_pop_field_return_local(cgenc, bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[ field := 1 ]")
 
     assert len(bytecodes) == 6
-    assert Bytecodes.push_1 == bytecodes[0]
-    assert Bytecodes.dup == bytecodes[1]
-    assert Bytecodes.pop_field == bytecodes[2]
-    assert Bytecodes.return_local == bytecodes[5]
+    check(
+        bytecodes,
+        [Bytecodes.push_1, Bytecodes.dup, Bytecodes.pop_field, Bytecodes.return_local],
+    )
 
 
 def test_block_dup_pop_field_return_local_dot(cgenc, bgenc):
@@ -872,10 +914,10 @@ def test_block_dup_pop_field_return_local_dot(cgenc, bgenc):
     bytecodes = block_to_bytecodes(bgenc, "[ field := 1. ]")
 
     assert len(bytecodes) == 6
-    assert Bytecodes.push_1 == bytecodes[0]
-    assert Bytecodes.dup == bytecodes[1]
-    assert Bytecodes.pop_field == bytecodes[2]
-    assert Bytecodes.return_local == bytecodes[5]
+    check(
+        bytecodes,
+        [Bytecodes.push_1, Bytecodes.dup, Bytecodes.pop_field, Bytecodes.return_local],
+    )
 
 
 @pytest.mark.parametrize(
@@ -898,14 +940,163 @@ def test_block_if_return_non_local(bgenc, if_selector, jump_bytecode):
         ),
     )
 
-    assert len(bytecodes) == 18
-    assert Bytecodes.send_1 == bytecodes[5]
-    assert jump_bytecode == bytecodes[7]
-    assert bytecodes[8] == 7, "jump offset"
+    assert len(bytecodes) == 19
+    check(
+        bytecodes,
+        [
+            (5, Bytecodes.send_1),
+            BC(jump_bytecode, 8),
+            BC(Bytecodes.push_argument, 1, 0),
+            BC(Bytecodes.return_non_local, 1),
+            Bytecodes.pop,
+        ],
+    )
 
-    assert Bytecodes.push_argument == bytecodes[9]
-    assert bytecodes[10] == 1, "arg idx"
-    assert bytecodes[11] == 0, "ctx level"
-    assert Bytecodes.return_non_local == bytecodes[12]
-    assert bytecodes[13] == 1
-    assert Bytecodes.pop == bytecodes[14]
+
+@pytest.mark.parametrize(
+    "selector,jump_bytecode",
+    [
+        ("whileTrue:", Bytecodes.jump_on_false_pop),
+        ("whileFalse:", Bytecodes.jump_on_true_pop),
+    ],
+)
+def test_while_inlining(mgenc, selector, jump_bytecode):
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test: arg = (
+            #start.
+            [ true ] SELECTOR [ arg ].
+            #end
+        )""".replace(
+            "SELECTOR", selector
+        ),
+    )
+
+    assert len(bytecodes) == 19
+    check(
+        bytecodes,
+        [
+            (2, Bytecodes.push_constant),
+            jump_bytecode,
+            Bytecodes.push_argument,
+            Bytecodes.pop,
+            BC(Bytecodes.jump_backward, 9),
+            Bytecodes.push_nil,
+            Bytecodes.pop,
+        ],
+    )
+
+
+def test_inlining_while_loop_with_expanding_branches(mgenc):
+    """
+    This test checks whether the jumps in the while loop are correct after it got inlined.
+    The challenge here is
+    """
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test = (
+          #const0. #const1. #const2.
+          0 ifTrue: [
+            [ #const3. #const4. #const5 ]
+               whileTrue: [
+                 #const6. #const7. #const8 ]
+          ].
+          ^ #end
+        )
+        """,
+    )
+
+    assert len(bytecodes) == 38
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_constant_0,
+            Bytecodes.pop,
+            Bytecodes.push_constant_1,
+            Bytecodes.pop,
+            Bytecodes.push_constant_2,
+            Bytecodes.pop,
+            Bytecodes.push_0,
+            BC(
+                Bytecodes.jump_on_false_top_nil,
+                27,
+                note="jump offset, to jump to the pop BC after the if/right before the push #end",
+            ),
+            Bytecodes.push_constant,
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+            BC(
+                Bytecodes.jump_on_false_pop,
+                15,
+                note="jump offset, jump to push_nil as result of whileTrue",
+            ),
+            Bytecodes.push_constant,
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+            Bytecodes.pop,
+            Bytecodes.push_constant,
+            Bytecodes.pop,
+            BC(
+                Bytecodes.jump_backward,
+                20,
+                note="jump offset, jump back to the first push constant "
+                + "in the condition, pushing const3",
+            ),
+            Bytecodes.push_nil,
+            Bytecodes.pop,
+        ],
+    )
+
+
+def test_inlining_while_loop_with_contracting_branches(mgenc):
+    """
+    This test checks whether the jumps in the while loop are correct after it got inlined.
+    The challenge here is
+    """
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test = (
+          0 ifTrue: [
+            [ ^ 1 ]
+               whileTrue: [
+                 ^ 0 ]
+          ].
+          ^ #end
+        )
+        """,
+    )
+
+    assert len(bytecodes) == 19
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_0,
+            BC(
+                Bytecodes.jump_on_false_top_nil,
+                15,
+                note="jump offset to jump to the pop after the if, before pushing #end",
+            ),
+            Bytecodes.push_1,
+            Bytecodes.return_local,
+            BC(
+                Bytecodes.jump_on_false_pop,
+                9,
+                note="jump offset, jump to push_nil as result of whileTrue",
+            ),
+            Bytecodes.push_0,
+            Bytecodes.return_local,
+            Bytecodes.pop,
+            BC(
+                Bytecodes.jump_backward,
+                8,
+                note="jump offset, to the push_1 of the condition",
+            ),
+            Bytecodes.push_nil,
+            Bytecodes.pop,
+        ],
+    )

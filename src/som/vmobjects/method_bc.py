@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from rlib import jit
-from rlib.min_heap_queue import heappush, heappop
+from rlib.min_heap_queue import heappush, heappop, HeapEntry
 from som.compiler.bc.bytecode_generator import (
     emit1,
     emit3,
@@ -12,9 +12,9 @@ from som.compiler.bc.bytecode_generator import (
     emit_super_send,
     emit_push_global,
     emit_push_block,
-    emit2_with_dummy,
     emit_push_field_with_index,
     emit_pop_field_with_index,
+    emit3_with_dummy,
 )
 from som.interpreter.ast.frame import (
     get_inner_as_context,
@@ -56,6 +56,7 @@ class BcAbstractMethod(AbstractMethod):
         "_size_frame",
         "_size_inner",
         "_lexical_scope",
+        "_inlined_loops[*]",
     ]
 
     def __init__(
@@ -69,6 +70,7 @@ class BcAbstractMethod(AbstractMethod):
         size_frame,
         size_inner,
         lexical_scope,
+        inlined_loops,
     ):
         AbstractMethod.__init__(self, signature)
 
@@ -88,6 +90,8 @@ class BcAbstractMethod(AbstractMethod):
         self._size_inner = size_inner
 
         self._lexical_scope = lexical_scope
+
+        self._inlined_loops = inlined_loops
 
     def get_number_of_locals(self):
         return self._number_of_locals
@@ -131,6 +135,10 @@ class BcAbstractMethod(AbstractMethod):
         # Get the bytecode at the given index
         assert 0 <= index < len(self._bytecodes)
         return ord(self._bytecodes[index])
+
+    def get_bytecodes(self):
+        """For testing purposes only"""
+        return [ord(b) for b in self._bytecodes]
 
     def set_bytecode(self, index, value):
         # Set the bytecode at the given index to the given value
@@ -239,15 +247,38 @@ class BcMethod(BcAbstractMethod):
         mgenc.merge_into_scope(self._lexical_scope)
         self._inline_into(mgenc)
 
+    def _create_back_jump_heap(self):
+        heap = []
+        if self._inlined_loops:
+            for loop in self._inlined_loops:
+                heappush(heap, _BackJump(loop.loop_begin_idx, loop.backward_jump_idx))
+        return heap
+
     def _inline_into(self, mgenc):
         jumps = []  # a sorted list/priority queue. sorted by original_target index
+        back_jumps = self._create_back_jump_heap()
+        back_jumps_to_patch = []
 
         i = 0
         while i < len(self._bytecodes):
-            while jumps and jumps[0][0] <= i:
+            while back_jumps and back_jumps[0].address <= i:
+                jump = heappop(back_jumps)
+                assert (
+                    jump.address == i
+                ), "we use the less or equal, but actually expect it to be strictly equal"
+                heappush(
+                    back_jumps_to_patch,
+                    _BackJumpPatch(
+                        jump.backward_jump_idx, mgenc.offset_of_next_instruction()
+                    ),
+                )
+
+            while jumps and jumps[0].address <= i:
                 jump = heappop(jumps)
-                assert jump[0] == i
-                mgenc.patch_jump_offset_to_point_to_next_instruction(jump[2], None)
+                assert (
+                    jump.address == i
+                ), "we use the less or equal, but actually expect it to be strictly equal"
+                mgenc.patch_jump_offset_to_point_to_next_instruction(jump.idx, None)
 
             bytecode = self.get_bytecode(i)
             bc_length = bytecode_length(bytecode)
@@ -356,11 +387,28 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.jump_on_true_pop
                 or bytecode == Bytecodes.jump_on_false_top_nil
                 or bytecode == Bytecodes.jump_on_false_pop
+                or bytecode == Bytecodes.jump2
+                or bytecode == Bytecodes.jump2_on_true_top_nil
+                or bytecode == Bytecodes.jump2_on_true_pop
+                or bytecode == Bytecodes.jump2_on_false_top_nil
+                or bytecode == Bytecodes.jump2_on_false_pop
             ):
                 # emit the jump, but instead of the offset, emit a dummy
-                idx = emit2_with_dummy(mgenc, bytecode)
-                offset = self.get_bytecode(i + 1)
-                heappush(jumps, (i + offset, bytecode, idx))
+                idx = emit3_with_dummy(mgenc, bytecode)
+
+                offset1 = self.get_bytecode(i + 1)
+                offset2 = self.get_bytecode(i + 2)
+                heappush(jumps, _Jump(i + (offset1 + (offset2 << 8)), bytecode, idx))
+
+            elif (
+                bytecode == Bytecodes.jump_backward
+                or bytecode == Bytecodes.jump2_backward
+            ):
+                jump = heappop(back_jumps_to_patch)
+                assert (
+                    jump.address == i
+                ), "the jump should match with the jump instructions"
+                mgenc.emit_backwards_jump_offset_to_target(jump.loop_begin_idx, None)
 
             elif bytecode in RUN_TIME_ONLY_BYTECODES:
                 raise Exception(
@@ -419,6 +467,13 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.jump_on_true_pop
                 or bytecode == Bytecodes.jump_on_false_top_nil
                 or bytecode == Bytecodes.jump_on_false_pop
+                or bytecode == Bytecodes.jump_backward
+                or bytecode == Bytecodes.jump2
+                or bytecode == Bytecodes.jump2_on_true_top_nil
+                or bytecode == Bytecodes.jump2_on_true_pop
+                or bytecode == Bytecodes.jump2_on_false_top_nil
+                or bytecode == Bytecodes.jump2_on_false_pop
+                or bytecode == Bytecodes.jump2_backward
             ):
                 # don't use context
                 pass
@@ -485,6 +540,25 @@ class BcMethod(BcAbstractMethod):
 
         if removed_ctx_level == 1:
             self._lexical_scope.drop_inlined_scope()
+
+
+class _Jump(HeapEntry):
+    def __init__(self, jump_target, bytecode, idx):
+        HeapEntry.__init__(self, jump_target)
+        self.bytecode = bytecode
+        self.idx = idx
+
+
+class _BackJump(HeapEntry):
+    def __init__(self, loop_begin_idx, backward_jump_idx):
+        HeapEntry.__init__(self, loop_begin_idx)
+        self.backward_jump_idx = backward_jump_idx
+
+
+class _BackJumpPatch(HeapEntry):
+    def __init__(self, backward_jump_idx, loop_begin_idx):
+        HeapEntry.__init__(self, backward_jump_idx)
+        self.loop_begin_idx = loop_begin_idx
 
 
 class BcMethodNLR(BcMethod):

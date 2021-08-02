@@ -77,6 +77,31 @@ def dump_bytecode(m, b, indent=""):
             + ", context "
             + str(m.get_bytecode(b + 2))
         )
+    elif bytecode == Bytecodes.push_frame or bytecode == Bytecodes.pop_frame:
+        error_println("idx: " + str(m.get_bytecode(b + 1)))
+    elif bytecode == Bytecodes.push_inner or bytecode == Bytecodes.pop_inner:
+        error_println(
+            "idx: "
+            + str(m.get_bytecode(b + 1))
+            + ", context: "
+            + str(m.get_bytecode(b + 2))
+        )
+    elif (
+        bytecode == Bytecodes.push_frame_0
+        or bytecode == Bytecodes.push_frame_1
+        or bytecode == Bytecodes.push_frame_2
+        or bytecode == Bytecodes.pop_frame_0
+        or bytecode == Bytecodes.pop_frame_1
+        or bytecode == Bytecodes.pop_frame_2
+        or bytecode == Bytecodes.push_inner_0
+        or bytecode == Bytecodes.push_inner_1
+        or bytecode == Bytecodes.push_inner_2
+        or bytecode == Bytecodes.pop_inner_0
+        or bytecode == Bytecodes.pop_inner_1
+        or bytecode == Bytecodes.pop_inner_2
+    ):
+        # don't need any other arguments
+        error_println("")
     elif bytecode == Bytecodes.push_field or bytecode == Bytecodes.pop_field:
         if m.get_holder():
             field_name = str(
@@ -97,11 +122,15 @@ def dump_bytecode(m, b, indent=""):
         dump_method(m.get_constant(b), indent + "\t")
     elif bytecode == Bytecodes.push_constant:
         constant = m.get_constant(b)
-        constant_class = constant.get_class(current_universe)
-        if constant_class:
-            class_name = str(constant_class.get_name())
-        else:
+        try:
+            constant_class = constant.get_class(current_universe)
+            if constant_class:
+                class_name = str(constant_class.get_name())
+            else:
+                class_name = "not yet supported"
+        except:  # pylint: disable=bare-except
             class_name = "not yet supported"
+
         error_println(
             "(index: "
             + str(m.get_bytecode(b + 1))
@@ -152,9 +181,17 @@ def dump_bytecode(m, b, indent=""):
     elif bytecode == Bytecodes.return_non_local:
         error_println("context: " + str(m.get_bytecode(b + 1)))
     elif is_one_of(bytecode, JUMP_BYTECODES):
-        offset = m.get_bytecode(b + 1)
+        offset1 = m.get_bytecode(b + 1)
+        offset2 = m.get_bytecode(b + 2)
+        offset = offset1 + (offset2 << 8)
+
+        if bytecode == Bytecodes.jump_backward or bytecode == Bytecodes.jump2_backward:
+            target = b - offset
+        else:
+            target = b + offset
+
         error_println(
-            "(jump offset: " + str(offset) + " -> jump target: " + str(b + offset) + ")"
+            "(jump offset: " + str(offset) + " -> jump target: " + str(target) + ")"
         )
     else:
         error_println("<incorrect bytecode>")

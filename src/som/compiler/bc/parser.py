@@ -248,15 +248,31 @@ class Parser(ParserBase):
 
         keyword = "".join(keyword_parts)
 
-        if not is_super_send and (
-            (keyword == "ifTrue:" and mgenc.inline_if_true_or_if_false(self, True))
-            or (keyword == "ifFalse:" and mgenc.inline_if_true_or_if_false(self, False))
-            or (keyword == "ifTrue:ifFalse:" and mgenc.inline_if_true_false(self, True))
-            or (
-                keyword == "ifFalse:ifTrue:" and mgenc.inline_if_true_false(self, False)
-            )
-        ):
-            return
+        num_args = len(keyword_parts)
+
+        if not is_super_send:
+            if num_args == 1 and (
+                (keyword == "ifTrue:" and mgenc.inline_if_true_or_if_false(self, True))
+                or (
+                    keyword == "ifFalse:"
+                    and mgenc.inline_if_true_or_if_false(self, False)
+                )
+                or (keyword == "whileTrue:" and mgenc.inline_while(self, True))
+                or (keyword == "whileFalse:" and mgenc.inline_while(self, False))
+            ):
+                return
+
+            if num_args == 2 and (
+                (
+                    keyword == "ifTrue:ifFalse:"
+                    and mgenc.inline_if_true_false(self, True)
+                )
+                or (
+                    keyword == "ifFalse:ifTrue:"
+                    and mgenc.inline_if_true_false(self, False)
+                )
+            ):
+                return
 
         msg = self.universe.symbol_for(keyword)
 

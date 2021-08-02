@@ -105,16 +105,6 @@ def interpret(method, frame, max_stack_size):
     stack = [None] * max_stack_size
 
     while True:
-        # since methods cannot contain loops (all loops are done via primitives)
-        # profiling only needs to be done on pc = 0
-        if current_bc_idx == 0:
-            jitdriver.can_enter_jit(
-                current_bc_idx=current_bc_idx,
-                stack_ptr=stack_ptr,
-                method=method,
-                frame=frame,
-                stack=stack,
-            )
         jitdriver.jit_merge_point(
             current_bc_idx=current_bc_idx,
             stack_ptr=stack_ptr,
@@ -500,6 +490,80 @@ def interpret(method, frame, max_stack_size):
             if val is falseObject:
                 next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
             stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump_backward:
+            next_bc_idx = current_bc_idx - method.get_bytecode(current_bc_idx + 1)
+            jitdriver.can_enter_jit(
+                current_bc_idx=next_bc_idx,
+                stack_ptr=stack_ptr,
+                method=method,
+                frame=frame,
+                stack=stack,
+            )
+
+        elif bytecode == Bytecodes.jump2:
+            next_bc_idx = (
+                current_bc_idx
+                + method.get_bytecode(current_bc_idx + 1)
+                + (method.get_bytecode(current_bc_idx + 2) << 8)
+            )
+
+        elif bytecode == Bytecodes.jump2_on_true_top_nil:
+            val = stack[stack_ptr]
+            if val is trueObject:
+                next_bc_idx = (
+                    current_bc_idx
+                    + method.get_bytecode(current_bc_idx + 1)
+                    + (method.get_bytecode(current_bc_idx + 2) << 8)
+                )
+                stack[stack_ptr] = nilObject
+            else:
+                stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_on_false_top_nil:
+            val = stack[stack_ptr]
+            if val is falseObject:
+                next_bc_idx = (
+                    current_bc_idx
+                    + method.get_bytecode(current_bc_idx + 1)
+                    + (method.get_bytecode(current_bc_idx + 2) << 8)
+                )
+                stack[stack_ptr] = nilObject
+            else:
+                stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_on_true_pop:
+            val = stack[stack_ptr]
+            if val is trueObject:
+                next_bc_idx = (
+                    current_bc_idx
+                    + method.get_bytecode(current_bc_idx + 1)
+                    + (method.get_bytecode(current_bc_idx + 2) << 8)
+                )
+            stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_on_false_pop:
+            val = stack[stack_ptr]
+            if val is falseObject:
+                next_bc_idx = (
+                    current_bc_idx
+                    + method.get_bytecode(current_bc_idx + 1)
+                    + (method.get_bytecode(current_bc_idx + 2) << 8)
+                )
+            stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_backward:
+            next_bc_idx = current_bc_idx - (
+                method.get_bytecode(current_bc_idx + 1)
+                + (method.get_bytecode(current_bc_idx + 2) << 8)
+            )
+            jitdriver.can_enter_jit(
+                current_bc_idx=next_bc_idx,
+                stack_ptr=stack_ptr,
+                method=method,
+                frame=frame,
+                stack=stack,
+            )
 
         elif bytecode == Bytecodes.q_super_send_1:
             invokable = method.get_inline_cache_invokable(current_bc_idx)
