@@ -510,6 +510,70 @@ def interpret(method, frame, max_stack_size):
                 stack=stack,
             )
 
+        elif bytecode == Bytecodes.jump2:
+            next_bc_idx = (
+                current_bc_idx
+                + method.get_bytecode(current_bc_idx + 1)
+                + (method.get_bytecode(current_bc_idx + 2) << 8)
+            )
+
+        elif bytecode == Bytecodes.jump2_on_true_top_nil:
+            val = stack[stack_ptr]
+            if val is trueObject:
+                next_bc_idx = (
+                    current_bc_idx
+                    + method.get_bytecode(current_bc_idx + 1)
+                    + (method.get_bytecode(current_bc_idx + 2) << 8)
+                )
+                stack[stack_ptr] = nilObject
+            else:
+                stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_on_false_top_nil:
+            val = stack[stack_ptr]
+            if val is falseObject:
+                next_bc_idx = (
+                    current_bc_idx
+                    + method.get_bytecode(current_bc_idx + 1)
+                    + (method.get_bytecode(current_bc_idx + 2) << 8)
+                )
+                stack[stack_ptr] = nilObject
+            else:
+                stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_on_true_pop:
+            val = stack[stack_ptr]
+            if val is trueObject:
+                next_bc_idx = (
+                    current_bc_idx
+                    + method.get_bytecode(current_bc_idx + 1)
+                    + (method.get_bytecode(current_bc_idx + 2) << 8)
+                )
+            stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_on_false_pop:
+            val = stack[stack_ptr]
+            if val is falseObject:
+                next_bc_idx = (
+                    current_bc_idx
+                    + method.get_bytecode(current_bc_idx + 1)
+                    + (method.get_bytecode(current_bc_idx + 2) << 8)
+                )
+            stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_backward:
+            next_bc_idx = current_bc_idx - (
+                method.get_bytecode(current_bc_idx + 1)
+                + (method.get_bytecode(current_bc_idx + 2) << 8)
+            )
+            jitdriver.can_enter_jit(
+                current_bc_idx=next_bc_idx,
+                stack_ptr=stack_ptr,
+                method=method,
+                frame=frame,
+                stack=stack,
+            )
+
         elif bytecode == Bytecodes.q_super_send_1:
             invokable = method.get_inline_cache_invokable(current_bc_idx)
             stack[stack_ptr] = invokable.invoke_1(stack[stack_ptr])

@@ -22,6 +22,8 @@ from som.interpreter.bc.bytecodes import (
     bytecode_as_str,
     is_one_of,
     JUMP_BYTECODES,
+    NUM_SINGLE_BYTE_JUMP_BYTECODES,
+    FIRST_DOUBLE_BYTE_JUMP_BYTECODE,
 )
 from som.vmobjects.integer import int_0, int_1
 from som.vmobjects.method_trivial import (
@@ -664,7 +666,16 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         self._check_jump_offset(parser, jump_offset, bytecode)
 
-        self._bytecode[idx_of_offset] = jump_offset
+        if jump_offset <= 0xFF:
+            self._bytecode[idx_of_offset] = jump_offset
+        else:
+            # need to use the jump2* version of the bytecode
+            if bytecode < FIRST_DOUBLE_BYTE_JUMP_BYTECODE:
+                # still need to bump this one up to
+                self._bytecode[instruction_start] += NUM_SINGLE_BYTE_JUMP_BYTECODES
+            assert is_one_of(self._bytecode[instruction_start], JUMP_BYTECODES)
+            self._bytecode[idx_of_offset] = jump_offset & 0xFF
+            self._bytecode[idx_of_offset + 1] = jump_offset >> 8
 
     def offset_of_next_instruction(self):
         return len(self._bytecode)
@@ -673,7 +684,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
     def _check_jump_offset(parser, jump_offset, bytecode):
         from som.compiler.symbol import Symbol
 
-        if not 0 <= jump_offset < 256:
+        if not 0 <= jump_offset <= 0xFFFF:
             raise ParseError(
                 "The jump_offset for the "
                 + bytecode_as_str(bytecode)

@@ -12,9 +12,9 @@ from som.compiler.bc.bytecode_generator import (
     emit_super_send,
     emit_push_global,
     emit_push_block,
-    emit2_with_dummy,
     emit_push_field_with_index,
     emit_pop_field_with_index,
+    emit3_with_dummy,
 )
 from som.interpreter.ast.frame import (
     get_inner_as_context,
@@ -387,15 +387,23 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.jump_on_true_pop
                 or bytecode == Bytecodes.jump_on_false_top_nil
                 or bytecode == Bytecodes.jump_on_false_pop
+                or bytecode == Bytecodes.jump2
+                or bytecode == Bytecodes.jump2_on_true_top_nil
+                or bytecode == Bytecodes.jump2_on_true_pop
+                or bytecode == Bytecodes.jump2_on_false_top_nil
+                or bytecode == Bytecodes.jump2_on_false_pop
             ):
                 # emit the jump, but instead of the offset, emit a dummy
-                idx = emit2_with_dummy(mgenc, bytecode)
-                mgenc.add_bytecode_argument(0)
+                idx = emit3_with_dummy(mgenc, bytecode)
 
-                offset = self.get_bytecode(i + 1)
-                heappush(jumps, _Jump(i + offset, bytecode, idx))
+                offset1 = self.get_bytecode(i + 1)
+                offset2 = self.get_bytecode(i + 2)
+                heappush(jumps, _Jump(i + (offset1 + (offset2 << 8)), bytecode, idx))
 
-            elif bytecode == Bytecodes.jump_backward:
+            elif (
+                bytecode == Bytecodes.jump_backward
+                or bytecode == Bytecodes.jump2_backward
+            ):
                 jump = heappop(back_jumps_to_patch)
                 assert (
                     jump.address == i
@@ -460,6 +468,12 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.jump_on_false_top_nil
                 or bytecode == Bytecodes.jump_on_false_pop
                 or bytecode == Bytecodes.jump_backward
+                or bytecode == Bytecodes.jump2
+                or bytecode == Bytecodes.jump2_on_true_top_nil
+                or bytecode == Bytecodes.jump2_on_true_pop
+                or bytecode == Bytecodes.jump2_on_false_top_nil
+                or bytecode == Bytecodes.jump2_on_false_pop
+                or bytecode == Bytecodes.jump2_backward
             ):
                 # don't use context
                 pass

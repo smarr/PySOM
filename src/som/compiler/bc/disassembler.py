@@ -156,9 +156,11 @@ def dump_bytecode(m, b, indent=""):
     elif bytecode == Bytecodes.return_non_local:
         error_println("context: " + str(m.get_bytecode(b + 1)))
     elif is_one_of(bytecode, JUMP_BYTECODES):
-        offset = m.get_bytecode(b + 1)
+        offset1 = m.get_bytecode(b + 1)
+        offset2 = m.get_bytecode(b + 2)
+        offset = offset1 + (offset2 << 8)
 
-        if bytecode == Bytecodes.jump_backward:
+        if bytecode == Bytecodes.jump_backward or bytecode == Bytecodes.jump2_backward:
             target = b - offset
         else:
             target = b + offset

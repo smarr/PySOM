@@ -185,7 +185,12 @@ def emit_jump_with_dummy_offset(mgenc):
 
 
 def emit_jump_backward_with_offset(mgenc, offset):
-    emit3(mgenc, BC.jump_backward, offset, 0)
+    emit3(
+        mgenc,
+        BC.jump_backward if offset <= 0xFF else BC.jump2_backward,
+        offset & 0xFF,
+        offset >> 8,
+    )
 
 
 def emit1(mgenc, code):
@@ -206,3 +211,10 @@ def emit3(mgenc, code, idx, ctx):
     mgenc.add_bytecode(code)
     mgenc.add_bytecode_argument(idx)
     mgenc.add_bytecode_argument(ctx)
+
+
+def emit3_with_dummy(mgenc, code):
+    mgenc.add_bytecode(code)
+    idx = mgenc.add_bytecode_argument_and_get_index(0)
+    mgenc.add_bytecode_argument(0)
+    return idx
