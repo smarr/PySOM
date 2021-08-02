@@ -97,11 +97,15 @@ def dump_bytecode(m, b, indent=""):
         dump_method(m.get_constant(b), indent + "\t")
     elif bytecode == Bytecodes.push_constant:
         constant = m.get_constant(b)
-        constant_class = constant.get_class(current_universe)
-        if constant_class:
-            class_name = str(constant_class.get_name())
-        else:
+        try:
+            constant_class = constant.get_class(current_universe)
+            if constant_class:
+                class_name = str(constant_class.get_name())
+            else:
+                class_name = "not yet supported"
+        except:  # pylint: disable=bare-except
             class_name = "not yet supported"
+
         error_println(
             "(index: "
             + str(m.get_bytecode(b + 1))
