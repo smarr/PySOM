@@ -136,6 +136,10 @@ class BcAbstractMethod(AbstractMethod):
         assert 0 <= index < len(self._bytecodes)
         return ord(self._bytecodes[index])
 
+    def get_bytecodes(self):
+        """For testing purposes only"""
+        return [ord(b) for b in self._bytecodes]
+
     def set_bytecode(self, index, value):
         # Set the bytecode at the given index to the given value
         assert (
