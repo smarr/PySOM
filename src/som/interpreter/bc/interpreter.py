@@ -104,6 +104,15 @@ def interpret(method, frame, max_stack_size):
     stack_ptr = -1
     stack = [None] * max_stack_size
 
+    # allow recursive methods to trigger compilation
+    jitdriver.can_enter_jit(
+        current_bc_idx=current_bc_idx,
+        stack_ptr=stack_ptr,
+        method=method,
+        frame=frame,
+        stack=stack,
+    )
+
     while True:
         jitdriver.jit_merge_point(
             current_bc_idx=current_bc_idx,
