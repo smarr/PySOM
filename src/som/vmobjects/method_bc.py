@@ -390,6 +390,8 @@ class BcMethod(BcAbstractMethod):
             ):
                 # emit the jump, but instead of the offset, emit a dummy
                 idx = emit2_with_dummy(mgenc, bytecode)
+                mgenc.add_bytecode_argument(0)
+
                 offset = self.get_bytecode(i + 1)
                 heappush(jumps, _Jump(i + offset, bytecode, idx))
 
@@ -457,6 +459,7 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.jump_on_true_pop
                 or bytecode == Bytecodes.jump_on_false_top_nil
                 or bytecode == Bytecodes.jump_on_false_pop
+                or bytecode == Bytecodes.jump_backward
             ):
                 # don't use context
                 pass

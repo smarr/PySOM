@@ -173,17 +173,19 @@ def emit_jump_on_bool_with_dummy_offset(mgenc, is_if_true, needs_pop):
         emit1(mgenc, BC.jump_on_true_pop if needs_pop else BC.jump_on_true_top_nil)
 
     idx = mgenc.add_bytecode_argument_and_get_index(0)
+    mgenc.add_bytecode_argument(0)
     return idx
 
 
 def emit_jump_with_dummy_offset(mgenc):
     emit1(mgenc, BC.jump)
     idx = mgenc.add_bytecode_argument_and_get_index(0)
+    mgenc.add_bytecode_argument(0)
     return idx
 
 
 def emit_jump_backward_with_offset(mgenc, offset):
-    emit2(mgenc, BC.jump_backward, offset)
+    emit3(mgenc, BC.jump_backward, offset, 0)
 
 
 def emit1(mgenc, code):

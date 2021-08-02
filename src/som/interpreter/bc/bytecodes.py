@@ -211,12 +211,12 @@ _BYTECODE_LENGTH = [
     1,  # return_self
     1,  # inc
     1,  # dec
-    2,  # jump
-    2,  # jump_on_true_top_nil
-    2,  # jump_on_false_top_nil
-    2,  # jump_on_true_pop
-    2,  # jump_on_false_pop
-    2,  # jump_backward
+    3,  # jump
+    3,  # jump_on_true_top_nil
+    3,  # jump_on_false_top_nil
+    3,  # jump_on_true_pop
+    3,  # jump_on_false_pop
+    3,  # jump_backward
     2,  # q_super_send_1
     2,  # q_super_send_2
     2,  # q_super_send_3
