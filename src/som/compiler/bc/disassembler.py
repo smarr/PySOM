@@ -77,6 +77,31 @@ def dump_bytecode(m, b, indent=""):
             + ", context "
             + str(m.get_bytecode(b + 2))
         )
+    elif bytecode == Bytecodes.push_frame or bytecode == Bytecodes.pop_frame:
+        error_println("idx: " + str(m.get_bytecode(b + 1)))
+    elif bytecode == Bytecodes.push_inner or bytecode == Bytecodes.pop_inner:
+        error_println(
+            "idx: "
+            + str(m.get_bytecode(b + 1))
+            + ", context: "
+            + str(m.get_bytecode(b + 2))
+        )
+    elif (
+        bytecode == Bytecodes.push_frame_0
+        or bytecode == Bytecodes.push_frame_1
+        or bytecode == Bytecodes.push_frame_2
+        or bytecode == Bytecodes.pop_frame_0
+        or bytecode == Bytecodes.pop_frame_1
+        or bytecode == Bytecodes.pop_frame_2
+        or bytecode == Bytecodes.push_inner_0
+        or bytecode == Bytecodes.push_inner_1
+        or bytecode == Bytecodes.push_inner_2
+        or bytecode == Bytecodes.pop_inner_0
+        or bytecode == Bytecodes.pop_inner_1
+        or bytecode == Bytecodes.pop_inner_2
+    ):
+        # don't need any other arguments
+        error_println("")
     elif bytecode == Bytecodes.push_field or bytecode == Bytecodes.pop_field:
         if m.get_holder():
             field_name = str(
