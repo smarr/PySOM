@@ -70,8 +70,9 @@ class Bytecodes(object):
     jump_on_false_top_nil = jump_on_true_top_nil + 1
     jump_on_true_pop = jump_on_false_top_nil + 1
     jump_on_false_pop = jump_on_true_pop + 1
+    jump_backward = jump_on_false_pop + 1
 
-    q_super_send_1 = jump_on_false_pop + 1
+    q_super_send_1 = jump_backward + 1
     q_super_send_2 = q_super_send_1 + 1
     q_super_send_3 = q_super_send_2 + 1
     q_super_send_n = q_super_send_3 + 1
@@ -131,6 +132,7 @@ JUMP_BYTECODES = [
     Bytecodes.jump_on_true_pop,
     Bytecodes.jump_on_false_pop,
     Bytecodes.jump_on_false_top_nil,
+    Bytecodes.jump_backward,
 ]
 
 RUN_TIME_ONLY_BYTECODES = [
@@ -214,6 +216,7 @@ _BYTECODE_LENGTH = [
     2,  # jump_on_false_top_nil
     2,  # jump_on_true_pop
     2,  # jump_on_false_pop
+    2,  # jump_backward
     2,  # q_super_send_1
     2,  # q_super_send_2
     2,  # q_super_send_3
@@ -279,6 +282,7 @@ _BYTECODE_STACK_EFFECT = [
     0,  # jump_on_false_top_nil
     -1,  # jump_on_true_pop
     -1,  # jump_on_false_pop
+    0,  # jump_backward
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_1
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_2
     _STACK_EFFECT_DEPENDS_ON_MESSAGE,  # q_super_send_3

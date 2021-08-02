@@ -909,3 +909,126 @@ def test_block_if_return_non_local(bgenc, if_selector, jump_bytecode):
     assert Bytecodes.return_non_local == bytecodes[12]
     assert bytecodes[13] == 1
     assert Bytecodes.pop == bytecodes[14]
+
+
+@pytest.mark.parametrize(
+    "selector,jump_bytecode",
+    [
+        ("whileTrue:", Bytecodes.jump_on_false_pop),
+        ("whileFalse:", Bytecodes.jump_on_true_pop),
+    ],
+)
+def test_while_inlining(mgenc, selector, jump_bytecode):
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test: arg = (
+            #start.
+            [ true ] SELECTOR [ arg ].
+            #end
+        )""".replace(
+            "SELECTOR", selector
+        ),
+    )
+
+    assert len(bytecodes) == 17
+    assert Bytecodes.push_constant == bytecodes[2]
+    assert jump_bytecode == bytecodes[4]
+    assert Bytecodes.push_argument == bytecodes[6]
+    assert Bytecodes.pop == bytecodes[9]
+    assert Bytecodes.jump_backward == bytecodes[10]
+    assert bytecodes[11] == 8, "jump offset"
+    assert Bytecodes.push_nil == bytecodes[12]
+    assert Bytecodes.pop == bytecodes[13]
+
+
+def test_inlining_while_loop_with_expanding_branches(mgenc):
+    """
+    This test checks whether the jumps in the while loop are correct after it got inlined.
+    The challenge here is
+    """
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test = (
+          #const0. #const1. #const2.
+          0 ifTrue: [
+            [ #const3. #const4. #const5 ]
+               whileTrue: [
+                 #const6. #const7. #const8 ]
+          ].
+          ^ #end
+        )
+        """,
+    )
+
+    assert len(bytecodes) == 35
+    assert Bytecodes.push_constant_0 == bytecodes[0]
+    assert Bytecodes.push_constant_1 == bytecodes[2]
+    assert Bytecodes.push_constant_2 == bytecodes[4]
+
+    assert Bytecodes.push_0 == bytecodes[6]
+    assert Bytecodes.jump_on_false_top_nil == bytecodes[7]
+    assert (
+        bytecodes[8] == 24
+    ), "jump offset, to jump to the pop BC after the if/right before the push #end"
+
+    assert Bytecodes.push_constant == bytecodes[9]
+    assert Bytecodes.push_constant == bytecodes[12]
+    assert Bytecodes.push_constant == bytecodes[15]
+
+    assert Bytecodes.jump_on_false_pop == bytecodes[17]
+    assert bytecodes[18] == 13, "jump offset, jump to push_nil as result of whileTrue"
+
+    assert Bytecodes.push_constant == bytecodes[19]
+    assert Bytecodes.push_constant == bytecodes[22]
+    assert Bytecodes.push_constant == bytecodes[25]
+
+    assert Bytecodes.jump_backward == bytecodes[28]
+    assert (
+        bytecodes[29] == 19
+    ), "jump offset, jump back to the first push constant in the condition, pushing const3"
+
+    assert Bytecodes.push_nil == bytecodes[30]
+    assert Bytecodes.pop == bytecodes[31]
+
+
+def test_inlining_while_loop_with_contracting_branches(mgenc):
+    """
+    This test checks whether the jumps in the while loop are correct after it got inlined.
+    The challenge here is
+    """
+    bytecodes = method_to_bytecodes(
+        mgenc,
+        """
+        test = (
+          0 ifTrue: [
+            [ ^ 1 ]
+               whileTrue: [
+                 ^ 0 ]
+          ].
+          ^ #end
+        )
+        """,
+    )
+
+    assert len(bytecodes) == 16
+    assert Bytecodes.jump_on_false_top_nil == bytecodes[1]
+    assert (
+        bytecodes[2] == 12
+    ), "jump offset to jump to the pop after the if, before pushing #end"
+
+    assert Bytecodes.push_1 == bytecodes[3]
+    assert Bytecodes.return_local == bytecodes[4]
+
+    assert Bytecodes.jump_on_false_pop == bytecodes[5]
+    assert bytecodes[6] == 7, "jump offset, jump to push_nil as result of whileTrue"
+
+    assert Bytecodes.push_0 == bytecodes[7]
+    assert Bytecodes.return_local == bytecodes[8]
+
+    assert Bytecodes.jump_backward == bytecodes[10]
+    assert bytecodes[11] == 7, "jump offset, to the push_1 of the condition"
+
+    assert Bytecodes.push_nil == bytecodes[12]
+    assert Bytecodes.pop == bytecodes[13]

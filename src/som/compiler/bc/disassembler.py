@@ -153,8 +153,14 @@ def dump_bytecode(m, b, indent=""):
         error_println("context: " + str(m.get_bytecode(b + 1)))
     elif is_one_of(bytecode, JUMP_BYTECODES):
         offset = m.get_bytecode(b + 1)
+
+        if bytecode == Bytecodes.jump_backward:
+            target = b - offset
+        else:
+            target = b + offset
+
         error_println(
-            "(jump offset: " + str(offset) + " -> jump target: " + str(b + offset) + ")"
+            "(jump offset: " + str(offset) + " -> jump target: " + str(target) + ")"
         )
     else:
         error_println("<incorrect bytecode>")

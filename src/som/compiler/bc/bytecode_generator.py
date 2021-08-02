@@ -182,6 +182,10 @@ def emit_jump_with_dummy_offset(mgenc):
     return idx
 
 
+def emit_jump_backward_with_offset(mgenc, offset):
+    emit2(mgenc, BC.jump_backward, offset)
+
+
 def emit1(mgenc, code):
     mgenc.add_bytecode(code)
 

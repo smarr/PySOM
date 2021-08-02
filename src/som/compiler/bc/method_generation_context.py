@@ -2,6 +2,9 @@ from rlib.debug import make_sure_not_resized
 from som.compiler.bc.bytecode_generator import (
     emit_jump_on_bool_with_dummy_offset,
     emit_jump_with_dummy_offset,
+    emit_pop,
+    emit_push_constant,
+    emit_jump_backward_with_offset,
 )
 
 from som.compiler.method_generation_context import MethodGenerationContextBase
@@ -51,6 +54,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         self._last_4_bytecodes = [Bytecodes.invalid] * _NUM_LAST_BYTECODES
         self._is_currently_inlining_a_block = False
+        self.inlined_loops = []
 
     def get_number_of_locals(self):
         return len(self._local_list)
@@ -149,6 +153,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
             size_frame,
             size_inner,
             self.lexical_scope,
+            self.inlined_loops[:],
         )
 
         # copy bytecodes into method
@@ -360,12 +365,12 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._last_4_bytecodes[3] = Bytecodes.invalid
 
     def optimize_dup_pop_pop_sequence(self):
-        # TODO:
-        # // when we are inlining blocks, this already happened
-        # // and any new opportunities to apply these optimizations are consequently
-        # // at jump targets for blocks, and we can't remove those
-        # if (isCurrentlyInliningBlock):
-        #   return false;
+        # when we are inlining blocks, this already happened
+        # and any new opportunities to apply these optimizations are consequently
+        # at jump targets for blocks, and we can't remove those
+        if self._is_currently_inlining_a_block:
+            return False
+
         dup_candidate = self._last_bytecode_is(1, Bytecodes.dup)
         if dup_candidate == Bytecodes.invalid:
             return False
@@ -546,14 +551,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
             and bytecode_length(Bytecodes.push_block_no_ctx) == 2
         )
 
-        block_1_lit_idx = self._bytecode[-3]
-        block_2_lit_idx = self._bytecode[-1]
-
-        # grab the blocks' methods for inlining
-        to_be_inlined_1 = self._literals[block_1_lit_idx]
-        to_be_inlined_2 = self._literals[block_2_lit_idx]
-
-        self._remove_last_bytecodes(2)
+        (
+            to_be_inlined_1,
+            to_be_inlined_2,
+        ) = self._extract_block_methods_and_remove_bytecodes()
 
         jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
             self, is_if_true, True
@@ -583,16 +584,90 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         return True
 
+    def _extract_block_methods_and_remove_bytecodes(self):
+        block_1_lit_idx = self._bytecode[-3]
+        block_2_lit_idx = self._bytecode[-1]
+
+        # grab the blocks' methods for inlining
+        to_be_inlined_1 = self._literals[block_1_lit_idx]
+        to_be_inlined_2 = self._literals[block_2_lit_idx]
+
+        self._remove_last_bytecodes(2)
+
+        return to_be_inlined_1, to_be_inlined_2
+
+    def inline_while(self, parser, is_while_true):
+        if not self._has_two_literal_block_arguments():
+            return False
+
+        assert (
+            bytecode_length(Bytecodes.push_block) == 2
+            and bytecode_length(Bytecodes.push_block_no_ctx) == 2
+        )
+
+        cond_method, body_method = self._extract_block_methods_and_remove_bytecodes()
+
+        loop_begin_idx = self.offset_of_next_instruction()
+
+        self._is_currently_inlining_a_block = True
+        cond_method.inline(self)
+
+        jump_offset_idx_to_skip_loop_body = emit_jump_on_bool_with_dummy_offset(
+            self, is_while_true, True
+        )
+
+        body_method.inline(self)
+
+        self._complete_jumps_and_emit_returning_nil(
+            parser, loop_begin_idx, jump_offset_idx_to_skip_loop_body
+        )
+
+        self._is_currently_inlining_a_block = False
+
+        return True
+
+    def _complete_jumps_and_emit_returning_nil(
+        self, parser, loop_begin_idx, jump_offset_idx_to_skip_loop_body
+    ):
+        from som.vm.globals import nilObject
+
+        self._reset_last_bytecode_buffer()
+
+        emit_pop(self)
+
+        self.emit_backwards_jump_offset_to_target(loop_begin_idx, parser)
+
+        self.patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_skip_loop_body, parser
+        )
+        emit_push_constant(self, nilObject)
+        self._reset_last_bytecode_buffer()
+
+    def emit_backwards_jump_offset_to_target(self, loop_begin_idx, parser):
+        address_of_jump = self.offset_of_next_instruction()
+        # we are going to jump backward and want a positive value
+        # thus we subtract target_address from address_of_jump
+        jump_offset = address_of_jump - loop_begin_idx
+
+        self._check_jump_offset(parser, jump_offset, Bytecodes.jump_backward)
+        backward_jump_idx = self.offset_of_next_instruction()
+        emit_jump_backward_with_offset(self, jump_offset)
+
+        self.inlined_loops.append(_Loop(loop_begin_idx, backward_jump_idx))
+
     def patch_jump_offset_to_point_to_next_instruction(self, idx_of_offset, parser):
         instruction_start = idx_of_offset - 1
         bytecode = self._bytecode[instruction_start]
         assert is_one_of(bytecode, JUMP_BYTECODES)
 
-        jump_offset = len(self._bytecode) - instruction_start
+        jump_offset = self.offset_of_next_instruction() - instruction_start
 
         self._check_jump_offset(parser, jump_offset, bytecode)
 
         self._bytecode[idx_of_offset] = jump_offset
+
+    def offset_of_next_instruction(self):
+        return len(self._bytecode)
 
     @staticmethod
     def _check_jump_offset(parser, jump_offset, bytecode):
@@ -607,6 +682,14 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 Symbol.NONE,
                 parser,
             )
+
+
+class _Loop(object):
+    _immutable_fields_ = ["loop_begin_idx", "backward_jump_idx"]
+
+    def __init__(self, loop_begin_idx, backward_jump_idx):
+        self.loop_begin_idx = loop_begin_idx
+        self.backward_jump_idx = backward_jump_idx
 
 
 class FindVarResult(object):

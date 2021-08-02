@@ -28,7 +28,7 @@ from som.vm.current import current_universe
 from som.vm.globals import trueObject, falseObject
 
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
-    is_bytecode_interpreter(), reason="Tests are specific to bytecode interpreter"
+    is_bytecode_interpreter(), reason="Tests are specific to AST interpreter"
 )
 
 

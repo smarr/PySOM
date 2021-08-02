@@ -5,6 +5,11 @@
 # https://github.com/python/cpython/blob/main/LICENSE
 
 
+class HeapEntry(object):
+    def __init__(self, address):
+        self.address = address
+
+
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
     heap.append(item)
@@ -30,7 +35,7 @@ def _siftdown(heap, startpos, pos):
     while pos > startpos:
         parentpos = (pos - 1) >> 1
         parent = heap[parentpos]
-        if newitem[0] < parent[0]:
+        if newitem.address < parent.address:
             heap[pos] = parent
             pos = parentpos
             continue
@@ -47,7 +52,7 @@ def _siftup(heap, pos):
     while childpos < endpos:
         # Set childpos to index of smaller child.
         rightpos = childpos + 1
-        if rightpos < endpos and not heap[childpos][0] < heap[rightpos][0]:
+        if rightpos < endpos and not heap[childpos].address < heap[rightpos].address:
             childpos = rightpos
         # Move the smaller child up.
         heap[pos] = heap[childpos]
