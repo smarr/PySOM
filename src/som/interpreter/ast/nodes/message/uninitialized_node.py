@@ -22,7 +22,6 @@ from som.interpreter.ast.nodes.specialized.to_do_node import (
     IntToIntDoNode,
     IntToDoubleDoNode,
 )
-from som.interpreter.ast.nodes.specialized.while_node import WhileMessageNode
 
 
 class UninitializedMessageNode(AbstractMessageNode):
@@ -33,7 +32,6 @@ class UninitializedMessageNode(AbstractMessageNode):
     def _specialize(self, _frame, rcvr, args):
         if args:
             for specialization in [
-                WhileMessageNode,
                 IntToIntDoNode,
                 IntToDoubleDoNode,
                 IntToIntByDoNode,
