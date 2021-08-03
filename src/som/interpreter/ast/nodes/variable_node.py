@@ -70,7 +70,7 @@ class UninitializedWriteNode(ExpressionNode):
         return self._specialize().execute(frame)
 
     def write_value(self, frame, value):
-        return self._specialize().write_value(frame, value)
+        self._specialize().write_value(frame, value)
 
     def _specialize(self):
         return self.replace(
@@ -164,7 +164,6 @@ class NonLocalVariableWriteNode(_NonLocalVariableNode):
 
     def write_value(self, frame, value):
         self.determine_block(frame).set_outer(self._frame_idx, value)
-        return value
 
 
 class _LocalVariableNode(ExpressionNode):
@@ -200,7 +199,6 @@ class LocalInnerVarWriteNode(_LocalVariableWriteNode):
 
     def write_value(self, frame, value):
         write_inner(frame, self._frame_idx, value)
-        return value
 
 
 class LocalFrameVarReadNode(_LocalVariableNode):
@@ -219,4 +217,3 @@ class LocalFrameVarWriteNode(_LocalVariableWriteNode):
 
     def write_value(self, frame, value):
         write_frame(frame, self._frame_idx, value)
-        return value
