@@ -17,6 +17,10 @@ from som.interpreter.ast.nodes.message.uninitialized_node import (
 from som.interpreter.ast.nodes.return_non_local_node import ReturnNonLocalNode
 from som.interpreter.ast.nodes.sequence_node import SequenceNode
 from som.interpreter.ast.nodes.specialized.int_inc_node import IntIncrementNode
+from som.interpreter.ast.nodes.specialized.literal_and_or import (
+    AndInlinedNode,
+    OrInlinedNode,
+)
 from som.interpreter.ast.nodes.specialized.literal_if import (
     IfInlinedNode,
     IfElseInlinedNode,
@@ -201,6 +205,17 @@ class Parser(ParserBase):
 
         source = self._get_source_section(coord)
 
+        if not is_super_send:
+            sel = selector.get_embedded_string()
+            if sel == "&&":
+                inlined = self._try_inlining_and(receiver, arg_expr, source, mgenc)
+                if inlined is not None:
+                    return inlined
+            elif sel == "||":
+                inlined = self._try_inlining_or(receiver, arg_expr, source, mgenc)
+                if inlined is not None:
+                    return inlined
+
         if is_super_send:
             return BinarySuper(
                 selector, receiver, arg_expr, mgenc.holder.get_super_class(), source
@@ -260,6 +275,22 @@ class Parser(ParserBase):
         body_expr = arguments[0].get_method().inline(mgenc)
         return WhileInlinedNode(cond_expr, body_expr, while_true, source)
 
+    @staticmethod
+    def _try_inlining_and(receiver, arg_expr, source, mgenc):
+        if not isinstance(arg_expr, BlockNode):
+            return None
+
+        arg_body = arg_expr.get_method().inline(mgenc)
+        return AndInlinedNode(receiver, arg_body, source)
+
+    @staticmethod
+    def _try_inlining_or(receiver, arg_expr, source, mgenc):
+        if not isinstance(arg_expr, BlockNode):
+            return None
+
+        arg_body = arg_expr.get_method().inline(mgenc)
+        return OrInlinedNode(receiver, arg_body, source)
+
     def _keyword_message(self, mgenc, receiver):
         is_super_send = self._super_send
 
@@ -299,6 +330,18 @@ class Parser(ParserBase):
                 elif keyword == "whileFalse:":
                     inlined = self._try_inlining_while(
                         False, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "and:":
+                    inlined = self._try_inlining_and(
+                        receiver, arguments[0], source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "or:":
+                    inlined = self._try_inlining_or(
+                        receiver, arguments[0], source, mgenc
                     )
                     if inlined is not None:
                         return inlined
