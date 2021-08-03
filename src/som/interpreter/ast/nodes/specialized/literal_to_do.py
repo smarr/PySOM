@@ -1,8 +1,27 @@
-from rlib.jit import JitDriver
+from rlib.jit import JitDriver, we_are_jitted
 
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
+from som.vm.globals import nilObject
 from som.vmobjects.double import Double
 from som.vmobjects.integer import Integer
+
+
+def get_printable_location(self):
+    assert isinstance(self, ToDoInlined)
+    source = self.source_section
+    return "#to:do: %s:%d:%d" % (
+        source.file,
+        source.coord.start_line,
+        source.coord.start_column,
+    )
+
+
+driver = JitDriver(
+    greens=["self"],
+    reds="auto",
+    is_recursive=True,
+    get_printable_location=get_printable_location,
+)
 
 
 class ToDoInlined(ExpressionNode):
@@ -28,57 +47,23 @@ class ToDoInlined(ExpressionNode):
         assert isinstance(start, Integer)
 
         end = self._to_expr.execute(frame)
+
         if isinstance(end, Integer):
-            _to_do_int(
-                frame,
-                start.get_embedded_integer(),
-                end.get_embedded_integer(),
-                self._idx_write,
-                self._do_expr,
-            )
-            return start
+            end_int = end.get_embedded_integer()
+        else:
+            assert isinstance(end, Double)
+            end_int = int(end.get_embedded_double())
 
-        assert isinstance(end, Double)
-        _to_do_dbl(
-            frame,
-            start.get_embedded_integer(),
-            end.get_embedded_double(),
-            self._idx_write,
-            self._do_expr,
-        )
+        if we_are_jitted():
+            self._idx_write.write_value(frame, nilObject)
+
+        i = start.get_embedded_integer()
+        while i <= end_int:
+            driver.jit_merge_point(self=self)
+            self._idx_write.write_value(frame, Integer(i))
+            self._do_expr.execute(frame)
+            if we_are_jitted():
+                self._idx_write.write_value(frame, nilObject)
+            i += 1
+
         return start
-
-
-def get_printable_location(do_expr, idx_write):  # pylint: disable=unused-argument
-    assert isinstance(do_expr, ExpressionNode)
-    return "#to:do: %s" % str(do_expr.source_section)
-
-
-int_driver = JitDriver(
-    greens=["do_expr", "idx_write"],
-    reds="auto",
-    is_recursive=True,
-    get_printable_location=get_printable_location,
-)
-
-
-dbl_driver = JitDriver(
-    greens=["do_expr", "idx_write"],
-    reds="auto",
-    is_recursive=True,
-    get_printable_location=get_printable_location,
-)
-
-
-def _to_do_int(frame, start, end, idx_write, do_expr):
-    for i in range(start, end + 1):
-        int_driver.jit_merge_point(do_expr=do_expr, idx_write=idx_write)
-        idx_write.write_value(frame, Integer(i))
-        do_expr.execute(frame)
-
-
-def _to_do_dbl(frame, start, end, idx_write, do_expr):
-    for i in range(start, end + 1):
-        dbl_driver.jit_merge_point(do_expr=do_expr, idx_write=idx_write)
-        idx_write.write_value(frame, Integer(i))
-        do_expr.execute(frame)

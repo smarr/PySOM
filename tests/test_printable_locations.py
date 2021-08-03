@@ -2,12 +2,13 @@
 import pytest
 
 from rtruffle.source_section import SourceCoordinate, SourceSection
-from som.interpreter.ast.nodes.expression_node import ExpressionNode
+from som.compiler.ast.variable import Local
 from som.interpreter.ast.nodes.specialized.down_to_do_node import (
     get_printable_location as pl_dtd,
 )
 from som.interpreter.ast.nodes.specialized.literal_to_do import (
     get_printable_location as pl_ltd,
+    ToDoInlined,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import (
     get_printable_location_while as pl_while,
@@ -45,9 +46,9 @@ def test_pl_dtd(method):
 
 
 def test_pl_ltd(source_section):
-    do_expr = ExpressionNode(source_section)
+    node = ToDoInlined(None, None, None, Local("", 1, source_section), source_section)
 
-    assert pl_ltd(do_expr, None) == "#to:do: test.som:1:1"
+    assert pl_ltd(node) == "#to:do: test.som:1:1"
 
 
 def test_while(source_section):
