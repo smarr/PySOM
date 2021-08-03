@@ -39,7 +39,7 @@ class LiteralReturn(AbstractTrivialMethod):
     _immutable_fields_ = ["_value"]
 
     def __init__(self, signature, value):
-        AbstractTrivialMethod.__init__(self, signature)
+        AbstractTrivialMethod.__init__(self, signature, None)
         self._value = value
 
     def set_holder(self, value):
@@ -81,7 +81,7 @@ class GlobalRead(AbstractTrivialMethod):
     _immutable_fields_ = ["_assoc?", "_global_name", "_context_level", "universe"]
 
     def __init__(self, signature, global_name, context_level, universe, assoc=None):
-        AbstractTrivialMethod.__init__(self, signature)
+        AbstractTrivialMethod.__init__(self, signature, None)
         self._assoc = assoc
         self._global_name = global_name
         self._context_level = context_level
@@ -136,7 +136,7 @@ class FieldRead(AbstractTrivialMethod):
     _immutable_fields_ = ["_field_idx", "_context_level"]
 
     def __init__(self, signature, field_idx, context_level):
-        AbstractTrivialMethod.__init__(self, signature)
+        AbstractTrivialMethod.__init__(self, signature, None)
         self._field_idx = field_idx
         self._context_level = context_level
 
@@ -181,7 +181,7 @@ class FieldWrite(AbstractTrivialMethod):
     _immutable_fields_ = ["_field_idx", "_arg_idx"]
 
     def __init__(self, signature, field_idx, arg_idx):
-        AbstractTrivialMethod.__init__(self, signature)
+        AbstractTrivialMethod.__init__(self, signature, None)
         self._field_idx = field_idx
         self._arg_idx = arg_idx
 
