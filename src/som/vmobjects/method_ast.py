@@ -13,29 +13,14 @@ from som.interpreter.ast.frame import (
 from som.vmobjects.method import AbstractMethod
 
 
-def get_printable_location_1(node):
-    assert isinstance(node, _Invokable)
-    return node.source_section.identifier
-
-
-def get_printable_location_2(node):
-    assert isinstance(node, _Invokable)
-    return node.source_section.identifier
-
-
-def get_printable_location_3(node):
-    assert isinstance(node, _Invokable)
-    return node.source_section.identifier
-
-
-def get_printable_location_args(node):
-    assert isinstance(node, _Invokable)
+def get_printable_location(node):
+    assert isinstance(node, AstMethod)
     return node.source_section.identifier
 
 
 jitdriver_1 = jit.JitDriver(
     greens=["node"],
-    get_printable_location=get_printable_location_1,
+    get_printable_location=get_printable_location,
     reds=["rcvr"],
     is_recursive=True,
     # the next line is a workaround around a likely bug in RPython
@@ -50,7 +35,7 @@ jitdriver_1 = jit.JitDriver(
 
 jitdriver_2 = jit.JitDriver(
     greens=["node"],
-    get_printable_location=get_printable_location_2,
+    get_printable_location=get_printable_location,
     reds=["rcvr", "arg"],
     is_recursive=True,
     should_unroll_one_iteration=lambda self: True,
@@ -58,7 +43,7 @@ jitdriver_2 = jit.JitDriver(
 
 jitdriver_3 = jit.JitDriver(
     greens=["node"],
-    get_printable_location=get_printable_location_3,
+    get_printable_location=get_printable_location,
     reds=["rcvr", "arg1", "arg2"],
     is_recursive=True,
     should_unroll_one_iteration=lambda self: True,
@@ -66,7 +51,7 @@ jitdriver_3 = jit.JitDriver(
 
 jitdriver_args = jit.JitDriver(
     greens=["node"],
-    get_printable_location=get_printable_location_args,
+    get_printable_location=get_printable_location,
     reds=["rcvr", "args"],
     is_recursive=True,
     should_unroll_one_iteration=lambda self: True,

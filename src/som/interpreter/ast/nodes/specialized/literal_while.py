@@ -7,7 +7,7 @@ from som.vm.globals import trueObject, falseObject, nilObject
 def get_printable_location_while(self):
     assert isinstance(self, WhileInlinedNode)
 
-    return "while %s" % str(self.source_section)
+    return "while " + str(self.source_section)
 
 
 while_driver = JitDriver(
