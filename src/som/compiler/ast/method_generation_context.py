@@ -98,13 +98,13 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 return outer_local
         return None
 
-    def _get_self_read(self):
+    def get_self_read(self):
         return self.get_variable("self").get_read_node(self.get_context_level("self"))
 
     def get_object_field_read(self, field_name):
         if not self.has_field(field_name):
             return None
-        return create_read_node(self._get_self_read(), self.get_field_index(field_name))
+        return create_read_node(self.get_self_read(), self.get_field_index(field_name))
 
     def get_global_read(self, var_name):
         return create_global_node(var_name, self.universe, self, None)
@@ -113,5 +113,5 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if not self.has_field(field_name):
             return None
         return create_write_node(
-            self._get_self_read(), exp, self.get_field_index(field_name)
+            self.get_self_read(), exp, self.get_field_index(field_name)
         )
