@@ -96,8 +96,8 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._local_list.append(local)
         return local
 
-    def inline_locals(self, local_vars):
-        fresh_copies = MethodGenerationContextBase.inline_locals(self, local_vars)
+    def inline_as_locals(self, variables):
+        fresh_copies = MethodGenerationContextBase.inline_as_locals(self, variables)
         if fresh_copies:
             self._local_list.extend(fresh_copies)
         return fresh_copies

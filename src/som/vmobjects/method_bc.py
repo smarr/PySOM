@@ -55,7 +55,6 @@ class BcAbstractMethod(AbstractMethod):
         "_arg_inner_access[*]",
         "_size_frame",
         "_size_inner",
-        "_lexical_scope",
         "_inlined_loops[*]",
     ]
 
@@ -72,7 +71,7 @@ class BcAbstractMethod(AbstractMethod):
         lexical_scope,
         inlined_loops,
     ):
-        AbstractMethod.__init__(self, signature)
+        AbstractMethod.__init__(self, signature, lexical_scope)
 
         # Set the number of bytecodes in this method
         self._bytecodes = ["\x00"] * num_bytecodes
@@ -88,8 +87,6 @@ class BcAbstractMethod(AbstractMethod):
         self._arg_inner_access = arg_inner_access
         self._size_frame = size_frame
         self._size_inner = size_inner
-
-        self._lexical_scope = lexical_scope
 
         self._inlined_loops = inlined_loops
 

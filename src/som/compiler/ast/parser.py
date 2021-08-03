@@ -25,6 +25,7 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
     IfInlinedNode,
     IfElseInlinedNode,
 )
+from som.interpreter.ast.nodes.specialized.literal_to_do import ToDoInlined
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
 from som.vm.symbols import symbol_for
 
@@ -291,6 +292,18 @@ class Parser(ParserBase):
         arg_body = arg_expr.get_method().inline(mgenc)
         return OrInlinedNode(receiver, arg_body, source)
 
+    @staticmethod
+    def _try_inlining_to_do(receiver, arguments, source, mgenc):
+        if not isinstance(arguments[1], BlockNode):
+            return None
+
+        block_method = arguments[1].get_method()
+        do_expr = block_method.inline(mgenc)
+        idx_arg = block_method.get_argument(1, 0)
+        return ToDoInlined(
+            receiver, arguments[0], do_expr, mgenc.get_inlined_local(idx_arg, 0), source
+        )
+
     def _keyword_message(self, mgenc, receiver):
         is_super_send = self._super_send
 
@@ -355,6 +368,12 @@ class Parser(ParserBase):
                 elif keyword == "ifFalse:ifTrue:":
                     inlined = self._try_inlining_if_else(
                         False, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "to:do:":
+                    inlined = self._try_inlining_to_do(
+                        receiver, arguments, source, mgenc
                     )
                     if inlined is not None:
                         return inlined
