@@ -2,8 +2,12 @@
 import pytest
 
 from rtruffle.source_section import SourceCoordinate, SourceSection
+from som.interpreter.ast.nodes.expression_node import ExpressionNode
 from som.interpreter.ast.nodes.specialized.down_to_do_node import (
     get_printable_location as pl_dtd,
+)
+from som.interpreter.ast.nodes.specialized.literal_to_do import (
+    get_printable_location as pl_ltd,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import (
     get_printable_location_while as pl_while,
@@ -15,7 +19,6 @@ from som.interpreter.ast.nodes.specialized.to_by_do_node import (
 from som.interpreter.ast.nodes.specialized.to_do_node import (
     get_printable_location as pl_td,
 )
-from som.vm.symbols import symbol_for
 from som.vmobjects.clazz import Class
 from som.vmobjects.method_ast import AstMethod, get_printable_location as pl_method
 
@@ -39,6 +42,12 @@ def source_section():
 
 def test_pl_dtd(method):
     assert pl_dtd(method) == "#to:do: Test>>test"
+
+
+def test_pl_ltd(source_section):
+    do_expr = ExpressionNode(source_section)
+
+    assert pl_ltd(do_expr, None) == "#to:do: test.som:1:1"
 
 
 def test_while(source_section):
