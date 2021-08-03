@@ -522,6 +522,15 @@ def test_inlining_of_and(mgenc, and_sel):
     assert isinstance(ast._exprs[0], AndInlinedNode)
 
 
+def test_field_read_inlining(cgenc, mgenc):
+    add_field(cgenc, "field")
+    ast = parse_method(mgenc, "test = ( true and: [ field ] )")
+
+    assert isinstance(ast._exprs[0], AndInlinedNode)
+    and_expr = ast._exprs[0]
+    assert isinstance(and_expr._arg_expr, FieldReadNode)
+
+
 @pytest.mark.parametrize("or_sel", ["or:", "||"])
 def test_inlining_of_or(mgenc, or_sel):
     ast = parse_method(
