@@ -1310,3 +1310,70 @@ def test_return_field(cgenc, mgenc, field_num, bytecode):
             bytecode,
         ],
     )
+
+
+@pytest.mark.parametrize("and_sel", ["and:", "&&"])
+def test_inlining_of_and(mgenc, and_sel):
+    bytecodes = method_to_bytecodes(
+        mgenc, "test = ( true AND_SEL [ #val ] )".replace("AND_SEL", and_sel)
+    )
+
+    assert len(bytecodes) == 12
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_global,
+            BC(Bytecodes.jump_on_false_pop, 7),
+            # true branch
+            Bytecodes.push_constant_2,  # push the `#val`
+            BC(Bytecodes.jump, 5),
+            # false branch, jump_on_false target, push false
+            Bytecodes.push_constant,
+            # target of the jump in the true branch
+            Bytecodes.return_self,
+        ],
+    )
+
+
+@pytest.mark.parametrize("or_sel", ["or:", "||"])
+def test_inlining_of_or(mgenc, or_sel):
+    bytecodes = method_to_bytecodes(
+        mgenc, "test = ( true OR_SEL [ #val ] )".replace("OR_SEL", or_sel)
+    )
+
+    assert len(bytecodes) == 12
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_global,
+            BC(Bytecodes.jump_on_true_pop, 7),
+            # true branch
+            Bytecodes.push_constant_2,  # push the `#val`
+            BC(Bytecodes.jump, 5),
+            # false branch, jump_on_true target, push true
+            Bytecodes.push_constant,
+            # target of the jump in the true branch
+            Bytecodes.return_self,
+        ],
+    )
+
+
+def test_field_read_inlining(cgenc, mgenc):
+    add_field(cgenc, "field")
+    bytecodes = method_to_bytecodes(mgenc, "test = ( true and: [ field ] )")
+
+    assert len(bytecodes) == 11
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_global,
+            BC(Bytecodes.jump_on_false_pop, 7),
+            # true branch
+            Bytecodes.push_field_0,
+            BC(Bytecodes.jump, 4),
+            # false branch, jump_on_true target, push true
+            Bytecodes.push_constant_2,
+            # target of the jump in the true branch
+            Bytecodes.return_self,
+        ],
+    )

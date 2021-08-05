@@ -233,6 +233,14 @@ class Parser(ParserBase):
 
         self._binary_operand(mgenc)
 
+        if not is_super_send and (
+            msg.get_embedded_string() == "||"
+            and mgenc.inline_andor(self, True)
+            or msg.get_embedded_string() == "&&"
+            and mgenc.inline_andor(self, False)
+        ):
+            return
+
         if is_super_send:
             emit_super_send(mgenc, msg)
         else:
@@ -268,6 +276,8 @@ class Parser(ParserBase):
                 )
                 or (keyword == "whileTrue:" and mgenc.inline_while(self, True))
                 or (keyword == "whileFalse:" and mgenc.inline_while(self, False))
+                or (keyword == "or:" and mgenc.inline_andor(self, True))
+                or (keyword == "and:" and mgenc.inline_andor(self, False))
             ):
                 return
 

@@ -1,5 +1,9 @@
 from rlib.jit import elidable_promote, unroll_safe
-from som.compiler.bc.bytecode_generator import emit_push_constant, emit_push_global
+from som.compiler.bc.bytecode_generator import (
+    emit_push_constant,
+    emit_push_global,
+    emit_push_field_with_index,
+)
 from som.interp_type import is_ast_interpreter
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.bc.frame import stack_pop_old_arguments_and_push_result
@@ -174,7 +178,7 @@ class FieldRead(AbstractTrivialMethod):
     else:
 
         def inline(self, mgenc):
-            raise NotImplementedError()
+            emit_push_field_with_index(mgenc, self._field_idx, self._context_level - 1)
 
 
 class FieldWrite(AbstractTrivialMethod):
