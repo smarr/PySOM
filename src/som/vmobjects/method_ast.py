@@ -163,7 +163,7 @@ class AstMethod(AbstractMethod):
         )
         return node.invokable.expr_or_sequence.execute(frame)
 
-    def inline(self, mgenc):
+    def inline(self, mgenc, merge_scope=True):  # pylint: disable=unused-argument
         mgenc.merge_into_scope(self._lexical_scope)
         self.invokable.expr_or_sequence.adapt_after_inlining(mgenc)
         return self.invokable.expr_or_sequence

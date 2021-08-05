@@ -135,6 +135,11 @@ def interpret(method, frame, max_stack_size):
             stack_ptr += 1
             stack[stack_ptr] = val
 
+        elif bytecode == Bytecodes.dup_second:
+            val = stack[stack_ptr - 1]
+            stack_ptr += 1
+            stack[stack_ptr] = val
+
         elif bytecode == Bytecodes.push_frame:
             stack_ptr += 1
             stack[stack_ptr] = read_frame(
@@ -533,6 +538,15 @@ def interpret(method, frame, max_stack_size):
                 stack[stack_ptr] = None
             stack_ptr -= 1
 
+        elif bytecode == Bytecodes.jump_if_greater:
+            top = stack[stack_ptr]
+            top_2 = stack[stack_ptr - 1]
+            if top.get_embedded_integer() > top_2.get_embedded_integer():
+                stack[stack_ptr] = None
+                stack[stack_ptr - 1] = None
+                stack_ptr -= 2
+                next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
+
         elif bytecode == Bytecodes.jump_backward:
             next_bc_idx = current_bc_idx - method.get_bytecode(current_bc_idx + 1)
             jitdriver.can_enter_jit(
@@ -601,6 +615,19 @@ def interpret(method, frame, max_stack_size):
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_if_greater:
+            top = stack[stack_ptr]
+            top_2 = stack[stack_ptr - 1]
+            if top.get_embedded_integer() > top_2.get_embedded_integer():
+                stack[stack_ptr] = None
+                stack[stack_ptr - 1] = None
+                stack_ptr -= 2
+                next_bc_idx = (
+                    current_bc_idx
+                    + method.get_bytecode(current_bc_idx + 1)
+                    + (method.get_bytecode(current_bc_idx + 2) << 8)
+                )
 
         elif bytecode == Bytecodes.jump2_backward:
             next_bc_idx = current_bc_idx - (

@@ -5,6 +5,11 @@ from som.compiler.bc.bytecode_generator import (
     emit_pop,
     emit_push_constant,
     emit_jump_backward_with_offset,
+    emit_dup,
+    emit_inc,
+    emit_dup_second,
+    emit_jump_if_greater_with_dummy_offset,
+    emit_pop_local,
     emit_inc_field_push,
 )
 
@@ -685,7 +690,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._remove_last_bytecodes(1)  # remove push_block*
 
         jump_offset_idx_to_skip_branch = emit_jump_on_bool_with_dummy_offset(
-            self, False if is_or else True, True
+            self, not is_or, True
         )
 
         to_be_inlined = self._literals[block_literal_idx]
@@ -708,6 +713,47 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         self._reset_last_bytecode_buffer()
 
+        return True
+
+    def inline_to_do(self, parser):
+        # HACK: We do assume that the receiver on the stack is a integer,
+        # HACK: similar to the other inlined messages.
+        # HACK: We don't support anything but integer at the moment.
+        push_block_candidate = self._last_bytecode_is_one_of(0, PUSH_BLOCK_BYTECODES)
+        if push_block_candidate == Bytecodes.invalid:
+            return False
+
+        assert bytecode_length(push_block_candidate) == 2
+        block_literal_idx = self._bytecode[-1]
+
+        to_be_inlined = self._literals[block_literal_idx]
+
+        self._remove_last_bytecodes(1)  # remove push_block*
+
+        self._is_currently_inlining_a_block = True
+        emit_dup_second(self)
+
+        loop_begin_idx = self.offset_of_next_instruction()
+        jump_offset_idx_to_end = emit_jump_if_greater_with_dummy_offset(self)
+
+        emit_dup(self)
+
+        to_be_inlined.merge_scope_into(self)
+
+        block_arg = to_be_inlined.get_argument(1, 0)
+        emit_pop_local(self, self.get_inlined_local_idx(block_arg, 0), 0)
+
+        to_be_inlined.inline(self, False)
+
+        emit_pop(self)
+        emit_inc(self)
+
+        self.emit_backwards_jump_offset_to_target(loop_begin_idx, parser)
+        self.patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_end, parser
+        )
+
+        self._is_currently_inlining_a_block = False
         return True
 
     def _complete_jumps_and_emit_returning_nil(

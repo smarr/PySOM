@@ -70,14 +70,14 @@ class LiteralReturn(AbstractTrivialMethod):
 
     if is_ast_interpreter():
 
-        def inline(self, _mgenc):
+        def inline(self, _mgenc, merge_scope=True):  # pylint: disable=unused-argument
             from som.interpreter.ast.nodes.literal_node import LiteralNode
 
             return LiteralNode(self._value)
 
     else:
 
-        def inline(self, mgenc):
+        def inline(self, mgenc, merge_scope=True):  # pylint: disable=unused-argument
             emit_push_constant(mgenc, self._value)
 
 
@@ -125,14 +125,14 @@ class GlobalRead(AbstractTrivialMethod):
 
     if is_ast_interpreter():
 
-        def inline(self, mgenc):
+        def inline(self, mgenc, merge_scope=True):  # pylint: disable=unused-argument
             from som.interpreter.ast.nodes.global_read_node import create_global_node
 
             return create_global_node(self._global_name, self.universe, mgenc, None)
 
     else:
 
-        def inline(self, mgenc):
+        def inline(self, mgenc, merge_scope=True):  # pylint: disable=unused-argument
             emit_push_global(mgenc, self._global_name)
 
 
@@ -170,14 +170,14 @@ class FieldRead(AbstractTrivialMethod):
 
     if is_ast_interpreter():
 
-        def inline(self, mgenc):
+        def inline(self, mgenc, merge_scope=True):  # pylint: disable=unused-argument
             from som.interpreter.ast.nodes.field_node import FieldReadNode
 
             return FieldReadNode(mgenc.get_self_read(), self._field_idx, None)
 
     else:
 
-        def inline(self, mgenc):
+        def inline(self, mgenc, merge_scope=True):  # pylint: disable=unused-argument
             emit_push_field_with_index(mgenc, self._field_idx, self._context_level - 1)
 
 
