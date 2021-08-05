@@ -51,7 +51,10 @@ class Bytecodes(object):
     pop_field_0 = pop_field + 1
     pop_field_1 = pop_field_0 + 1
 
-    send_1 = pop_field_1 + 1
+    nil_frame = pop_field_1 + 1
+    nil_inner = nil_frame + 1
+
+    send_1 = nil_inner + 1
     send_2 = send_1 + 1
     send_3 = send_2 + 1
     send_n = send_3 + 1
@@ -96,8 +99,9 @@ class Bytecodes(object):
     push_argument = push_local + 1
     pop_local = push_argument + 1
     pop_argument = pop_local + 1
+    nil_local = pop_argument + 1
 
-    invalid = pop_argument + 1
+    invalid = nil_local + 1
 
 
 def is_one_of(bytecode, candidates):
@@ -182,6 +186,8 @@ RUN_TIME_ONLY_BYTECODES = [
     Bytecodes.pop_inner_0,
     Bytecodes.pop_inner_1,
     Bytecodes.pop_inner_2,
+    Bytecodes.nil_frame,
+    Bytecodes.nil_inner,
     Bytecodes.q_super_send_1,
     Bytecodes.q_super_send_2,
     Bytecodes.q_super_send_3,
@@ -237,6 +243,8 @@ _BYTECODE_LENGTH = [
     3,  # pop_field
     1,  # pop_field_0
     1,  # pop_field_1
+    2,  # nil_frame
+    2,  # nil_inner
     2,  # send_1
     2,  # send_2
     2,  # send_3
@@ -275,6 +283,7 @@ _BYTECODE_LENGTH = [
     3,  # push_argument
     3,  # pop_local
     3,  # pop_argument
+    2,  # nil_local
 ]
 
 
