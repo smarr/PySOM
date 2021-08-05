@@ -20,6 +20,7 @@ from som.interpreter.ast.nodes.specialized.to_by_do_node import (
 from som.interpreter.ast.nodes.specialized.to_do_node import (
     get_printable_location as pl_td,
 )
+from som.vm.symbols import symbol_for
 from som.vmobjects.clazz import Class
 from som.vmobjects.method_ast import AstMethod, get_printable_location as pl_method
 
