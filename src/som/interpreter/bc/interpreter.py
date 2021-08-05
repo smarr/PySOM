@@ -319,6 +319,16 @@ def interpret(method, frame, max_stack_size):
 
             write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 2, value)
 
+        elif bytecode == Bytecodes.nil_frame:
+            if we_are_jitted():
+                idx = method.get_bytecode(current_bc_idx + 1)
+                write_frame(frame, idx, nilObject)
+
+        elif bytecode == Bytecodes.nil_inner:
+            if we_are_jitted():
+                idx = method.get_bytecode(current_bc_idx + 1)
+                write_inner(frame, idx, nilObject)
+
         elif bytecode == Bytecodes.pop_field:
             field_idx = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)
@@ -681,6 +691,10 @@ def interpret(method, frame, max_stack_size):
             # retry bytecode after patching
             next_bc_idx = current_bc_idx
         elif bytecode == Bytecodes.pop_argument:
+            method.patch_variable_access(current_bc_idx)
+            # retry bytecode after patching
+            next_bc_idx = current_bc_idx
+        elif bytecode == Bytecodes.nil_local:
             method.patch_variable_access(current_bc_idx)
             # retry bytecode after patching
             next_bc_idx = current_bc_idx

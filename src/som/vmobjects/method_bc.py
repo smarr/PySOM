@@ -17,6 +17,7 @@ from som.compiler.bc.bytecode_generator import (
     emit3_with_dummy,
     emit_push_local,
     emit_pop_local,
+    emit_nil_local,
     compute_offset,
 )
 from som.interpreter.ast.frame import (
@@ -178,6 +179,13 @@ class BcAbstractMethod(AbstractMethod):
         elif bc == Bytecodes.pop_local:
             var = self._lexical_scope.get_local(idx, ctx_level)
             self.set_bytecode(bytecode_index, var.get_pop_bytecode(ctx_level))
+        elif bc == Bytecodes.nil_local:
+            var = self._lexical_scope.get_local(idx, 0)
+            if var.is_accessed_out_of_context():
+                bytecode = Bytecodes.nil_inner
+            else:
+                bytecode = Bytecodes.nil_frame
+            self.set_bytecode(bytecode_index, bytecode)
         else:
             raise Exception("Unsupported bytecode?")
         assert (
@@ -362,6 +370,12 @@ class BcMethod(BcAbstractMethod):
                     emit3(mgenc, bytecode, idx, ctx_level, 1)
                 else:
                     emit3(mgenc, bytecode, idx, ctx_level, -1)
+
+            elif bytecode == Bytecodes.nil_local:
+                idx = self.get_bytecode(i + 1)
+                var = self._lexical_scope.get_local(idx, 0)
+                idx = mgenc.get_inlined_local_idx(var, 0)
+                emit_nil_local(mgenc, idx)
 
             elif bytecode == Bytecodes.push_block:
                 literal_idx = self.get_bytecode(i + 1)
@@ -593,6 +607,12 @@ class BcMethod(BcAbstractMethod):
                     self.set_bytecode(i + 1, new_idx)
                 elif ctx_level > removed_ctx_level:
                     self.set_bytecode(i + 2, ctx_level - 1)
+
+            elif bytecode == Bytecodes.nil_local:
+                assert removed_ctx_level > 0, (
+                    "Don't need to adjust this bytecode, "
+                    + "because it only operates on ctx_level==0"
+                )
 
             elif bytecode == Bytecodes.return_non_local:
                 ctx_level = self.get_bytecode(i + 1)
