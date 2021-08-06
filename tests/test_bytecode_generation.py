@@ -1382,13 +1382,14 @@ def test_field_read_inlining(cgenc, mgenc):
 def test_inlining_of_to_do(mgenc):
     bytecodes = method_to_bytecodes(mgenc, "test = ( 1 to: 2 do: [:i | i ] )")
 
-    assert len(bytecodes) == 21
+    assert len(bytecodes) == 23
     check(
         bytecodes,
         [
             Bytecodes.push_1,
             Bytecodes.push_constant_0,
             Bytecodes.dup_second,  # stack: Top[1, 2, 1]
+            Bytecodes.nil_local,
             BC(Bytecodes.jump_if_greater, 17),  # consume only on jump
             Bytecodes.dup,
             BC(
@@ -1424,13 +1425,14 @@ def test_to_do_block_block_inlined_self(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 25
+    assert len(bytecodes) == 27
     check(
         bytecodes,
         [
             Bytecodes.push_1,
             Bytecodes.push_constant_0,
             Bytecodes.dup_second,
+            Bytecodes.nil_local,
             BC(Bytecodes.jump_if_greater, 21),
             Bytecodes.dup,
             BC(Bytecodes.pop_local, 2, 0),
