@@ -728,21 +728,23 @@ class MethodGenerationContext(MethodGenerationContextBase):
         block_literal_idx = self._bytecode[-1]
 
         to_be_inlined = self._literals[block_literal_idx]
+        to_be_inlined.merge_scope_into(self)
+
+        block_arg = to_be_inlined.get_argument(1, 0)
+        i_var_idx = self.get_inlined_local_idx(block_arg, 0)
 
         self._remove_last_bytecodes(1)  # remove push_block*
 
         self._is_currently_inlining_a_block = True
         emit_dup_second(self)
 
+        emit_nil_local(self, i_var_idx)
+
         loop_begin_idx = self.offset_of_next_instruction()
         jump_offset_idx_to_end = emit_jump_if_greater_with_dummy_offset(self)
 
         emit_dup(self)
 
-        to_be_inlined.merge_scope_into(self)
-
-        block_arg = to_be_inlined.get_argument(1, 0)
-        i_var_idx = self.get_inlined_local_idx(block_arg, 0)
         emit_pop_local(self, i_var_idx, 0)
 
         to_be_inlined.inline(self, False)
