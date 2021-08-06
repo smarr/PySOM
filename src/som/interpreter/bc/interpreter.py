@@ -76,16 +76,12 @@ def _invoke_invokable_slow_path(invokable, num_args, receiver, stack, stack_ptr)
 
     elif num_args == 2:
         arg = stack[stack_ptr]
-        stack[stack_ptr] = None
         stack_ptr -= 1
         stack[stack_ptr] = invokable.invoke_2(receiver, arg)
 
     elif num_args == 3:
         arg2 = stack[stack_ptr]
-        stack[stack_ptr] = None
-
         arg1 = stack[stack_ptr - 1]
-        stack[stack_ptr - 1] = None
         stack_ptr -= 2
 
         stack[stack_ptr] = invokable.invoke_3(receiver, arg1, arg2)
@@ -241,30 +237,25 @@ def interpret(method, frame, max_stack_size):
                 )
 
         elif bytecode == Bytecodes.pop:
-            stack[stack_ptr] = None
             stack_ptr -= 1
 
         elif bytecode == Bytecodes.pop_frame:
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
             write_frame(frame, method.get_bytecode(current_bc_idx + 1), value)
 
         elif bytecode == Bytecodes.pop_frame_0:
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
             write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 0, value)
 
         elif bytecode == Bytecodes.pop_frame_1:
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
             write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 1, value)
 
         elif bytecode == Bytecodes.pop_frame_2:
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
             write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 2, value)
 
@@ -272,7 +263,6 @@ def interpret(method, frame, max_stack_size):
             idx = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
 
             if ctx_level == 0:
@@ -283,21 +273,18 @@ def interpret(method, frame, max_stack_size):
 
         elif bytecode == Bytecodes.pop_inner_0:
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
 
             write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 0, value)
 
         elif bytecode == Bytecodes.pop_inner_1:
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
 
             write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 1, value)
 
         elif bytecode == Bytecodes.pop_inner_2:
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
 
             write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 2, value)
@@ -308,7 +295,6 @@ def interpret(method, frame, max_stack_size):
             self_obj = get_self(frame, ctx_level)
 
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
 
             self_obj.set_field(field_idx, value)
@@ -317,7 +303,6 @@ def interpret(method, frame, max_stack_size):
             self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
 
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
 
             self_obj.set_field(0, value)
@@ -326,7 +311,6 @@ def interpret(method, frame, max_stack_size):
             self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
 
             value = stack[stack_ptr]
-            stack[stack_ptr] = None
             stack_ptr -= 1
 
             self_obj.set_field(1, value)
@@ -357,7 +341,6 @@ def interpret(method, frame, max_stack_size):
             invokable = _lookup(layout, signature, method, current_bc_idx)
             if invokable is not None:
                 arg = stack[stack_ptr]
-                stack[stack_ptr] = None
                 stack_ptr -= 1
                 stack[stack_ptr] = invokable.invoke_2(receiver, arg)
             elif not layout.is_latest:
@@ -379,8 +362,6 @@ def interpret(method, frame, max_stack_size):
             if invokable is not None:
                 arg2 = stack[stack_ptr]
                 arg1 = stack[stack_ptr - 1]
-                stack[stack_ptr] = None
-                stack[stack_ptr - 1] = None
                 stack_ptr -= 2
                 stack[stack_ptr] = invokable.invoke_3(receiver, arg1, arg2)
             elif not layout.is_latest:
@@ -673,7 +654,6 @@ def _send_does_not_understand(receiver, selector, stack, stack_ptr):
     i = number_of_arguments - 1
     while i >= 0:
         value = stack[stack_ptr]
-        stack[stack_ptr] = None
         stack_ptr -= 1
 
         arguments_array.set_indexable_field(i, value)
