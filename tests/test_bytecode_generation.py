@@ -102,8 +102,7 @@ def check(actual, expected):
                     + str(expected_bc.arg1)
                     + ", "
                     + str(expected_bc.arg2)
-                    + ")"
-                    + " but got "
+                    + ") but got "
                     + bytecode_as_str(actual_bc)
                     + "("
                     + str(actual[i + 1])
