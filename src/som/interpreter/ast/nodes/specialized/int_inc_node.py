@@ -12,3 +12,9 @@ class IntIncrementNode(ExpressionNode):
     def execute(self, frame):
         result = self._rcvr_expr.execute(frame)
         return result.prim_inc()
+
+    def does_access_field(self, field_idx):
+        from som.interpreter.ast.nodes.field_node import FieldReadNode
+
+        rcvr = self._rcvr_expr
+        return isinstance(rcvr, FieldReadNode) and field_idx == rcvr.field_idx
