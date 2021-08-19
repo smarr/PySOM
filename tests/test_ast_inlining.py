@@ -471,7 +471,7 @@ def test_block_block_inlined_self(cgenc, mgenc):
     assert read_node.var.idx == 1
 
     write_node = block_b_if_true._body_expr
-    assert write_node._field_idx == 0
+    assert write_node.field_idx == 0
 
     assert write_node._self_exp._frame_idx == FRAME_AND_INNER_RCVR_IDX
     assert write_node._self_exp._context_level == 2
