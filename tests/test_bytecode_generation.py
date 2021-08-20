@@ -306,6 +306,54 @@ def test_if_true_with_literal_return(mgenc, literal, bytecode):
 
 
 @pytest.mark.parametrize(
+    "literal,bytecode",
+    [
+        ("0", Bytecodes.push_0),
+        ("1", Bytecodes.push_1),
+        ("-10", Bytecodes.push_constant),
+        ("3333", Bytecodes.push_constant),
+        ("'str'", Bytecodes.push_constant),
+        ("#sym", Bytecodes.push_constant),
+        ("1.1", Bytecodes.push_constant),
+        ("-2342.234", Bytecodes.push_constant),
+        ("true", Bytecodes.push_constant),
+        ("false", Bytecodes.push_constant),
+        ("nil", Bytecodes.push_nil),
+        ("SomeGlobal", Bytecodes.push_global),
+        ("[]", Bytecodes.push_block_no_ctx),
+        ("[ self ]", Bytecodes.push_block),
+    ],
+)
+def test_if_true_with_something_and_literal_return(mgenc, literal, bytecode):
+    # This test is different from the previous one, because the block
+    # method won't be recognized as being trivial
+    source = """
+        test = (
+            self method ifTrue: [ #fooBarNonTrivialBlock. LITERAL ].
+        )""".replace(
+        "LITERAL", literal
+    )
+    bytecodes = method_to_bytecodes(mgenc, source)
+
+    length = bytecode_length(bytecode)
+
+    assert len(bytecodes) == 12 + length
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_argument,
+            Bytecodes.send_1,
+            Bytecodes.jump_on_false_top_nil,
+            Bytecodes.push_constant_2,
+            Bytecodes.pop,
+            bytecode,
+            Bytecodes.pop,
+            Bytecodes.return_self,
+        ],
+    )
+
+
+@pytest.mark.parametrize(
     "if_selector,jump_bytecode",
     [
         ("ifTrue:", Bytecodes.jump_on_false_top_nil),
