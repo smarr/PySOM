@@ -1318,11 +1318,11 @@ def test_inlining_of_and(mgenc, and_sel):
         mgenc, "test = ( true AND_SEL [ #val ] )".replace("AND_SEL", and_sel)
     )
 
-    assert len(bytecodes) == 12
+    assert len(bytecodes) == 11
     check(
         bytecodes,
         [
-            Bytecodes.push_global,
+            Bytecodes.push_constant_0,
             BC(Bytecodes.jump_on_false_pop, 7),
             # true branch
             Bytecodes.push_constant_2,  # push the `#val`
@@ -1341,17 +1341,17 @@ def test_inlining_of_or(mgenc, or_sel):
         mgenc, "test = ( true OR_SEL [ #val ] )".replace("OR_SEL", or_sel)
     )
 
-    assert len(bytecodes) == 12
+    assert len(bytecodes) == 10
     check(
         bytecodes,
         [
-            Bytecodes.push_global,
+            Bytecodes.push_constant_0,
             BC(Bytecodes.jump_on_true_pop, 7),
             # true branch
             Bytecodes.push_constant_2,  # push the `#val`
-            BC(Bytecodes.jump, 5),
+            BC(Bytecodes.jump, 4),
             # false branch, jump_on_true target, push true
-            Bytecodes.push_constant,
+            Bytecodes.push_constant_0,
             # target of the jump in the true branch
             Bytecodes.return_self,
         ],
@@ -1362,11 +1362,11 @@ def test_field_read_inlining(cgenc, mgenc):
     add_field(cgenc, "field")
     bytecodes = method_to_bytecodes(mgenc, "test = ( true and: [ field ] )")
 
-    assert len(bytecodes) == 11
+    assert len(bytecodes) == 10
     check(
         bytecodes,
         [
-            Bytecodes.push_global,
+            Bytecodes.push_constant_0,
             BC(Bytecodes.jump_on_false_pop, 7),
             # true branch
             Bytecodes.push_field_0,
