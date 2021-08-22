@@ -667,6 +667,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         if jump_offset <= 0xFF:
             self._bytecode[idx_of_offset] = jump_offset
+            self._bytecode[idx_of_offset + 1] = 0
         else:
             # need to use the jump2* version of the bytecode
             if bytecode < FIRST_DOUBLE_BYTE_JUMP_BYTECODE:
