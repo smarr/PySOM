@@ -35,6 +35,7 @@ from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import (
     BcMethodNLR,
     BcMethod,
+    BackJump,
 )
 
 _NUM_LAST_BYTECODES = 4
@@ -637,7 +638,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         backward_jump_idx = self.offset_of_next_instruction()
         emit_jump_backward_with_offset(self, jump_offset)
 
-        self.inlined_loops.append(_Loop(loop_begin_idx, backward_jump_idx))
+        self.inlined_loops.append(BackJump(loop_begin_idx, backward_jump_idx))
 
     def patch_jump_offset_to_point_to_next_instruction(self, idx_of_offset, parser):
         instruction_start = idx_of_offset - 1
@@ -676,14 +677,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 Symbol.NONE,
                 parser,
             )
-
-
-class _Loop(object):
-    _immutable_fields_ = ["loop_begin_idx", "backward_jump_idx"]
-
-    def __init__(self, loop_begin_idx, backward_jump_idx):
-        self.loop_begin_idx = loop_begin_idx
-        self.backward_jump_idx = backward_jump_idx
 
 
 class FindVarResult(object):

@@ -252,8 +252,33 @@ class BcMethod(BcAbstractMethod):
         heap = []
         if self._inlined_loops:
             for loop in self._inlined_loops:
-                heappush(heap, _BackJump(loop.loop_begin_idx, loop.backward_jump_idx))
+                heappush(heap, loop)
         return heap
+
+    @staticmethod
+    def _prepare_back_jump_to_current_address(
+        back_jumps, back_jumps_to_patch, i, mgenc
+    ):
+        while back_jumps and back_jumps[0].address <= i:
+            jump = heappop(back_jumps)
+            assert (
+                jump.address == i
+            ), "we use the less or equal, but actually expect it to be strictly equal"
+            heappush(
+                back_jumps_to_patch,
+                _BackJumpPatch(
+                    jump.backward_jump_idx, mgenc.offset_of_next_instruction()
+                ),
+            )
+
+    @staticmethod
+    def _patch_jump_to_current_address(i, jumps, mgenc):
+        while jumps and jumps[0].address <= i:
+            jump = heappop(jumps)
+            assert (
+                jump.address == i
+            ), "we use the less or equal, but actually expect it to be strictly equal"
+            mgenc.patch_jump_offset_to_point_to_next_instruction(jump.idx, None)
 
     def _inline_into(self, mgenc):
         jumps = []  # a sorted list/priority queue. sorted by original_target index
@@ -262,24 +287,10 @@ class BcMethod(BcAbstractMethod):
 
         i = 0
         while i < len(self._bytecodes):
-            while back_jumps and back_jumps[0].address <= i:
-                jump = heappop(back_jumps)
-                assert (
-                    jump.address == i
-                ), "we use the less or equal, but actually expect it to be strictly equal"
-                heappush(
-                    back_jumps_to_patch,
-                    _BackJumpPatch(
-                        jump.backward_jump_idx, mgenc.offset_of_next_instruction()
-                    ),
-                )
-
-            while jumps and jumps[0].address <= i:
-                jump = heappop(jumps)
-                assert (
-                    jump.address == i
-                ), "we use the less or equal, but actually expect it to be strictly equal"
-                mgenc.patch_jump_offset_to_point_to_next_instruction(jump.idx, None)
+            self._prepare_back_jump_to_current_address(
+                back_jumps, back_jumps_to_patch, i, mgenc
+            )
+            self._patch_jump_to_current_address(i, jumps, mgenc)
 
             bytecode = self.get_bytecode(i)
             bc_length = bytecode_length(bytecode)
@@ -575,7 +586,7 @@ class _Jump(HeapEntry):
         self.idx = idx
 
 
-class _BackJump(HeapEntry):
+class BackJump(HeapEntry):
     def __init__(self, loop_begin_idx, backward_jump_idx):
         HeapEntry.__init__(self, loop_begin_idx)
         self.backward_jump_idx = backward_jump_idx
