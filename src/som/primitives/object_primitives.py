@@ -85,36 +85,24 @@ def _perform_with_arguments(rcvr, selector, args):
 
 class ObjectPrimitivesBase(Primitives):
     def install_primitives(self):
-        self._install_instance_primitive(BinaryPrimitive("==", self.universe, _equals))
+        self._install_instance_primitive(BinaryPrimitive("==", _equals))
+        self._install_instance_primitive(UnaryPrimitive("hashcode", _hashcode))
+        self._install_instance_primitive(UnaryPrimitive("objectSize", _object_size))
+        self._install_instance_primitive(BinaryPrimitive("instVarAt:", _inst_var_at))
         self._install_instance_primitive(
-            UnaryPrimitive("hashcode", self.universe, _hashcode)
+            TernaryPrimitive("instVarAt:put:", _inst_var_at_put)
         )
         self._install_instance_primitive(
-            UnaryPrimitive("objectSize", self.universe, _object_size)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("instVarAt:", self.universe, _inst_var_at)
-        )
-        self._install_instance_primitive(
-            TernaryPrimitive("instVarAt:put:", self.universe, _inst_var_at_put)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("instVarNamed:", self.universe, _inst_var_named)
+            BinaryPrimitive("instVarNamed:", _inst_var_named)
         )
 
-        self._install_instance_primitive(UnaryPrimitive("halt", self.universe, _halt))
-        self._install_instance_primitive(UnaryPrimitive("class", self.universe, _class))
+        self._install_instance_primitive(UnaryPrimitive("halt", _halt))
+        self._install_instance_primitive(UnaryPrimitive("class", _class))
 
+        self._install_instance_primitive(BinaryPrimitive("perform:", _perform))
         self._install_instance_primitive(
-            BinaryPrimitive("perform:", self.universe, _perform)
+            TernaryPrimitive("perform:inSuperclass:", _perform_in_superclass)
         )
         self._install_instance_primitive(
-            TernaryPrimitive(
-                "perform:inSuperclass:", self.universe, _perform_in_superclass
-            )
-        )
-        self._install_instance_primitive(
-            TernaryPrimitive(
-                "perform:withArguments:", self.universe, _perform_with_arguments
-            )
+            TernaryPrimitive("perform:withArguments:", _perform_with_arguments)
         )

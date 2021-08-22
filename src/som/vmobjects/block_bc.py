@@ -57,13 +57,13 @@ class BcBlock(AbstractObject):
         return universe.block_layouts[self._method.get_number_of_arguments()]
 
 
-def block_evaluation_primitive(num_args, universe):
+def block_evaluation_primitive(num_args):
     if num_args == 1:
-        return UnaryPrimitive(VALUE_SIGNATURE[num_args], universe, _invoke_1)
+        return UnaryPrimitive(VALUE_SIGNATURE[num_args], _invoke_1)
     if num_args == 2:
-        return BinaryPrimitive(VALUE_SIGNATURE[num_args], universe, _invoke_2)
+        return BinaryPrimitive(VALUE_SIGNATURE[num_args], _invoke_2)
     if num_args == 3:
-        return TernaryPrimitive(VALUE_SIGNATURE[num_args], universe, _invoke_3)
+        return TernaryPrimitive(VALUE_SIGNATURE[num_args], _invoke_3)
     raise Exception("Unsupported number of arguments for block: " + str(num_args))
 
 

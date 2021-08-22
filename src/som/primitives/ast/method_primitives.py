@@ -21,6 +21,4 @@ def _invoke_on_with(_ivkbl, rcvr, args):
 class MethodPrimitives(_Base):
     def install_primitives(self):
         _Base.install_primitives(self)
-        self._install_instance_primitive(
-            Primitive("invokeOn:with:", self.universe, _invoke_on_with)
-        )
+        self._install_instance_primitive(Primitive("invokeOn:with:", _invoke_on_with))

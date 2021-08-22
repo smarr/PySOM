@@ -6,13 +6,13 @@ from rlib.string_stream import encode_to_bytes
 from rlib.exit import Exit
 from rlib.osext import path_split
 from rlib import rgc
+from som.vm.symbols import symbol_for, sym_false, sym_true, sym_nil
 
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import block_evaluation_primitive
 from som.vmobjects.clazz import Class
 from som.vmobjects.object_without_fields import ObjectWithoutFields
 from som.vmobjects.object_with_layout import Object
-from som.vmobjects.symbol import Symbol
 from som.vmobjects.string import String
 
 from som.vm.globals import nilObject, trueObject, falseObject
@@ -61,17 +61,12 @@ class Universe(object):
         "string_layout?",
         "double_class",
         "double_layout?",
-        "_symbol_table",
         "_globals",
         "start_time",
-        "sym_plus",
-        "sym_minus",
-        "sym_nil",
         "_object_system_initialized",
     ]
 
     def __init__(self, avoid_exit=False):
-        self._symbol_table = {}
         self._globals = {}
 
         self.object_class = None
@@ -98,12 +93,6 @@ class Universe(object):
         self.double_class = None
         self.double_layout = None
 
-        self.sym_nil = self.symbol_for("nil")
-        self.sym_true = self.symbol_for("true")
-        self.sym_false = self.symbol_for("false")
-        self.sym_plus = self.symbol_for("+")
-        self.sym_minus = self.symbol_for("-")
-
         self._last_exit_code = 0
         self._avoid_exit = avoid_exit
         self._dump_bytecodes = False
@@ -126,12 +115,12 @@ class Universe(object):
     def execute_method(self, class_name, selector):
         self._initialize_object_system()
 
-        clazz = self.load_class(self.symbol_for(class_name))
+        clazz = self.load_class(symbol_for(class_name))
         if clazz is None:
             raise Exception("Class " + class_name + " could not be loaded.")
 
         # Lookup the invokable on class
-        invokable = clazz.get_class(self).lookup_invokable(self.symbol_for(selector))
+        invokable = clazz.get_class(self).lookup_invokable(symbol_for(selector))
         if invokable is None:
             raise Exception("Lookup of " + selector + " failed in class " + class_name)
 
@@ -149,7 +138,7 @@ class Universe(object):
             shell = Shell(self)
             return shell.start()
         arguments_array = self.new_array_with_strings(arguments)
-        initialize = self.system_class.lookup_invokable(self.symbol_for("initialize:"))
+        initialize = self.system_class.lookup_invokable(symbol_for("initialize:"))
         return initialize.invoke_2(system_object, arguments_array)
 
     def handle_arguments(self, arguments):
@@ -287,32 +276,32 @@ class Universe(object):
         self._load_system_class(self.double_class)
 
         # Load the generic block class
-        self.block_class = self.load_class(self.symbol_for("Block"))
+        self.block_class = self.load_class(symbol_for("Block"))
 
         # Setup the true and false objects
-        true_class_name = self.symbol_for("True")
+        true_class_name = symbol_for("True")
         true_class = self.load_class(true_class_name)
         true_class.load_primitives(False, self)
         trueObject.set_class(true_class)
 
-        false_class_name = self.symbol_for("False")
+        false_class_name = symbol_for("False")
         false_class = self.load_class(false_class_name)
         false_class.load_primitives(False, self)
         falseObject.set_class(false_class)
 
         # Load the system class and create an instance of it
-        self.system_class = self.load_class(self.symbol_for("System"))
+        self.system_class = self.load_class(symbol_for("System"))
         system_object = self.new_instance(self.system_class)
 
         # Put special objects and classes into the dictionary of globals
-        self.set_global(self.sym_nil, nilObject)
-        self.set_global(self.sym_true, trueObject)
-        self.set_global(self.sym_false, falseObject)
-        self.set_global(self.symbol_for("system"), system_object)
-        self.set_global(self.symbol_for("System"), self.system_class)
-        self.set_global(self.symbol_for("Block"), self.block_class)
+        self.set_global(sym_nil, nilObject)
+        self.set_global(sym_true, trueObject)
+        self.set_global(sym_false, falseObject)
+        self.set_global(symbol_for("system"), system_object)
+        self.set_global(symbol_for("System"), self.system_class)
+        self.set_global(symbol_for("Block"), self.block_class)
 
-        self.set_global(self.symbol_for("Nil"), self.nil_class)
+        self.set_global(symbol_for("Nil"), self.nil_class)
 
         self.set_global(true_class_name, true_class)
         self.set_global(false_class_name, false_class)
@@ -328,17 +317,6 @@ class Universe(object):
 
     def is_object_system_initialized(self):
         return self._object_system_initialized
-
-    @jit.elidable
-    def symbol_for(self, string):
-        # Lookup the symbol in the symbol table
-        result = self._symbol_table.get(string, None)
-        if result is not None:
-            return result
-
-        # Create a new symbol and return it
-        result = self._new_symbol(string)
-        return result
 
     @staticmethod
     def new_array_with_strings(strings):
@@ -360,13 +338,6 @@ class Universe(object):
 
         # Setup the metaclass hierarchy
         result.get_class(self).set_class(result)
-        return result
-
-    def _new_symbol(self, string):
-        result = Symbol(string)
-
-        # Insert the new symbol into the symbol table
-        self._symbol_table[string] = result
         return result
 
     def new_system_class(self):
@@ -391,8 +362,8 @@ class Universe(object):
         system_class.get_class(self).set_instance_fields(Array.from_size(0))
 
         # Initialize the name of the system class
-        system_class.set_name(self.symbol_for(name))
-        system_class.get_class(self).set_name(self.symbol_for(name + " class"))
+        system_class.set_name(symbol_for(name))
+        system_class.get_class(self).set_name(symbol_for(name + " class"))
 
         # Insert the system class into the dictionary of globals
         self.set_global(system_class.get_name(), system_class)
@@ -431,15 +402,13 @@ class Universe(object):
     def _make_block_class(self, number_of_arguments):
         # Compute the name of the block class with the given number of
         # arguments
-        name = self.symbol_for("Block" + str(number_of_arguments))
+        name = symbol_for("Block" + str(number_of_arguments))
 
         # Get the block class for blocks with the given number of arguments
         result = self._load_class(name, None)
 
         # Add the appropriate value primitive to the block class
-        result.add_primitive(
-            block_evaluation_primitive(number_of_arguments, self), True
-        )
+        result.add_primitive(block_evaluation_primitive(number_of_arguments), True)
 
         # Insert the block class into the dictionary of globals
         self.set_global(name, result)

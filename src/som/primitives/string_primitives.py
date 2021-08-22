@@ -1,9 +1,9 @@
 from rlib.objectmodel import compute_hash
 from som.compiler.symbol import Symbol
 from som.primitives.primitives import Primitives
-from som.vm.current import current_universe
 
 from som.vm.globals import trueObject, falseObject
+from som.vm.symbols import symbol_for
 from som.vmobjects.integer import Integer
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 from som.vmobjects.string import String
@@ -14,7 +14,7 @@ def _concat(rcvr, argument):
 
 
 def _as_symbol(rcvr):
-    return current_universe.symbol_for(rcvr.get_embedded_string())
+    return symbol_for(rcvr.get_embedded_string())
 
 
 def _length(rcvr):
@@ -85,29 +85,15 @@ def _is_digits(self):
 
 class StringPrimitivesBase(Primitives):
     def install_primitives(self):
+        self._install_instance_primitive(BinaryPrimitive("concatenate:", _concat))
+        self._install_instance_primitive(UnaryPrimitive("asSymbol", _as_symbol))
+        self._install_instance_primitive(UnaryPrimitive("length", _length))
+        self._install_instance_primitive(BinaryPrimitive("=", _equals))
         self._install_instance_primitive(
-            BinaryPrimitive("concatenate:", self.universe, _concat)
+            TernaryPrimitive("primSubstringFrom:to:", _substring)
         )
-        self._install_instance_primitive(
-            UnaryPrimitive("asSymbol", self.universe, _as_symbol)
-        )
-        self._install_instance_primitive(
-            UnaryPrimitive("length", self.universe, _length)
-        )
-        self._install_instance_primitive(BinaryPrimitive("=", self.universe, _equals))
-        self._install_instance_primitive(
-            TernaryPrimitive("primSubstringFrom:to:", self.universe, _substring)
-        )
-        self._install_instance_primitive(
-            UnaryPrimitive("hashcode", self.universe, _hashcode)
-        )
+        self._install_instance_primitive(UnaryPrimitive("hashcode", _hashcode))
 
-        self._install_instance_primitive(
-            UnaryPrimitive("isWhiteSpace", self.universe, _is_whitespace)
-        )
-        self._install_instance_primitive(
-            UnaryPrimitive("isLetters", self.universe, _is_letters)
-        )
-        self._install_instance_primitive(
-            UnaryPrimitive("isDigits", self.universe, _is_digits)
-        )
+        self._install_instance_primitive(UnaryPrimitive("isWhiteSpace", _is_whitespace))
+        self._install_instance_primitive(UnaryPrimitive("isLetters", _is_letters))
+        self._install_instance_primitive(UnaryPrimitive("isDigits", _is_digits))

@@ -108,9 +108,5 @@ def _to_by_do(_ivkbl, stack, stack_ptr):
 class IntegerPrimitives(_Base):
     def install_primitives(self):
         _Base.install_primitives(self)
-        self._install_instance_primitive(
-            TernaryPrimitive("to:do:", self.universe, _to_do)
-        )
-        self._install_instance_primitive(
-            Primitive("to:by:do:", self.universe, _to_by_do)
-        )
+        self._install_instance_primitive(TernaryPrimitive("to:do:", _to_do))
+        self._install_instance_primitive(Primitive("to:by:do:", _to_by_do))

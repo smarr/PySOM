@@ -21,7 +21,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def assemble(self, method_body):
         if self._primitive:
-            return empty_primitive(self.signature.get_embedded_string(), self.universe)
+            return empty_primitive(self.signature.get_embedded_string())
 
         if self.needs_to_catch_non_local_returns:
             method_body = CatchNonLocalReturnNode(

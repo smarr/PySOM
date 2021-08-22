@@ -1,14 +1,15 @@
 from som.interp_type import is_ast_interpreter
+from som.vm.symbols import symbol_for
 from som.vmobjects.abstract_object import AbstractObject
 
 
 class _AbstractPrimitive(AbstractObject):
     _immutable_fields_ = ["_is_empty", "_signature", "_holder"]
 
-    def __init__(self, signature_string, universe, is_empty=False):
+    def __init__(self, signature_string, is_empty=False):
         AbstractObject.__init__(self)
 
-        self._signature = universe.symbol_for(signature_string)
+        self._signature = symbol_for(signature_string)
         self._is_empty = is_empty
         self._holder = None
 
@@ -51,8 +52,8 @@ class _AbstractPrimitive(AbstractObject):
 class _AstPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
 
-    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
-        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+    def __init__(self, signature_string, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, is_empty)
         self._prim_fn = prim_fn
 
     def invoke_args(self, rcvr, args):
@@ -63,8 +64,8 @@ class _AstPrimitive(_AbstractPrimitive):
 class _BcPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
 
-    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
-        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+    def __init__(self, signature_string, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, is_empty)
         self._prim_fn = prim_fn
 
     def invoke_n(self, stack, stack_ptr):
@@ -78,8 +79,8 @@ class _BcPrimitive(_AbstractPrimitive):
 class UnaryPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
 
-    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
-        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+    def __init__(self, signature_string, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, is_empty)
         self._prim_fn = prim_fn
 
     def invoke_1(self, rcvr):
@@ -93,8 +94,8 @@ class UnaryPrimitive(_AbstractPrimitive):
 class BinaryPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
 
-    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
-        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+    def __init__(self, signature_string, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, is_empty)
         self._prim_fn = prim_fn
 
     def invoke_2(self, rcvr, arg):
@@ -108,8 +109,8 @@ class BinaryPrimitive(_AbstractPrimitive):
 class TernaryPrimitive(_AbstractPrimitive):
     _immutable_fields_ = ["_prim_fn"]
 
-    def __init__(self, signature_string, universe, prim_fn, is_empty=False):
-        _AbstractPrimitive.__init__(self, signature_string, universe, is_empty)
+    def __init__(self, signature_string, prim_fn, is_empty=False):
+        _AbstractPrimitive.__init__(self, signature_string, is_empty)
         self._prim_fn = prim_fn
 
     def invoke_3(self, rcvr, arg1, arg2):
@@ -145,6 +146,6 @@ else:
     _empty_invoke = _empty_invoke_bc
 
 
-def empty_primitive(signature_string, universe):
+def empty_primitive(signature_string):
     """Return an empty primitive with the given signature"""
-    return Primitive(signature_string, universe, _empty_invoke, True)
+    return Primitive(signature_string, _empty_invoke, True)

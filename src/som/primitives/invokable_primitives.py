@@ -12,9 +12,5 @@ def _signature(rcvr):
 
 class InvokablePrimitivesBase(Primitives):
     def install_primitives(self):
-        self._install_instance_primitive(
-            UnaryPrimitive("holder", self.universe, _holder)
-        )
-        self._install_instance_primitive(
-            UnaryPrimitive("signature", self.universe, _signature)
-        )
+        self._install_instance_primitive(UnaryPrimitive("holder", _holder))
+        self._install_instance_primitive(UnaryPrimitive("signature", _signature))

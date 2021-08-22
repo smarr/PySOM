@@ -8,6 +8,7 @@ from rpython import conftest  # pylint: disable=import-error
 from rpython.jit.metainterp.test.test_ajit import LLJitMixin  # pylint: disable=E
 
 from som.vm.current import current_universe
+from som.vm.symbols import symbol_for
 from som.vm.universe import Exit
 
 from som.compiler.sourcecode_compiler import compile_class_from_string
@@ -34,7 +35,7 @@ class TestLLtype(LLJitMixin):
         universe._initialize_object_system()  # pylint: disable=protected-access
         cls = compile_class_from_string(source, None, universe)
         obj = universe.new_instance(cls)
-        invokable = cls.lookup_invokable(universe.symbol_for(start))
+        invokable = cls.lookup_invokable(symbol_for(start))
         return universe, obj, invokable
 
     def _run_meta_interp(self, program, main_method, classpath=cp):

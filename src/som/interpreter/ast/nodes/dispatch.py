@@ -1,4 +1,5 @@
 from som.interpreter.send import lookup_and_send_3
+from som.vm.symbols import symbol_for
 
 from som.vmobjects.array import Array
 
@@ -93,7 +94,7 @@ class CachedDnuNode(_AbstractDispatchNode):
 
     _immutable_fields_ = ["_selector", "_cached_method"]
 
-    def __init__(self, selector, layout, next_entry, universe):
+    def __init__(self, selector, layout, next_entry):
         _AbstractDispatchNode.__init__(
             self,
             layout,
@@ -101,7 +102,7 @@ class CachedDnuNode(_AbstractDispatchNode):
         )
         self._selector = selector
         self._cached_method = layout.lookup_invokable(
-            universe.symbol_for("doesNotUnderstand:arguments:")
+            symbol_for("doesNotUnderstand:arguments:")
         )
 
     def dispatch_1(self, rcvr):

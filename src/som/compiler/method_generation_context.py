@@ -6,6 +6,7 @@ from som.compiler.lexical_scope import LexicalScope
 from som.compiler.parse_error import ParseError
 from som.compiler.symbol import Symbol
 from som.interpreter.ast.frame import ARG_OFFSET, FRAME_AND_INNER_RCVR_IDX
+from som.vm.symbols import sym_nil, sym_false, sym_true, symbol_for
 
 
 class MethodGenerationContextBase(object):
@@ -116,9 +117,9 @@ class MethodGenerationContextBase(object):
 
     def is_global_known(self, global_name):
         return (
-            global_name is self.universe.sym_true
-            or global_name is self.universe.sym_false
-            or global_name is self.universe.sym_nil
+            global_name is sym_true
+            or global_name is sym_false
+            or global_name is sym_nil
             or self.universe.has_global(global_name)
         )
 
@@ -208,7 +209,7 @@ class MethodGenerationContextBase(object):
         for _ in range(num_args - 1):
             block_sig += ":"
 
-        self.signature = self.universe.symbol_for(block_sig)
+        self.signature = symbol_for(block_sig)
 
     def merge_into_scope(self, scope_to_be_inlined):
         assert len(scope_to_be_inlined.arguments) == 1

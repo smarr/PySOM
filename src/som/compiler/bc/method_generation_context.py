@@ -10,8 +10,6 @@ from som.compiler.bc.bytecode_generator import (
 from som.compiler.method_generation_context import MethodGenerationContextBase
 from som.compiler.parse_error import ParseError
 from som.interpreter.bc.bytecodes import (
-    bytecode_stack_effect,
-    bytecode_stack_effect_depends_on_send,
     bytecode_length,
     Bytecodes,
     POP_X_BYTECODES,
@@ -25,6 +23,7 @@ from som.interpreter.bc.bytecodes import (
     NUM_SINGLE_BYTE_JUMP_BYTECODES,
     FIRST_DOUBLE_BYTE_JUMP_BYTECODE,
 )
+from som.vm.symbols import sym_nil, sym_false, sym_true
 from som.vmobjects.integer import int_0, int_1
 from som.vmobjects.method_trivial import (
     LiteralReturn,
@@ -123,7 +122,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def assemble(self, _dummy):
         if self._primitive:
-            return empty_primitive(self.signature.get_embedded_string(), self.universe)
+            return empty_primitive(self.signature.get_embedded_string())
 
         trivial_method = self.assemble_trivial_method()
         if trivial_method is not None:
@@ -411,11 +410,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
             global_name = self._literals[0]
             assert isinstance(global_name, Symbol)
 
-            if global_name is self.universe.sym_true:
+            if global_name is sym_true:
                 return LiteralReturn(self.signature, trueObject)
-            if global_name is self.universe.sym_false:
+            if global_name is sym_false:
                 return LiteralReturn(self.signature, falseObject)
-            if global_name is self.universe.sym_nil:
+            if global_name is sym_nil:
                 from som.vm.globals import nilObject
 
                 return LiteralReturn(self.signature, nilObject)

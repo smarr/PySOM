@@ -6,6 +6,7 @@ from som.compiler.parse_error import ParseError, ParseErrorSymList
 from som.compiler.symbol import Symbol
 
 from som.interp_type import is_ast_interpreter
+from som.vm.symbols import sym_object, symbol_for, sym_nil
 from som.vmobjects.double import Double
 
 if is_ast_interpreter():
@@ -77,7 +78,7 @@ class ParserBase(object):
         )
 
     def classdef(self, cgenc):
-        cgenc.name = self.universe.symbol_for(self._text)
+        cgenc.name = symbol_for(self._text)
         self._expect(Symbol.Identifier)
         self._expect(Symbol.Equal)
 
@@ -118,13 +119,13 @@ class ParserBase(object):
 
     def _superclass(self, cgenc):
         if self._sym == Symbol.Identifier:
-            super_name = self.universe.symbol_for(self._text)
+            super_name = symbol_for(self._text)
             self._accept(Symbol.Identifier)
         else:
-            super_name = self.universe.symbol_for("Object")
+            super_name = sym_object
 
         # Load the super class, if it is not nil (break the dependency cycle)
-        if super_name is not self.universe.sym_nil:
+        if super_name is not sym_nil:
             super_class = self.universe.load_class(super_name)
             if not super_class:
                 raise ParseError(
@@ -173,14 +174,14 @@ class ParserBase(object):
         if self._accept(Symbol.Or):
             while self._sym_is_identifier():
                 var = self._variable()
-                cgenc.add_instance_field(self.universe.symbol_for(var))
+                cgenc.add_instance_field(symbol_for(var))
             self._expect(Symbol.Or)
 
     def _class_fields(self, cgenc):
         if self._accept(Symbol.Or):
             while self._sym_is_identifier():
                 var = self._variable()
-                cgenc.add_class_field(self.universe.symbol_for(var))
+                cgenc.add_class_field(symbol_for(var))
             self._expect(Symbol.Or)
 
     def _pattern(self, mgenc):
@@ -209,10 +210,10 @@ class ParserBase(object):
             coord = self._lexer.get_source_coordinate()
             mgenc.add_argument(self._argument(), self._get_source_section(coord), self)
 
-        mgenc.signature = self.universe.symbol_for(keyword)
+        mgenc.signature = symbol_for(keyword)
 
     def _unary_selector(self):
-        return self.universe.symbol_for(self._identifier())
+        return symbol_for(self._identifier())
 
     def _binary_selector(self):
         s = self._text
@@ -232,7 +233,7 @@ class ParserBase(object):
         else:
             self._expect(Symbol.NONE)
 
-        return self.universe.symbol_for(s)
+        return symbol_for(s)
 
     def _identifier(self):
         s = self._text
@@ -343,7 +344,7 @@ class ParserBase(object):
     def _keyword_selector(self):
         s = self._text
         self._expect_one_of(self._keyword_selector_syms)
-        symb = self.universe.symbol_for(s)
+        symb = symbol_for(s)
         return symb
 
     def _string(self):

@@ -21,6 +21,7 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
     IfElseInlinedNode,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
+from som.vm.symbols import symbol_for
 
 from som.vmobjects.array import Array
 from som.vmobjects.string import String
@@ -307,7 +308,7 @@ class Parser(ParserBase):
                     if inlined is not None:
                         return inlined
 
-        selector = self.universe.symbol_for(keyword)
+        selector = symbol_for(keyword)
 
         if is_super_send:
             num_args = len(arguments) + 1
@@ -372,7 +373,7 @@ class Parser(ParserBase):
         self._expect(Symbol.Pound)
         if self._sym == Symbol.STString:
             s = self._string()
-            return self.universe.symbol_for(s)
+            return symbol_for(s)
         return self._selector()
 
     def _literal_string(self):
@@ -394,14 +395,15 @@ class Parser(ParserBase):
         self._expect(Symbol.EndBlock)
         return expressions
 
-    def _variable_read(self, mgenc, variable_name):
+    @staticmethod
+    def _variable_read(mgenc, variable_name):
         # first lookup in local variables, or method arguments
         variable = mgenc.get_variable(variable_name)
         if variable:
             return variable.get_read_node(mgenc.get_context_level(variable_name))
 
         # otherwise, it might be an object field
-        var_symbol = self.universe.symbol_for(variable_name)
+        var_symbol = symbol_for(variable_name)
         field_read = mgenc.get_object_field_read(var_symbol)
         if field_read:
             return field_read
@@ -427,7 +429,7 @@ class Parser(ParserBase):
         if variable:
             return variable.get_write_node(mgenc.get_context_level(variable_name), exp)
 
-        field_name = self.universe.symbol_for(variable_name)
+        field_name = symbol_for(variable_name)
         field_write = mgenc.get_object_field_write(field_name, exp)
         if field_write:
             return field_write
