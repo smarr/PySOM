@@ -15,6 +15,7 @@ from som.compiler.bc.bytecode_generator import (
     emit_push_field_with_index,
     emit_pop_field_with_index,
     emit3_with_dummy,
+    compute_offset,
 )
 from som.interpreter.ast.frame import (
     get_inner_as_context,
@@ -395,10 +396,17 @@ class BcMethod(BcAbstractMethod):
             ):
                 # emit the jump, but instead of the offset, emit a dummy
                 idx = emit3_with_dummy(mgenc, bytecode)
-
-                offset1 = self.get_bytecode(i + 1)
-                offset2 = self.get_bytecode(i + 2)
-                heappush(jumps, _Jump(i + (offset1 + (offset2 << 8)), bytecode, idx))
+                heappush(
+                    jumps,
+                    _Jump(
+                        i
+                        + compute_offset(
+                            self.get_bytecode(i + 1), self.get_bytecode(i + 2)
+                        ),
+                        bytecode,
+                        idx,
+                    ),
+                )
 
             elif (
                 bytecode == Bytecodes.jump_backward

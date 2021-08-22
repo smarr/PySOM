@@ -218,3 +218,7 @@ def emit3_with_dummy(mgenc, code):
     idx = mgenc.add_bytecode_argument_and_get_index(0)
     mgenc.add_bytecode_argument(0)
     return idx
+
+
+def compute_offset(byte1, byte2):
+    return byte1 + (byte2 << 8)
