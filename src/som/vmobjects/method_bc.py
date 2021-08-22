@@ -284,8 +284,11 @@ class BcMethod(BcAbstractMethod):
             bytecode = self.get_bytecode(i)
             bc_length = bytecode_length(bytecode)
 
-            if bytecode == Bytecodes.halt or bytecode == Bytecodes.dup:
-                emit1(mgenc, bytecode)
+            if bytecode == Bytecodes.halt:
+                emit1(mgenc, bytecode, 0)
+
+            elif bytecode == Bytecodes.dup:
+                emit1(mgenc, bytecode, 1)
 
             elif (
                 bytecode == Bytecodes.push_field
@@ -301,7 +304,13 @@ class BcMethod(BcAbstractMethod):
                 elif bytecode == Bytecodes.pop_field:
                     emit_pop_field_with_index(mgenc, idx, ctx_level - 1)
                 else:
-                    emit3(mgenc, bytecode, idx, ctx_level - 1)
+                    emit3(
+                        mgenc,
+                        bytecode,
+                        idx,
+                        ctx_level - 1,
+                        1 if Bytecodes.push_argument else -1,
+                    )
 
             elif bytecode == Bytecodes.push_local or bytecode == Bytecodes.pop_local:
                 idx = self.get_bytecode(i + 1)
@@ -313,7 +322,10 @@ class BcMethod(BcAbstractMethod):
                     idx = mgenc.get_inlined_local_idx(var, 0)
                 else:
                     ctx_level -= 1
-                emit3(mgenc, bytecode, idx, ctx_level)
+                if bytecode == Bytecodes.push_local:
+                    emit3(mgenc, bytecode, idx, ctx_level, 1)
+                else:
+                    emit3(mgenc, bytecode, idx, ctx_level, -1)
 
             elif bytecode == Bytecodes.push_block:
                 literal_idx = self.get_bytecode(i + 1)
@@ -344,11 +356,14 @@ class BcMethod(BcAbstractMethod):
                 bytecode == Bytecodes.push_0
                 or bytecode == Bytecodes.push_1
                 or bytecode == Bytecodes.push_nil
-                or bytecode == Bytecodes.pop
-                or bytecode == Bytecodes.inc
-                or bytecode == Bytecodes.dec
             ):
-                emit1(mgenc, bytecode)
+                emit1(mgenc, bytecode, 1)
+
+            elif bytecode == Bytecodes.pop:
+                emit1(mgenc, bytecode, -1)
+
+            elif bytecode == Bytecodes.inc or bytecode == Bytecodes.dec:
+                emit1(mgenc, bytecode, 0)
 
             elif bytecode == Bytecodes.push_global:
                 literal_idx = self.get_bytecode(i + 1)
@@ -385,28 +400,31 @@ class BcMethod(BcAbstractMethod):
             elif (
                 bytecode == Bytecodes.jump
                 or bytecode == Bytecodes.jump_on_true_top_nil
-                or bytecode == Bytecodes.jump_on_true_pop
                 or bytecode == Bytecodes.jump_on_false_top_nil
-                or bytecode == Bytecodes.jump_on_false_pop
                 or bytecode == Bytecodes.jump2
                 or bytecode == Bytecodes.jump2_on_true_top_nil
-                or bytecode == Bytecodes.jump2_on_true_pop
                 or bytecode == Bytecodes.jump2_on_false_top_nil
+            ):
+                # emit the jump, but instead of the offset, emit a dummy
+                idx = emit3_with_dummy(mgenc, bytecode, 0)
+                offset = compute_offset(
+                    self.get_bytecode(i + 1), self.get_bytecode(i + 2)
+                )
+                jump = _Jump(i + offset, bytecode, idx)
+                heappush(jumps, jump)
+            elif (
+                bytecode == Bytecodes.jump_on_true_pop
+                or bytecode == Bytecodes.jump_on_false_pop
+                or bytecode == Bytecodes.jump2_on_true_pop
                 or bytecode == Bytecodes.jump2_on_false_pop
             ):
                 # emit the jump, but instead of the offset, emit a dummy
-                idx = emit3_with_dummy(mgenc, bytecode)
-                heappush(
-                    jumps,
-                    _Jump(
-                        i
-                        + compute_offset(
-                            self.get_bytecode(i + 1), self.get_bytecode(i + 2)
-                        ),
-                        bytecode,
-                        idx,
-                    ),
+                idx = emit3_with_dummy(mgenc, bytecode, -1)
+                offset = compute_offset(
+                    self.get_bytecode(i + 1), self.get_bytecode(i + 2)
                 )
+                jump = _Jump(i + offset, bytecode, idx)
+                heappush(jumps, jump)
 
             elif (
                 bytecode == Bytecodes.jump_backward

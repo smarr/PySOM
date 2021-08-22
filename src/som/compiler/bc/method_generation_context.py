@@ -58,6 +58,9 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._is_currently_inlining_a_block = False
         self.inlined_loops = []
 
+        self.max_stack_depth = 0
+        self._current_stack_depth = 0
+
     def get_number_of_locals(self):
         return len(self._local_list)
 
@@ -66,7 +69,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def get_maximum_number_of_stack_elements(self):
         """Should not be used on the fast path. Really just hear for the disassembler."""
-        return self._compute_stack_depth()
+        return self.max_stack_depth
 
     def get_bytecode(self, idx):
         return self._bytecode[idx]
@@ -129,7 +132,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
         # +2 for buffer for dnu, #escapedBlock, etc.
-        max_stack_size = self._compute_stack_depth() + 2
+        max_stack_size = self.max_stack_depth + 2
         num_locals = len(self._locals)
 
         if len(arg_inner_access) > 1:
@@ -187,29 +190,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
             + str(var)
             + " could not be found."
         )
-
-    def _compute_stack_depth(self):
-        depth = 0
-        max_depth = 0
-        i = 0
-
-        while i < len(self._bytecode):
-            bc = self._bytecode[i]
-
-            if bytecode_stack_effect_depends_on_send(bc):
-                signature = self._literals[self._bytecode[i + 1]]
-                depth += bytecode_stack_effect(
-                    bc, signature.get_number_of_signature_arguments()
-                )
-            else:
-                depth += bytecode_stack_effect(bc)
-
-            i += bytecode_length(bc)
-
-            if depth > max_depth:
-                max_depth = depth
-
-        return max_depth
 
     def is_finished(self):
         return self._finished
@@ -286,7 +266,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return 0
         return 1 + self.outer_genc.get_max_context_level()
 
-    def add_bytecode(self, bytecode):
+    def add_bytecode(self, bytecode, stack_effect):
+        self._current_stack_depth += stack_effect
+        if self._current_stack_depth > self.max_stack_depth:
+            self.max_stack_depth = self._current_stack_depth
+
         self._bytecode.append(bytecode)
         self._last_4_bytecodes[0] = self._last_4_bytecodes[1]
         self._last_4_bytecodes[1] = self._last_4_bytecodes[2]
