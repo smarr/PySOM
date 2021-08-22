@@ -99,6 +99,8 @@ class Universe(object):
         self.double_layout = None
 
         self.sym_nil = self.symbol_for("nil")
+        self.sym_true = self.symbol_for("true")
+        self.sym_false = self.symbol_for("false")
         self.sym_plus = self.symbol_for("+")
         self.sym_minus = self.symbol_for("-")
 
@@ -304,8 +306,8 @@ class Universe(object):
 
         # Put special objects and classes into the dictionary of globals
         self.set_global(self.sym_nil, nilObject)
-        self.set_global(self.symbol_for("true"), trueObject)
-        self.set_global(self.symbol_for("false"), falseObject)
+        self.set_global(self.sym_true, trueObject)
+        self.set_global(self.sym_false, falseObject)
         self.set_global(self.symbol_for("system"), system_object)
         self.set_global(self.symbol_for("System"), self.system_class)
         self.set_global(self.symbol_for("Block"), self.block_class)

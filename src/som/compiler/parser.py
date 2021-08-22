@@ -124,7 +124,7 @@ class ParserBase(object):
             super_name = self.universe.symbol_for("Object")
 
         # Load the super class, if it is not nil (break the dependency cycle)
-        if super_name.get_embedded_string() != "nil":
+        if super_name is not self.universe.sym_nil:
             super_class = self.universe.load_class(super_name)
             if not super_class:
                 raise ParseError(

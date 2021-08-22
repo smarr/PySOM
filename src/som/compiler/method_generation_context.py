@@ -115,11 +115,10 @@ class MethodGenerationContextBase(object):
         )
 
     def is_global_known(self, global_name):
-        glob = global_name.get_embedded_string()
         return (
-            glob == "true"
-            or glob == "false"
-            or glob == "nil"
+            global_name is self.universe.sym_true
+            or global_name is self.universe.sym_false
+            or global_name is self.universe.sym_nil
             or self.universe.has_global(global_name)
         )
 

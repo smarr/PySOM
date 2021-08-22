@@ -427,12 +427,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
             global_name = self._literals[0]
             assert isinstance(global_name, Symbol)
 
-            glob = global_name.get_embedded_string()
-            if glob == "true":
+            if global_name is self.universe.sym_true:
                 return LiteralReturn(self.signature, trueObject)
-            if glob == "false":
+            if global_name is self.universe.sym_false:
                 return LiteralReturn(self.signature, falseObject)
-            if glob == "nil":
+            if global_name is self.universe.sym_nil:
                 from som.vm.globals import nilObject
 
                 return LiteralReturn(self.signature, nilObject)
