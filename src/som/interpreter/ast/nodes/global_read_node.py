@@ -4,16 +4,16 @@ from som.interpreter.send import lookup_and_send_2
 from som.vm.globals import nilObject, trueObject, falseObject
 
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
+from som.vm.symbols import sym_false, sym_true, sym_nil
 from som.vmobjects.method_trivial import GlobalRead
 
 
 def create_global_node(global_name, universe, mgenc, source_section):
-    glob = global_name.get_embedded_string()
-    if glob == "true":
+    if global_name is sym_true:
         return LiteralNode(trueObject, source_section)
-    if glob == "false":
+    if global_name is sym_false:
         return LiteralNode(falseObject, source_section)
-    if glob == "nil":
+    if global_name is sym_nil:
         return LiteralNode(nilObject, source_section)
 
     assoc = universe.get_globals_association_or_none(global_name)

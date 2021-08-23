@@ -10,6 +10,7 @@ from som.compiler.class_generation_context import ClassGenerationContext
 from som.interp_type import is_ast_interpreter
 from som.interpreter.bc.bytecodes import Bytecodes, bytecode_length, bytecode_as_str
 from som.vm.current import current_universe
+from som.vm.symbols import symbol_for
 
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
     is_ast_interpreter(), reason="Tests are specific to bytecode interpreter"
@@ -17,7 +18,7 @@ pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
 
 
 def add_field(cgenc, name):
-    cgenc.add_instance_field(current_universe.symbol_for(name))
+    cgenc.add_instance_field(symbol_for(name))
 
 
 def dump(mgenc):
@@ -27,7 +28,7 @@ def dump(mgenc):
 @pytest.fixture
 def cgenc():
     gen_c = ClassGenerationContext(current_universe)
-    gen_c.name = current_universe.symbol_for("Test")
+    gen_c.name = symbol_for("Test")
     return gen_c
 
 
@@ -40,7 +41,7 @@ def mgenc(cgenc):
 
 @pytest.fixture
 def bgenc(cgenc, mgenc):
-    mgenc.signature = current_universe.symbol_for("test")
+    mgenc.signature = symbol_for("test")
     bgenc = MethodGenerationContext(current_universe, cgenc, mgenc)
     return bgenc
 

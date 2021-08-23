@@ -26,6 +26,7 @@ from som.interpreter.ast.nodes.variable_node import (
 )
 from som.vm.current import current_universe
 from som.vm.globals import trueObject, falseObject
+from som.vm.symbols import symbol_for
 
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
     is_bytecode_interpreter(), reason="Tests are specific to AST interpreter"
@@ -33,13 +34,13 @@ pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
 
 
 def add_field(cgenc, name):
-    cgenc.add_instance_field(current_universe.symbol_for(name))
+    cgenc.add_instance_field(symbol_for(name))
 
 
 @pytest.fixture
 def cgenc():
     gen_c = ClassGenerationContext(current_universe)
-    gen_c.name = current_universe.symbol_for("Test")
+    gen_c.name = symbol_for("Test")
     return gen_c
 
 

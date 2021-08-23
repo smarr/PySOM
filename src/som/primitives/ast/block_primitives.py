@@ -12,4 +12,4 @@ def _restart(ivkbl, rcvr, args):
 
 class BlockPrimitives(Primitives):
     def install_primitives(self):
-        self._install_instance_primitive(Primitive("restart", self.universe, _restart))
+        self._install_instance_primitive(Primitive("restart", _restart))

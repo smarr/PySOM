@@ -22,6 +22,15 @@ from som.compiler.bc.bytecode_generator import (
 from som.compiler.bc.method_generation_context import MethodGenerationContext
 from som.compiler.parser import ParserBase
 from som.compiler.symbol import Symbol
+from som.vm.symbols import (
+    sym_array,
+    sym_array_size_placeholder,
+    sym_new_msg,
+    sym_at_put_msg,
+    symbol_for,
+    sym_minus,
+    sym_plus,
+)
 from som.vmobjects.integer import Integer
 from som.vmobjects.string import String
 
@@ -124,7 +133,7 @@ class Parser(ParserBase):
 
     def _assignment(self, mgenc):
         variable = self._variable()
-        var = self.universe.symbol_for(variable)
+        var = symbol_for(variable)
         mgenc.add_literal_if_absent(var)
 
         self._expect(Symbol.Assign)
@@ -202,11 +211,11 @@ class Parser(ParserBase):
             emit_send(mgenc, msg)
 
     def _try_inc_or_dec_bytecodes(self, msg, is_super_send, mgenc):
-        is_inc_or_dec = msg is self.universe.sym_plus or msg is self.universe.sym_minus
+        is_inc_or_dec = msg is sym_plus or msg is sym_minus
         if is_inc_or_dec and not is_super_send:
             if self._sym == Symbol.Integer and self._text == "1":
                 self._expect(Symbol.Integer)
-                if msg is self.universe.sym_plus:
+                if msg is sym_plus:
                     emit_inc(mgenc)
                 else:
                     emit_dec(mgenc)
@@ -274,7 +283,7 @@ class Parser(ParserBase):
             ):
                 return
 
-        msg = self.universe.symbol_for(keyword)
+        msg = symbol_for(keyword)
 
         if is_super_send:
             emit_super_send(mgenc, msg)
@@ -320,7 +329,7 @@ class Parser(ParserBase):
         self._expect(Symbol.Pound)
         if self._sym == Symbol.STString:
             s = self._string()
-            symb = self.universe.symbol_for(s)
+            symb = symbol_for(s)
         else:
             symb = self._selector()
 
@@ -336,17 +345,12 @@ class Parser(ParserBase):
         self._expect(Symbol.Pound)
         self._expect(Symbol.NewTerm)
 
-        array_class_name = self.universe.symbol_for("Array")
-        array_size_placeholder = self.universe.symbol_for("ArraySizeLiteralPlaceholder")
-        new_message = self.universe.symbol_for("new:")
-        at_put_message = self.universe.symbol_for("at:put:")
-
-        array_size_literal_idx = mgenc.add_literal(array_size_placeholder)
+        array_size_literal_idx = mgenc.add_literal(sym_array_size_placeholder)
 
         # create empty array
-        emit_push_global(mgenc, array_class_name)
+        emit_push_global(mgenc, sym_array)
         emit_push_constant_index(mgenc, array_size_literal_idx)
-        emit_send(mgenc, new_message)
+        emit_send(mgenc, sym_new_msg)
 
         i = 1
 
@@ -355,11 +359,11 @@ class Parser(ParserBase):
             emit_push_constant(mgenc, push_idx)
 
             self._literal(mgenc)
-            emit_send(mgenc, at_put_message)
+            emit_send(mgenc, sym_at_put_msg)
             i += 1
 
         mgenc.update_literal(
-            array_size_placeholder, array_size_literal_idx, Integer(i - 1)
+            sym_array_size_placeholder, array_size_literal_idx, Integer(i - 1)
         )
         self._expect(Symbol.EndTerm)
 
@@ -380,7 +384,8 @@ class Parser(ParserBase):
 
         self._expect(Symbol.EndBlock)
 
-    def _gen_push_variable(self, mgenc, var):
+    @staticmethod
+    def _gen_push_variable(mgenc, var):
         # The purpose of this function is to find out whether the variable to be
         # pushed on the stack is a local variable, argument, or object field.
         # This is done by examining all available lexical contexts, starting with
@@ -394,7 +399,7 @@ class Parser(ParserBase):
                 emit_push_local(mgenc, result.var.idx, result.context)
             result.mark_accessed()
         else:
-            identifier = self.universe.symbol_for(var)
+            identifier = symbol_for(var)
             if mgenc.has_field(identifier):
                 field_name = identifier
                 mgenc.add_literal_if_absent(field_name)
@@ -404,7 +409,8 @@ class Parser(ParserBase):
                 globe = identifier
                 emit_push_global(mgenc, globe)
 
-    def _gen_pop_variable(self, mgenc, var):
+    @staticmethod
+    def _gen_pop_variable(mgenc, var):
         # The purpose of this function is to find out whether the variable to be
         # popped off the stack is a local variable, argument, or object field.
         # This is done by examining all available lexical contexts, starting with
@@ -418,5 +424,5 @@ class Parser(ParserBase):
                 emit_pop_local(mgenc, result.var.idx, result.context)
             result.mark_accessed()
         else:
-            emit_pop_field(mgenc, self.universe.symbol_for(var))
+            emit_pop_field(mgenc, symbol_for(var))
             mgenc.mark_self_as_accessed_from_outer_context()

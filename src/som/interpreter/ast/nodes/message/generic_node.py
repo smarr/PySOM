@@ -70,9 +70,7 @@ class _AbstractGenericMessageNode(ExpressionNode):
             if method is not None:
                 node = CachedDispatchNode(layout, method, self._dispatch)
             else:
-                node = CachedDnuNode(
-                    self._selector, layout, self._dispatch, self.universe
-                )
+                node = CachedDnuNode(self._selector, layout, self._dispatch)
 
             node.parent = self
             self._dispatch = node

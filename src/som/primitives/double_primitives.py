@@ -111,51 +111,31 @@ def _from_string(_rcvr, string):
 
 class DoublePrimitives(Primitives):
     def install_primitives(self):
-        self._install_instance_primitive(
-            UnaryPrimitive("asString", self.universe, _as_string)
-        )
-        self._install_instance_primitive(UnaryPrimitive("round", self.universe, _round))
-        self._install_instance_primitive(
-            UnaryPrimitive("asInteger", self.universe, _as_integer)
-        )
+        self._install_instance_primitive(UnaryPrimitive("asString", _as_string))
+        self._install_instance_primitive(UnaryPrimitive("round", _round))
+        self._install_instance_primitive(UnaryPrimitive("asInteger", _as_integer))
 
-        self._install_instance_primitive(UnaryPrimitive("sqrt", self.universe, _sqrt))
-        self._install_instance_primitive(BinaryPrimitive("+", self.universe, _plus))
-        self._install_instance_primitive(BinaryPrimitive("-", self.universe, _minus))
-        self._install_instance_primitive(BinaryPrimitive("*", self.universe, _mult))
-        self._install_instance_primitive(
-            BinaryPrimitive("//", self.universe, _double_div)
-        )
-        self._install_instance_primitive(BinaryPrimitive("%", self.universe, _mod))
-        self._install_instance_primitive(BinaryPrimitive("=", self.universe, _equals))
-        self._install_instance_primitive(
-            BinaryPrimitive("<", self.universe, _less_than)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("<=", self.universe, _less_than_or_equal)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive(">", self.universe, _greater_than)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive(">=", self.universe, _greater_than_or_equal)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("<>", self.universe, _unequals)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("~=", self.universe, _unequals)
-        )
+        self._install_instance_primitive(UnaryPrimitive("sqrt", _sqrt))
+        self._install_instance_primitive(BinaryPrimitive("+", _plus))
+        self._install_instance_primitive(BinaryPrimitive("-", _minus))
+        self._install_instance_primitive(BinaryPrimitive("*", _mult))
+        self._install_instance_primitive(BinaryPrimitive("//", _double_div))
+        self._install_instance_primitive(BinaryPrimitive("%", _mod))
+        self._install_instance_primitive(BinaryPrimitive("=", _equals))
+        self._install_instance_primitive(BinaryPrimitive("<", _less_than))
+        self._install_instance_primitive(BinaryPrimitive("<=", _less_than_or_equal))
+        self._install_instance_primitive(BinaryPrimitive(">", _greater_than))
+        self._install_instance_primitive(BinaryPrimitive(">=", _greater_than_or_equal))
+        self._install_instance_primitive(BinaryPrimitive("<>", _unequals))
+        self._install_instance_primitive(BinaryPrimitive("~=", _unequals))
 
-        self._install_instance_primitive(BinaryPrimitive("max:", self.universe, _max))
-        self._install_instance_primitive(BinaryPrimitive("min:", self.universe, _min))
+        self._install_instance_primitive(BinaryPrimitive("max:", _max))
+        self._install_instance_primitive(BinaryPrimitive("min:", _min))
 
-        self._install_instance_primitive(UnaryPrimitive("sin", self.universe, _sin))
-        self._install_instance_primitive(UnaryPrimitive("cos", self.universe, _cos))
+        self._install_instance_primitive(UnaryPrimitive("sin", _sin))
+        self._install_instance_primitive(UnaryPrimitive("cos", _cos))
 
         self._install_class_primitive(
-            UnaryPrimitive("PositiveInfinity", self.universe, _positive_infinity)
+            UnaryPrimitive("PositiveInfinity", _positive_infinity)
         )
-        self._install_class_primitive(
-            BinaryPrimitive("fromString:", self.universe, _from_string)
-        )
+        self._install_class_primitive(BinaryPrimitive("fromString:", _from_string))

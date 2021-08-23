@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from som.vm.symbols import symbol_for
 from som.vmobjects.array import Array
 from som.vmobjects.clazz import Class
 
@@ -98,7 +99,7 @@ class ClassGenerationContext(object):
         result_class.set_instance_invokables(
             self._class_methods, self._class_has_primitives
         )
-        result_class.set_name(self.universe.symbol_for(cc_name))
+        result_class.set_name(symbol_for(cc_name))
 
         super_m_class = self._super_class.get_class(self.universe)
         result_class.set_super_class(super_m_class)

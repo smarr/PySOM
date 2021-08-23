@@ -10,8 +10,6 @@ from som.compiler.bc.bytecode_generator import (
 from som.compiler.method_generation_context import MethodGenerationContextBase
 from som.compiler.parse_error import ParseError
 from som.interpreter.bc.bytecodes import (
-    bytecode_stack_effect,
-    bytecode_stack_effect_depends_on_send,
     bytecode_length,
     Bytecodes,
     POP_X_BYTECODES,
@@ -25,6 +23,7 @@ from som.interpreter.bc.bytecodes import (
     NUM_SINGLE_BYTE_JUMP_BYTECODES,
     FIRST_DOUBLE_BYTE_JUMP_BYTECODE,
 )
+from som.vm.symbols import sym_nil, sym_false, sym_true
 from som.vmobjects.integer import int_0, int_1
 from som.vmobjects.method_trivial import (
     LiteralReturn,
@@ -58,6 +57,9 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._is_currently_inlining_a_block = False
         self.inlined_loops = []
 
+        self.max_stack_depth = 0
+        self._current_stack_depth = 0
+
     def get_number_of_locals(self):
         return len(self._local_list)
 
@@ -66,7 +68,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def get_maximum_number_of_stack_elements(self):
         """Should not be used on the fast path. Really just hear for the disassembler."""
-        return self._compute_stack_depth()
+        return self.max_stack_depth
 
     def get_bytecode(self, idx):
         return self._bytecode[idx]
@@ -120,7 +122,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def assemble(self, _dummy):
         if self._primitive:
-            return empty_primitive(self.signature.get_embedded_string(), self.universe)
+            return empty_primitive(self.signature.get_embedded_string())
 
         trivial_method = self.assemble_trivial_method()
         if trivial_method is not None:
@@ -129,7 +131,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         arg_inner_access, size_frame, size_inner = self.prepare_frame()
 
         # +2 for buffer for dnu, #escapedBlock, etc.
-        max_stack_size = self._compute_stack_depth() + 2
+        max_stack_size = self.max_stack_depth + 2
         num_locals = len(self._locals)
 
         if len(arg_inner_access) > 1:
@@ -187,29 +189,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
             + str(var)
             + " could not be found."
         )
-
-    def _compute_stack_depth(self):
-        depth = 0
-        max_depth = 0
-        i = 0
-
-        while i < len(self._bytecode):
-            bc = self._bytecode[i]
-
-            if bytecode_stack_effect_depends_on_send(bc):
-                signature = self._literals[self._bytecode[i + 1]]
-                depth += bytecode_stack_effect(
-                    bc, signature.get_number_of_signature_arguments()
-                )
-            else:
-                depth += bytecode_stack_effect(bc)
-
-            i += bytecode_length(bc)
-
-            if depth > max_depth:
-                max_depth = depth
-
-        return max_depth
 
     def is_finished(self):
         return self._finished
@@ -286,7 +265,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return 0
         return 1 + self.outer_genc.get_max_context_level()
 
-    def add_bytecode(self, bytecode):
+    def add_bytecode(self, bytecode, stack_effect):
+        self._current_stack_depth += stack_effect
+        if self._current_stack_depth > self.max_stack_depth:
+            self.max_stack_depth = self._current_stack_depth
+
         self._bytecode.append(bytecode)
         self._last_4_bytecodes[0] = self._last_4_bytecodes[1]
         self._last_4_bytecodes[1] = self._last_4_bytecodes[2]
@@ -427,12 +410,11 @@ class MethodGenerationContext(MethodGenerationContextBase):
             global_name = self._literals[0]
             assert isinstance(global_name, Symbol)
 
-            glob = global_name.get_embedded_string()
-            if glob == "true":
+            if global_name is sym_true:
                 return LiteralReturn(self.signature, trueObject)
-            if glob == "false":
+            if global_name is sym_false:
                 return LiteralReturn(self.signature, falseObject)
-            if glob == "nil":
+            if global_name is sym_nil:
                 from som.vm.globals import nilObject
 
                 return LiteralReturn(self.signature, nilObject)
@@ -668,6 +650,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         if jump_offset <= 0xFF:
             self._bytecode[idx_of_offset] = jump_offset
+            self._bytecode[idx_of_offset + 1] = 0
         else:
             # need to use the jump2* version of the bytecode
             if bytecode < FIRST_DOUBLE_BYTE_JUMP_BYTECODE:

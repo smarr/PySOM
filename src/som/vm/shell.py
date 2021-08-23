@@ -1,6 +1,7 @@
 from rlib.objectmodel import we_are_translated
 from rlib.osext import raw_input
 from som.vm.globals import nilObject
+from som.vm.symbols import symbol_for
 
 
 class Shell(object):
@@ -40,9 +41,7 @@ class Shell(object):
                 # If success
                 if shell_class:
                     shell_object = self.universe.new_instance(shell_class)
-                    shell_method = shell_class.lookup_invokable(
-                        self.universe.symbol_for("run:")
-                    )
+                    shell_method = shell_class.lookup_invokable(symbol_for("run:"))
 
                     it = shell_method.invoke_2(shell_object, it)
             except Exception as ex:  # pylint: disable=broad-except

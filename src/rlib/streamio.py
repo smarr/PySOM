@@ -4,7 +4,7 @@ except ImportError:
     "NOT_RPYTHON"
 
     def open_file_as_stream(file_name, mode):
-        return open(file_name, mode)
+        return open(file_name, mode)  # pylint: disable=unspecified-encoding
 
 
 # Taken from PyPy rpython/rlib/streamio.io (Version 7.3.1)

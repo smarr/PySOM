@@ -37,23 +37,15 @@ def _if_true_if_false(_rcvr, true_block, _false_block):
 
 class TruePrimitivesBase(Primitives):
     def install_primitives(self):
-        self._install_instance_primitive(UnaryPrimitive("not", self.universe, _not))
-        self._install_instance_primitive(BinaryPrimitive("or:", self.universe, _or))
-        self._install_instance_primitive(BinaryPrimitive("||", self.universe, _or))
+        self._install_instance_primitive(UnaryPrimitive("not", _not))
+        self._install_instance_primitive(BinaryPrimitive("or:", _or))
+        self._install_instance_primitive(BinaryPrimitive("||", _or))
+
+        self._install_instance_primitive(BinaryPrimitive("and:", _and_and_if_true))
+        self._install_instance_primitive(BinaryPrimitive("&&", _and_and_if_true))
+        self._install_instance_primitive(BinaryPrimitive("ifTrue:", _and_and_if_true))
+        self._install_instance_primitive(BinaryPrimitive("ifFalse:", _if_false))
 
         self._install_instance_primitive(
-            BinaryPrimitive("and:", self.universe, _and_and_if_true)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("&&", self.universe, _and_and_if_true)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("ifTrue:", self.universe, _and_and_if_true)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("ifFalse:", self.universe, _if_false)
-        )
-
-        self._install_instance_primitive(
-            TernaryPrimitive("ifTrue:ifFalse:", self.universe, _if_true_if_false)
+            TernaryPrimitive("ifTrue:ifFalse:", _if_true_if_false)
         )

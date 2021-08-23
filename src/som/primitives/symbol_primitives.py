@@ -16,9 +16,5 @@ def _equals(op1, op2):
 
 class SymbolPrimitivesBase(Primitives):
     def install_primitives(self):
-        self._install_instance_primitive(
-            UnaryPrimitive("asString", self.universe, _as_string)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("=", self.universe, _equals), False
-        )
+        self._install_instance_primitive(UnaryPrimitive("asString", _as_string))
+        self._install_instance_primitive(BinaryPrimitive("=", _equals), False)

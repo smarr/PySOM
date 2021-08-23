@@ -93,36 +93,20 @@ def _full_gc(_rcvr):
 
 class SystemPrimitivesBase(Primitives):
     def install_primitives(self):
-        self._install_instance_primitive(BinaryPrimitive("load:", self.universe, _load))
-        self._install_instance_primitive(BinaryPrimitive("exit:", self.universe, _exit))
+        self._install_instance_primitive(BinaryPrimitive("load:", _load))
+        self._install_instance_primitive(BinaryPrimitive("exit:", _exit))
+        self._install_instance_primitive(BinaryPrimitive("hasGlobal:", _has_global))
+        self._install_instance_primitive(BinaryPrimitive("global:", _global))
+        self._install_instance_primitive(TernaryPrimitive("global:put:", _global_put))
+        self._install_instance_primitive(BinaryPrimitive("printString:", _print_string))
+        self._install_instance_primitive(UnaryPrimitive("printNewline", _print_newline))
+        self._install_instance_primitive(BinaryPrimitive("errorPrint:", _error_print))
         self._install_instance_primitive(
-            BinaryPrimitive("hasGlobal:", self.universe, _has_global)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("global:", self.universe, _global)
-        )
-        self._install_instance_primitive(
-            TernaryPrimitive("global:put:", self.universe, _global_put)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("printString:", self.universe, _print_string)
-        )
-        self._install_instance_primitive(
-            UnaryPrimitive("printNewline", self.universe, _print_newline)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("errorPrint:", self.universe, _error_print)
-        )
-        self._install_instance_primitive(
-            BinaryPrimitive("errorPrintln:", self.universe, _error_println)
+            BinaryPrimitive("errorPrintln:", _error_println)
         )
 
-        self._install_instance_primitive(UnaryPrimitive("time", self.universe, _time))
-        self._install_instance_primitive(UnaryPrimitive("ticks", self.universe, _ticks))
-        self._install_instance_primitive(
-            UnaryPrimitive("fullGC", self.universe, _full_gc)
-        )
+        self._install_instance_primitive(UnaryPrimitive("time", _time))
+        self._install_instance_primitive(UnaryPrimitive("ticks", _ticks))
+        self._install_instance_primitive(UnaryPrimitive("fullGC", _full_gc))
 
-        self._install_instance_primitive(
-            BinaryPrimitive("loadFile:", self.universe, _load_file)
-        )
+        self._install_instance_primitive(BinaryPrimitive("loadFile:", _load_file))

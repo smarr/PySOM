@@ -1,3 +1,4 @@
+from som.compiler.bc.bytecode_generator import compute_offset
 from som.vm.current import current_universe
 from som.vm.universe import error_print, error_println
 from som.interpreter.bc.bytecodes import (
@@ -181,10 +182,7 @@ def dump_bytecode(m, b, indent=""):
     elif bytecode == Bytecodes.return_non_local:
         error_println("context: " + str(m.get_bytecode(b + 1)))
     elif is_one_of(bytecode, JUMP_BYTECODES):
-        offset1 = m.get_bytecode(b + 1)
-        offset2 = m.get_bytecode(b + 2)
-        offset = offset1 + (offset2 << 8)
-
+        offset = compute_offset(m.get_bytecode(b + 1), m.get_bytecode(b + 2))
         if bytecode == Bytecodes.jump_backward or bytecode == Bytecodes.jump2_backward:
             target = b - offset
         else:

@@ -97,21 +97,13 @@ def _put_all(rcvr, arg):
 
 class ArrayPrimitivesBase(Primitives):
     def install_primitives(self):
-        self._install_instance_primitive(BinaryPrimitive("at:", self.universe, _at))
-        self._install_instance_primitive(
-            TernaryPrimitive("at:put:", self.universe, _at_put)
-        )
-        self._install_instance_primitive(
-            UnaryPrimitive("length", self.universe, _length)
-        )
-        self._install_instance_primitive(UnaryPrimitive("copy", self.universe, _copy))
+        self._install_instance_primitive(BinaryPrimitive("at:", _at))
+        self._install_instance_primitive(TernaryPrimitive("at:put:", _at_put))
+        self._install_instance_primitive(UnaryPrimitive("length", _length))
+        self._install_instance_primitive(UnaryPrimitive("copy", _copy))
 
-        self._install_class_primitive(BinaryPrimitive("new:", self.universe, _new))
+        self._install_class_primitive(BinaryPrimitive("new:", _new))
 
-        self._install_instance_primitive(
-            BinaryPrimitive("doIndexes:", self.universe, _do_indexes)
-        )
-        self._install_instance_primitive(BinaryPrimitive("do:", self.universe, _do))
-        self._install_instance_primitive(
-            BinaryPrimitive("putAll:", self.universe, _put_all)
-        )
+        self._install_instance_primitive(BinaryPrimitive("doIndexes:", _do_indexes))
+        self._install_instance_primitive(BinaryPrimitive("do:", _do))
+        self._install_instance_primitive(BinaryPrimitive("putAll:", _put_all))
