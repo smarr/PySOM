@@ -447,6 +447,18 @@ def interpret(method, frame, max_stack_size):
         elif bytecode == Bytecodes.return_self:
             return read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
 
+        elif bytecode == Bytecodes.return_field_0:
+            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+            return self_obj.get_field(0)
+
+        elif bytecode == Bytecodes.return_field_1:
+            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+            return self_obj.get_field(1)
+
+        elif bytecode == Bytecodes.return_field_2:
+            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
+            return self_obj.get_field(2)
+
         elif bytecode == Bytecodes.inc:
             val = stack[stack_ptr]
             from som.vmobjects.integer import Integer

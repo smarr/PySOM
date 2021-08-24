@@ -6,6 +6,7 @@ from som.compiler.bc.bytecode_generator import (
     emit_push_constant,
     emit_jump_backward_with_offset,
     emit_inc_field_push,
+    emit_return_field,
 )
 
 from som.compiler.method_generation_context import MethodGenerationContextBase
@@ -23,6 +24,7 @@ from som.interpreter.bc.bytecodes import (
     JUMP_BYTECODES,
     NUM_SINGLE_BYTE_JUMP_BYTECODES,
     FIRST_DOUBLE_BYTE_JUMP_BYTECODE,
+    RETURN_FIELD_BYTECODES,
 )
 from som.vm.symbols import sym_nil, sym_false, sym_true
 from som.vmobjects.integer import int_0, int_1
@@ -119,6 +121,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if return_candidate != Bytecodes.invalid:
             assert not self.is_block_method
             return self._assemble_field_setter(return_candidate)
+
+        return_candidate = self._last_bytecode_is_one_of(0, RETURN_FIELD_BYTECODES)
+        if return_candidate != Bytecodes.invalid:
+            return self._assemble_field_getter_from_return(return_candidate)
 
         return None
 
@@ -428,6 +434,31 @@ class MethodGenerationContext(MethodGenerationContextBase):
             return True
         return False
 
+    def optimize_return_field(self):
+        if self._is_currently_inlining_a_block:
+            return False
+
+        bytecode = self._last_4_bytecodes[3]
+        if bytecode == Bytecodes.push_field_0:
+            idx = 0
+        elif bytecode == Bytecodes.push_field_1:
+            idx = 1
+        elif bytecode == Bytecodes.push_field:
+            bc_offset = len(self._bytecode)
+            ctx = self._bytecode[bc_offset - 1]
+            if ctx > 0:
+                return False
+            idx = self._bytecode[bc_offset - 2]
+            if idx > 2:
+                return False
+        else:
+            return False
+
+        self._remove_last_bytecodes(1)
+        self._reset_last_bytecode_buffer()
+        emit_return_field(self, idx)
+        return True
+
     def _get_index_and_ctx_of_last(self, bytecode, bc_offset):
         if bytecode == Bytecodes.push_field_0:
             return 0, 0
@@ -508,6 +539,17 @@ class MethodGenerationContext(MethodGenerationContextBase):
             ctx = self._bytecode[-2]
 
         return FieldRead(self.signature, idx, ctx)
+
+    def _assemble_field_getter_from_return(self, return_candidate):
+        if len(self._bytecode) != bytecode_length(return_candidate):
+            return None
+
+        if return_candidate == Bytecodes.return_field_0:
+            return FieldRead(self.signature, 0, 0)
+        if return_candidate == Bytecodes.return_field_1:
+            return FieldRead(self.signature, 1, 0)
+        assert return_candidate == Bytecodes.return_field_2
+        return FieldRead(self.signature, 2, 0)
 
     def _assemble_field_setter(self, return_candidate):
         pop_candidate = self._last_bytecode_is_one_of(1, POP_FIELD_BYTECODES)

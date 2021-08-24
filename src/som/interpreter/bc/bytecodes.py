@@ -62,7 +62,11 @@ class Bytecodes(object):
     return_non_local = return_local + 1
     return_self = return_non_local + 1
 
-    inc = return_self + 1
+    return_field_0 = return_self + 1
+    return_field_1 = return_field_0 + 1
+    return_field_2 = return_field_1 + 1
+
+    inc = return_field_2 + 1
     dec = inc + 1
 
     inc_field = dec + 1
@@ -135,6 +139,12 @@ POP_FIELD_BYTECODES = [
     Bytecodes.pop_field_1,
 ]
 
+RETURN_FIELD_BYTECODES = [
+    Bytecodes.return_field_0,
+    Bytecodes.return_field_1,
+    Bytecodes.return_field_2,
+]
+
 JUMP_BYTECODES = [
     Bytecodes.jump,
     Bytecodes.jump_on_true_top_nil,
@@ -181,6 +191,9 @@ NOT_EXPECTED_IN_BLOCK_BYTECODES = [
     Bytecodes.pop_field_0,
     Bytecodes.pop_field_1,
     Bytecodes.return_self,
+    Bytecodes.return_field_0,
+    Bytecodes.return_field_1,
+    Bytecodes.return_field_2,
 ]
 
 _BYTECODE_LENGTH = [
@@ -227,6 +240,9 @@ _BYTECODE_LENGTH = [
     1,  # return_local
     2,  # return_non_local
     1,  # return_self
+    1,  # return_field_0
+    1,  # return_field_1
+    1,  # return_field_2
     1,  # inc
     1,  # dec
     3,  # inc_field
@@ -301,6 +317,9 @@ _BYTECODE_STACK_EFFECT = [
     0,  # return_local
     0,  # return_non_local
     0,  # return_self
+    0,  # return_field_0
+    0,  # return_field_1
+    0,  # return_field_2
     0,  # inc
     0,  # dec
     0,  # inc_field
