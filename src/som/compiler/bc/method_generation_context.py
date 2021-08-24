@@ -459,7 +459,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         pop_len = bytecode_length(pop_candidate)
         assert bytecode_length(Bytecodes.return_self) == 1
-        assert bytecode_length(return_candidate)
+        assert bytecode_length(return_candidate) == 1
         return_len = 1
 
         if len(self._bytecode) != (
