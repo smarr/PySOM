@@ -36,7 +36,7 @@ def get_printable_location_down(block_method):
     from som.vmobjects.method_bc import BcAbstractMethod
 
     assert isinstance(block_method, BcAbstractMethod)
-    return "downToto:do: " % block_method.merge_point_string()
+    return "downToto:do: " + block_method.merge_point_string()
 
 
 jitdriver_int_down = jit.JitDriver(
