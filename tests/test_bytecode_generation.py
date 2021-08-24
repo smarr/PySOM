@@ -1100,3 +1100,35 @@ def test_inlining_while_loop_with_contracting_branches(mgenc):
             Bytecodes.pop,
         ],
     )
+
+
+@pytest.mark.parametrize(
+    "source,bytecode",
+    [
+        ("0", Bytecodes.push_0),
+        ("1", Bytecodes.push_1),
+        ("-10", Bytecodes.push_constant_2),
+        ("3333", Bytecodes.push_constant_2),
+        ("'str'", Bytecodes.push_constant_2),
+        ("#sym", Bytecodes.push_constant_2),
+        ("1.1", Bytecodes.push_constant_2),
+        ("-2342.234", Bytecodes.push_constant_2),
+        ("true", Bytecodes.push_constant_0),
+        ("false", Bytecodes.push_constant_2),
+        ("nil", Bytecodes.push_nil),
+        ("Nil", Bytecodes.push_global),
+        ("UnknownGlobal", Bytecodes.push_global),
+        ("[]", Bytecodes.push_block_no_ctx),
+    ],
+)
+def test_trivial_method_inlining(mgenc, source, bytecode):
+    bytecodes = method_to_bytecodes(mgenc, "test = ( true ifTrue: [ " + source + " ] )")
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_constant_0,
+            Bytecodes.jump_on_false_top_nil,
+            bytecode,
+            Bytecodes.return_self,
+        ],
+    )
