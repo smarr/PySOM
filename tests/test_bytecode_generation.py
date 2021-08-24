@@ -1278,3 +1278,35 @@ def test_return_inc_field_from_block(cgenc, bgenc, field_num):
             Bytecodes.return_local,
         ],
     )
+
+
+@pytest.mark.parametrize(
+    "field_num,bytecode",
+    [
+        (0, Bytecodes.return_field_0),
+        (1, Bytecodes.return_field_1),
+        (2, Bytecodes.return_field_2),
+        (3, BC(Bytecodes.push_field, 3)),
+        (4, BC(Bytecodes.push_field, 4)),
+    ],
+)
+def test_return_field(cgenc, mgenc, field_num, bytecode):
+    add_field(cgenc, "field0")
+    add_field(cgenc, "field1")
+    add_field(cgenc, "field2")
+    add_field(cgenc, "field3")
+    add_field(cgenc, "field4")
+    add_field(cgenc, "field5")
+    add_field(cgenc, "field6")
+
+    field_name = "field" + str(field_num)
+    bytecodes = method_to_bytecodes(mgenc, "test = ( 1. ^ " + field_name + " )")
+
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_1,
+            Bytecodes.pop,
+            bytecode,
+        ],
+    )
