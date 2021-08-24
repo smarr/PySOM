@@ -1193,10 +1193,11 @@ def test_inc_field(cgenc, mgenc, field_num):
     bytecodes = method_to_bytecodes(
         mgenc, "test = ( " + field_name + " := " + field_name + " + 1 )"
     )
+
     check(
         bytecodes,
         [
-            BC(Bytecodes.inc_field_push, field_num, 0),
+            BC(Bytecodes.inc_field, field_num, 0),
             Bytecodes.return_self,
         ],
     )
@@ -1221,8 +1222,7 @@ def test_inc_field_non_trivial(cgenc, mgenc, field_num):
         [
             Bytecodes.push_1,
             Bytecodes.pop,
-            BC(Bytecodes.inc_field_push, field_num, 0),
-            Bytecodes.pop,
+            BC(Bytecodes.inc_field, field_num, 0),
             Bytecodes.push_constant_1,
             Bytecodes.return_self,
         ],
@@ -1249,6 +1249,32 @@ def test_return_inc_field(cgenc, mgenc, field_num):
             Bytecodes.push_constant_0,
             Bytecodes.pop,
             BC(Bytecodes.inc_field_push, field_num, 0),
+            Bytecodes.return_local,
+        ],
+    )
+
+
+@pytest.mark.parametrize("field_num", range(0, 7))
+def test_return_inc_field_from_block(cgenc, bgenc, field_num):
+    add_field(cgenc, "field0")
+    add_field(cgenc, "field1")
+    add_field(cgenc, "field2")
+    add_field(cgenc, "field3")
+    add_field(cgenc, "field4")
+    add_field(cgenc, "field5")
+    add_field(cgenc, "field6")
+
+    field_name = "field" + str(field_num)
+    bytecodes = block_to_bytecodes(
+        bgenc, "[ #foo. " + field_name + " := " + field_name + " + 1 ]"
+    )
+
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_constant_0,
+            Bytecodes.pop,
+            BC(Bytecodes.inc_field_push, field_num, 1),
             Bytecodes.return_local,
         ],
     )

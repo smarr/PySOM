@@ -479,6 +479,13 @@ def interpret(method, frame, max_stack_size):
                 return _not_yet_implemented()
             stack[stack_ptr] = result
 
+        elif bytecode == Bytecodes.inc_field:
+            field_idx = method.get_bytecode(current_bc_idx + 1)
+            ctx_level = method.get_bytecode(current_bc_idx + 2)
+            self_obj = get_self(frame, ctx_level)
+
+            self_obj.inc_field(field_idx)
+
         elif bytecode == Bytecodes.inc_field_push:
             field_idx = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)

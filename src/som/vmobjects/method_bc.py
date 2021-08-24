@@ -322,7 +322,9 @@ class BcMethod(BcAbstractMethod):
                         ctx_level - 1,
                         1 if Bytecodes.push_argument else -1,
                     )
-            elif bytecode == Bytecodes.inc_field_push:
+            elif (
+                bytecode == Bytecodes.inc_field or bytecode == Bytecodes.inc_field_push
+            ):
                 idx = self.get_bytecode(i + 1)
                 ctx_level = self.get_bytecode(i + 2)
                 assert ctx_level > 0
@@ -526,6 +528,7 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.push_argument
                 or bytecode == Bytecodes.pop_argument
                 or bytecode == Bytecodes.inc_field_push
+                or bytecode == Bytecodes.inc_field
             ):
                 ctx_level = self.get_bytecode(i + 2)
                 if ctx_level > removed_ctx_level:
