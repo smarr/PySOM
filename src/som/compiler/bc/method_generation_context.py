@@ -5,6 +5,7 @@ from som.compiler.bc.bytecode_generator import (
     emit_pop,
     emit_push_constant,
     emit_jump_backward_with_offset,
+    emit_inc_field_push,
 )
 
 from som.compiler.method_generation_context import MethodGenerationContextBase
@@ -35,6 +36,7 @@ from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import (
     BcMethodNLR,
     BcMethod,
+    BackJump,
 )
 
 _NUM_LAST_BYTECODES = 4
@@ -216,16 +218,16 @@ class MethodGenerationContext(MethodGenerationContextBase):
             self._last_4_bytecodes[1] = self._last_4_bytecodes[2]
             self._last_4_bytecodes[2] = Bytecodes.dup
 
-        # TODO:
-        #     } else if (last4Bytecodes[3] == INC_FIELD) {
-        #       // we optimized the sequence to an INC_FIELD, which doesn't modify the stack
-        #       // but since we need the value to return it from the block, we need to push it.
-        #       last4Bytecodes[3] = INC_FIELD_PUSH;
-        #       assert Bytecodes.getBytecodeLength(INC_FIELD) == 3;
-        #       assert Bytecodes.getBytecodeLength(INC_FIELD) == Bytecodes.getBytecodeLength(
-        #           INC_FIELD_PUSH);
-        #       bytecode.set(bytecode.size() - 3, INC_FIELD_PUSH);
-        #     }
+        if self._last_4_bytecodes[3] == Bytecodes.inc_field:
+            # we optimized the sequence to an INC_FIELD, which doesn't modify the stack
+            # but since we need the value to return it from the block, we need to push it.
+            self._last_4_bytecodes[3] = Bytecodes.inc_field_push
+
+            bc_offset = len(self._bytecode) - 3
+            assert bytecode_length(Bytecodes.inc_field_push) == 3
+            assert bytecode_length(Bytecodes.inc_field) == 3
+            assert self._bytecode[bc_offset] == Bytecodes.inc_field
+            self._bytecode[bc_offset] = Bytecodes.inc_field_push
 
     def add_literal_if_absent(self, lit):
         if lit in self._literals:
@@ -356,17 +358,17 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if self._is_currently_inlining_a_block:
             return False
 
-        dup_candidate = self._last_bytecode_is(1, Bytecodes.dup)
-        if dup_candidate == Bytecodes.invalid:
-            return False
+        if self._last_bytecode_is(0, Bytecodes.inc_field_push) != Bytecodes.invalid:
+            return self.optimize_inc_field_push()
 
         pop_candidate = self._last_bytecode_is_one_of(0, POP_X_BYTECODES)
         if pop_candidate == Bytecodes.invalid:
             return False
 
-        # TODO:
-        # if (POP_FIELD == popCandidate && optimizePushFieldIncDupPopField())
-        #    return true;
+        dup_candidate = self._last_bytecode_is(1, Bytecodes.dup)
+        if dup_candidate == Bytecodes.invalid:
+            return False
+
         self._remove_last_bytecode_at(1)  # remove DUP bytecode
 
         # adapt last 4 bytecodes
@@ -376,6 +378,65 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._last_4_bytecodes[0] = Bytecodes.invalid
 
         return True
+
+    def optimize_inc_field_push(self):
+        assert bytecode_length(Bytecodes.inc_field_push) == 3
+
+        bc_idx = len(self._bytecode) - 3
+        assert self._bytecode[bc_idx] == Bytecodes.inc_field_push
+
+        self._bytecode[bc_idx] = Bytecodes.inc_field
+        self._last_4_bytecodes[3] = Bytecodes.inc_field
+
+        return True
+
+    def optimize_inc_field(self, field_idx, ctx_level):
+        """
+        Try using a INC_FIELD bytecode instead of the following sequence.
+
+          PUSH_FIELD
+          INC
+          DUP
+          POP_FIELD
+
+        return true, if it optimized it.
+        """
+        if self._is_currently_inlining_a_block:
+            return False
+
+        if self._last_bytecode_is(0, Bytecodes.dup) == Bytecodes.invalid:
+            return False
+
+        if self._last_bytecode_is(1, Bytecodes.inc) == Bytecodes.invalid:
+            return False
+
+        push_candidate = self._last_bytecode_is_one_of(2, PUSH_FIELD_BYTECODES)
+        if push_candidate == Bytecodes.invalid:
+            return False
+
+        assert bytecode_length(Bytecodes.dup) == 1
+        assert bytecode_length(Bytecodes.inc) == 1
+        bc_offset = 1 + 1 + bytecode_length(push_candidate)
+
+        candidate_idx, candidate_ctx = self._get_index_and_ctx_of_last(
+            push_candidate, bc_offset
+        )
+        if candidate_idx == field_idx and candidate_ctx == ctx_level:
+            self._remove_last_bytecodes(3)
+            self._reset_last_bytecode_buffer()
+            emit_inc_field_push(self, field_idx, ctx_level)
+            return True
+        return False
+
+    def _get_index_and_ctx_of_last(self, bytecode, bc_offset):
+        if bytecode == Bytecodes.push_field_0:
+            return 0, 0
+        if bytecode == Bytecodes.push_field_1:
+            return 1, 0
+
+        offset = len(self._bytecode) - bc_offset
+        assert self._bytecode[offset] == bytecode
+        return self._bytecode[offset + 1], self._bytecode[offset + 2]
 
     def _assemble_literal_return(self, return_candidate, push_candidate):
         if len(self._bytecode) != (
@@ -637,7 +698,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         backward_jump_idx = self.offset_of_next_instruction()
         emit_jump_backward_with_offset(self, jump_offset)
 
-        self.inlined_loops.append(_Loop(loop_begin_idx, backward_jump_idx))
+        self.inlined_loops.append(BackJump(loop_begin_idx, backward_jump_idx))
 
     def patch_jump_offset_to_point_to_next_instruction(self, idx_of_offset, parser):
         instruction_start = idx_of_offset - 1
@@ -676,14 +737,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
                 Symbol.NONE,
                 parser,
             )
-
-
-class _Loop(object):
-    _immutable_fields_ = ["loop_begin_idx", "backward_jump_idx"]
-
-    def __init__(self, loop_begin_idx, backward_jump_idx):
-        self.loop_begin_idx = loop_begin_idx
-        self.backward_jump_idx = backward_jump_idx
 
 
 class FindVarResult(object):

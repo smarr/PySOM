@@ -6,7 +6,7 @@ from som.interpreter.ast.frame import (
     FRAME_AND_INNER_RCVR_IDX,
     get_inner_as_context,
 )
-from som.interpreter.bc.bytecodes import bytecode_length, Bytecodes
+from som.interpreter.bc.bytecodes import bytecode_length, Bytecodes, bytecode_as_str
 from som.interpreter.bc.frame import (
     get_block_at,
     get_self_dynamically,
@@ -479,6 +479,21 @@ def interpret(method, frame, max_stack_size):
                 return _not_yet_implemented()
             stack[stack_ptr] = result
 
+        elif bytecode == Bytecodes.inc_field:
+            field_idx = method.get_bytecode(current_bc_idx + 1)
+            ctx_level = method.get_bytecode(current_bc_idx + 2)
+            self_obj = get_self(frame, ctx_level)
+
+            self_obj.inc_field(field_idx)
+
+        elif bytecode == Bytecodes.inc_field_push:
+            field_idx = method.get_bytecode(current_bc_idx + 1)
+            ctx_level = method.get_bytecode(current_bc_idx + 2)
+            self_obj = get_self(frame, ctx_level)
+
+            stack_ptr += 1
+            stack[stack_ptr] = self_obj.inc_field(field_idx)
+
         elif bytecode == Bytecodes.jump:
             next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
 
@@ -657,7 +672,12 @@ def _unknown_bytecode(bytecode, bytecode_idx, method):
 
     dump_method(method, "")
     raise Exception(
-        "Unknown bytecode: " + str(bytecode) + " at bci: " + str(bytecode_idx)
+        "Unknown bytecode: "
+        + str(bytecode)
+        + " "
+        + bytecode_as_str(bytecode)
+        + " at bci: "
+        + str(bytecode_idx)
     )
 
 
@@ -729,7 +749,6 @@ def _send_does_not_understand(receiver, selector, stack, stack_ptr):
 
 def get_printable_location(bytecode_index, method):
     from som.vmobjects.method_bc import BcAbstractMethod
-    from som.interpreter.bc.bytecodes import bytecode_as_str
 
     assert isinstance(method, BcAbstractMethod)
     bc = method.get_bytecode(bytecode_index)

@@ -16,6 +16,7 @@ from som.interpreter.ast.nodes.message.uninitialized_node import (
 )
 from som.interpreter.ast.nodes.return_non_local_node import ReturnNonLocalNode
 from som.interpreter.ast.nodes.sequence_node import SequenceNode
+from som.interpreter.ast.nodes.specialized.int_inc_node import IntIncrementNode
 from som.interpreter.ast.nodes.specialized.literal_if import (
     IfInlinedNode,
     IfElseInlinedNode,
@@ -198,15 +199,22 @@ class Parser(ParserBase):
         selector = self._binary_selector()
         arg_expr = self._binary_operand(mgenc)
 
+        source = self._get_source_section(coord)
+
         if is_super_send:
-            msg = BinarySuper(
-                selector, receiver, arg_expr, mgenc.holder.get_super_class()
+            return BinarySuper(
+                selector, receiver, arg_expr, mgenc.holder.get_super_class(), source
             )
-        else:
-            msg = UninitializedMessageNode(
-                selector, self.universe, receiver, [arg_expr]
-            )
-        return self._assign_source(msg, coord)
+        if selector.get_embedded_string() == "+" and isinstance(arg_expr, LiteralNode):
+            lit_val = arg_expr.execute(None)
+            from som.vmobjects.integer import Integer
+
+            if isinstance(lit_val, Integer) and lit_val.get_embedded_integer() == 1:
+                return IntIncrementNode(receiver, source)
+
+        return UninitializedMessageNode(
+            selector, self.universe, receiver, [arg_expr], source
+        )
 
     def _binary_operand(self, mgenc):
         operand = self._primary(mgenc)

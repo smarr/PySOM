@@ -65,7 +65,10 @@ class Bytecodes(object):
     inc = return_self + 1
     dec = inc + 1
 
-    jump = dec + 1
+    inc_field = dec + 1
+    inc_field_push = inc_field + 1
+
+    jump = inc_field_push + 1
     jump_on_true_top_nil = jump + 1
     jump_on_false_top_nil = jump_on_true_top_nil + 1
     jump_on_true_pop = jump_on_false_top_nil + 1
@@ -226,6 +229,8 @@ _BYTECODE_LENGTH = [
     1,  # return_self
     1,  # inc
     1,  # dec
+    3,  # inc_field
+    3,  # inc_field_push
     3,  # jump
     3,  # jump_on_true_top_nil
     3,  # jump_on_false_top_nil
@@ -298,6 +303,8 @@ _BYTECODE_STACK_EFFECT = [
     0,  # return_self
     0,  # inc
     0,  # dec
+    0,  # inc_field
+    1,  # inc_field_push
     0,  # jump
     0,  # jump_on_true_top_nil
     0,  # jump_on_false_top_nil

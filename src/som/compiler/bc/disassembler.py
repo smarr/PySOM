@@ -103,7 +103,12 @@ def dump_bytecode(m, b, indent=""):
     ):
         # don't need any other arguments
         error_println("")
-    elif bytecode == Bytecodes.push_field or bytecode == Bytecodes.pop_field:
+    elif (
+        bytecode == Bytecodes.push_field
+        or bytecode == Bytecodes.pop_field
+        or bytecode == Bytecodes.inc_field_push
+        or bytecode == Bytecodes.inc_field
+    ):
         if m.get_holder():
             field_name = str(
                 m.get_holder().get_instance_field_name(m.get_bytecode(b + 1))

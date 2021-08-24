@@ -11,6 +11,10 @@ def emit_dec(mgenc):
     emit1(mgenc, BC.dec, 0)
 
 
+def emit_inc_field_push(mgenc, field_idx, ctx_level):
+    emit3(mgenc, BC.inc_field_push, field_idx, ctx_level, 1)
+
+
 def emit_pop(mgenc):
     if not mgenc.optimize_dup_pop_pop_sequence():
         emit1(mgenc, BC.pop, -1)
@@ -94,6 +98,10 @@ def emit_pop_local(mgenc, idx, ctx):
 def emit_pop_field(mgenc, field_name):
     ctx_level = mgenc.get_max_context_level()
     field_idx = mgenc.get_field_index(field_name)
+
+    if mgenc.optimize_inc_field(field_idx, ctx_level):
+        return
+
     emit_pop_field_with_index(mgenc, field_idx, ctx_level)
 
 

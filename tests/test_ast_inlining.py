@@ -9,11 +9,12 @@ from som.compiler.class_generation_context import ClassGenerationContext
 from som.interp_type import is_bytecode_interpreter
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
-from som.interpreter.ast.nodes.field_node import FieldWriteNode, FieldReadNode
+from som.interpreter.ast.nodes.field_node import FieldReadNode, FieldIncrementNode
 from som.interpreter.ast.nodes.global_read_node import _UninitializedGlobalReadNode
 from som.interpreter.ast.nodes.literal_node import LiteralNode
 from som.interpreter.ast.nodes.return_non_local_node import ReturnLocalNode
 from som.interpreter.ast.nodes.sequence_node import SequenceNode
+from som.interpreter.ast.nodes.specialized.int_inc_node import IntIncrementNode
 from som.interpreter.ast.nodes.specialized.literal_if import (
     IfInlinedNode,
     IfElseInlinedNode,
@@ -213,17 +214,13 @@ def test_if_true_and_inc_field(cgenc, mgenc):
     )
 
     assert isinstance(ast._exprs[1], IfInlinedNode)
-    field_write = ast._exprs[1]._body_expr
+    field_inc = ast._exprs[1]._body_expr
 
-    assert isinstance(field_write, FieldWriteNode)
+    assert isinstance(field_inc, FieldIncrementNode)
 
-    assert field_write.field_idx == 0
-    assert isinstance(field_write._self_exp, LocalFrameVarReadNode)
-    assert field_write._self_exp._frame_idx == FRAME_AND_INNER_RCVR_IDX
-
-    self_of_read = field_write._value_exp._rcvr_expr._self_exp
-    assert isinstance(self_of_read, LocalFrameVarReadNode)
-    assert self_of_read._frame_idx == FRAME_AND_INNER_RCVR_IDX
+    assert field_inc.field_idx == 0
+    assert isinstance(field_inc._self_exp, LocalFrameVarReadNode)
+    assert field_inc._self_exp._frame_idx == FRAME_AND_INNER_RCVR_IDX
 
 
 def test_if_true_and_inc_arg(mgenc):
@@ -238,9 +235,11 @@ def test_if_true_and_inc_arg(mgenc):
     )
 
     assert isinstance(ast._exprs[1], IfInlinedNode)
-    plus_message = ast._exprs[1]._body_expr
+    inc_message = ast._exprs[1]._body_expr
 
-    arg_node = plus_message._rcvr_expr
+    assert isinstance(inc_message, IntIncrementNode)
+
+    arg_node = inc_message._rcvr_expr
     assert arg_node._context_level == 0
     assert arg_node.var._name == "arg"
     assert arg_node.var.idx == 1
@@ -471,6 +470,7 @@ def test_block_block_inlined_self(cgenc, mgenc):
     assert read_node.var.idx == 1
 
     write_node = block_b_if_true._body_expr
+    assert isinstance(write_node, FieldIncrementNode)
     assert write_node.field_idx == 0
 
     assert write_node._self_exp._frame_idx == FRAME_AND_INNER_RCVR_IDX
@@ -502,6 +502,7 @@ def test_to_do_block_block_inlined_self(cgenc, mgenc):
     assert write_node._var._name == "l2"
     assert write_node._var.idx == 1
 
+    assert isinstance(write_node._value_expr, IntIncrementNode)
     read_l2_node = write_node._value_expr._rcvr_expr
     assert read_l2_node._context_level == 2
     assert read_l2_node.var._name == "l2"

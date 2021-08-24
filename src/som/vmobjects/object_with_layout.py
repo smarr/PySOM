@@ -174,6 +174,10 @@ class Object(ObjectWithoutFields):
         location = self.get_location(field_idx)
         return location.read_fn(location, self)
 
+    def inc_field(self, field_idx):
+        location = self.get_location(field_idx)
+        return location.inc_fn(location, self)
+
     def set_field(self, field_idx, value):
         # Set the field with the given index to the given value
         assert isinstance(field_idx, int)
