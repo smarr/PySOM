@@ -25,7 +25,7 @@ def emit_push_argument(mgenc, idx, ctx):
 
 
 def emit_nil_local(mgenc, idx):
-    emit2(mgenc, BC.nil_local, idx)
+    emit2(mgenc, BC.nil_local, idx, 0)
 
 
 def emit_return_self(mgenc):
