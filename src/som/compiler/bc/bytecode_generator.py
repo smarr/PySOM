@@ -1,4 +1,6 @@
 from som.interpreter.bc.bytecodes import Bytecodes as BC
+from som.vm.globals import nilObject, trueObject, falseObject
+from som.vm.symbols import sym_nil, sym_true, sym_false
 
 
 def emit_inc(mgenc):
@@ -64,6 +66,16 @@ def emit_push_field_with_index(mgenc, field_idx, ctx_level):
 
 
 def emit_push_global(mgenc, glob):
+    if glob is sym_nil:
+        emit_push_constant(mgenc, nilObject)
+        return
+    if glob is sym_true:
+        emit_push_constant(mgenc, trueObject)
+        return
+    if glob is sym_false:
+        emit_push_constant(mgenc, falseObject)
+        return
+
     idx = mgenc.add_literal_if_absent(glob)
     # the block needs to be able to send #unknownGlobal: to self
     if not mgenc.is_global_known(glob):
@@ -119,7 +131,6 @@ def emit_send(mgenc, msg):
 
 def emit_push_constant(mgenc, lit):
     from som.vmobjects.integer import Integer
-    from som.vm.globals import nilObject
 
     if isinstance(lit, Integer):
         if lit.get_embedded_integer() == 0:
