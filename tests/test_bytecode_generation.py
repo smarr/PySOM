@@ -102,8 +102,7 @@ def check(actual, expected):
                     + str(expected_bc.arg1)
                     + ", "
                     + str(expected_bc.arg2)
-                    + ")"
-                    + " but got "
+                    + ") but got "
                     + bytecode_as_str(actual_bc)
                     + "("
                     + str(actual[i + 1])
@@ -467,13 +466,13 @@ def test_nested_ifs(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 18
+    assert len(bytecodes) == 16
     check(
         bytecodes,
         [
-            Bytecodes.push_global,
-            BC(Bytecodes.jump_on_false_top_nil, 15, note="jump offset"),
-            (7, Bytecodes.jump_on_true_top_nil),
+            Bytecodes.push_constant_0,
+            BC(Bytecodes.jump_on_false_top_nil, 14, note="jump offset"),
+            (5, Bytecodes.jump_on_true_top_nil),
             Bytecodes.push_field_0,
             BC(Bytecodes.push_argument, 1, 0),
             Bytecodes.send_2,
@@ -501,18 +500,18 @@ def test_nested_ifs_and_locals(cgenc, mgenc):
               ^ i - j - f - g - d ] ] )""",
     )
 
-    assert len(bytecodes) == 55
+    assert len(bytecodes) == 54
     check(
         bytecodes,
         [
             BC(Bytecodes.push_local, 1, 0),
             BC(Bytecodes.pop_local, 0, 0),
-            (8, BC(Bytecodes.jump_on_false_top_nil, 46)),
-            (13, BC(Bytecodes.pop_local, 4, 0)),
-            (18, BC(Bytecodes.pop_local, 2, 0)),
-            (23, BC(Bytecodes.jump_on_true_top_nil, 31)),
-            (27, BC(Bytecodes.pop_local, 7, 0)),
-            (48, BC(Bytecodes.push_local, 3, 0)),
+            (7, BC(Bytecodes.jump_on_false_top_nil, 46)),
+            (12, BC(Bytecodes.pop_local, 4, 0)),
+            (17, BC(Bytecodes.pop_local, 2, 0)),
+            (22, BC(Bytecodes.jump_on_true_top_nil, 31)),
+            (26, BC(Bytecodes.pop_local, 7, 0)),
+            (47, BC(Bytecodes.push_local, 3, 0)),
         ],
     )
 
@@ -539,25 +538,25 @@ def test_nested_ifs_and_non_inlined_blocks(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 36
+    assert len(bytecodes) == 35
     check(
         bytecodes,
         [
-            (4, Bytecodes.push_global),
+            (4, Bytecodes.push_constant_1),
             BC(Bytecodes.jump_on_false_top_nil, 26),
-            (10, BC(Bytecodes.pop_local, 1, 0, note="local e")),
-            (18, BC(Bytecodes.jump_on_true_top_nil, 14)),
-            (22, BC(Bytecodes.pop_local, 2, 0, note="local h")),
+            (9, BC(Bytecodes.pop_local, 1, 0, note="local e")),
+            (17, BC(Bytecodes.jump_on_true_top_nil, 14)),
+            (21, BC(Bytecodes.pop_local, 2, 0, note="local h")),
         ],
     )
 
     check(
-        mgenc.get_constant(13).get_bytecodes(),
+        mgenc.get_constant(12).get_bytecodes(),
         [(1, BC(Bytecodes.pop_local, 0, 1, note="local a"))],
     )
 
     check(
-        mgenc.get_constant(25).get_bytecodes(),
+        mgenc.get_constant(24).get_bytecodes(),
         [
             BC(Bytecodes.push_local, 2, 1, note="local h"),
             BC(Bytecodes.push_local, 0, 1, note="local a"),
@@ -566,7 +565,7 @@ def test_nested_ifs_and_non_inlined_blocks(cgenc, mgenc):
     )
 
     check(
-        mgenc.get_constant(33).get_bytecodes(),
+        mgenc.get_constant(32).get_bytecodes(),
         [BC(Bytecodes.push_local, 0, 1, note="local a")],
     )
 
@@ -586,18 +585,18 @@ def test_nested_non_inlined_blocks(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 20
+    assert len(bytecodes) == 19
     check(
         bytecodes,
         [
-            (2, BC(Bytecodes.jump_on_true_top_nil, 17)),
+            (1, BC(Bytecodes.jump_on_true_top_nil, 17)),
             BC(Bytecodes.push_argument, 1, 0, note="arg a"),
-            (9, BC(Bytecodes.push_local, 0, 0, note="local b")),
-            (13, BC(Bytecodes.push_local, 1, 0, note="local c")),
+            (8, BC(Bytecodes.push_local, 0, 0, note="local b")),
+            (12, BC(Bytecodes.push_local, 1, 0, note="local c")),
         ],
     )
 
-    block_method = mgenc.get_constant(17)
+    block_method = mgenc.get_constant(16)
     check(
         block_method.get_bytecodes(),
         [
@@ -1099,5 +1098,37 @@ def test_inlining_while_loop_with_contracting_branches(mgenc):
             ),
             Bytecodes.push_nil,
             Bytecodes.pop,
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "source,bytecode",
+    [
+        ("0", Bytecodes.push_0),
+        ("1", Bytecodes.push_1),
+        ("-10", Bytecodes.push_constant_2),
+        ("3333", Bytecodes.push_constant_2),
+        ("'str'", Bytecodes.push_constant_2),
+        ("#sym", Bytecodes.push_constant_2),
+        ("1.1", Bytecodes.push_constant_2),
+        ("-2342.234", Bytecodes.push_constant_2),
+        ("true", Bytecodes.push_constant_0),
+        ("false", Bytecodes.push_constant_2),
+        ("nil", Bytecodes.push_nil),
+        ("Nil", Bytecodes.push_global),
+        ("UnknownGlobal", Bytecodes.push_global),
+        ("[]", Bytecodes.push_block_no_ctx),
+    ],
+)
+def test_trivial_method_inlining(mgenc, source, bytecode):
+    bytecodes = method_to_bytecodes(mgenc, "test = ( true ifTrue: [ " + source + " ] )")
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_constant_0,
+            Bytecodes.jump_on_false_top_nil,
+            bytecode,
+            Bytecodes.return_self,
         ],
     )

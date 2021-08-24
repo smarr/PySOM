@@ -164,6 +164,18 @@ class FieldRead(AbstractTrivialMethod):
             value,
         )
 
+    if is_ast_interpreter():
+
+        def inline(self, mgenc):
+            from som.interpreter.ast.nodes.field_node import FieldReadNode
+
+            return FieldReadNode(mgenc.get_self_read(), self._field_idx, None)
+
+    else:
+
+        def inline(self, mgenc):
+            raise NotImplementedError()
+
 
 class FieldWrite(AbstractTrivialMethod):
     _immutable_fields_ = ["_field_idx", "_arg_idx"]
