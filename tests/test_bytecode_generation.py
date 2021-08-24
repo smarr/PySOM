@@ -426,16 +426,13 @@ def test_if_true_and_inc_field(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 19
+    assert len(bytecodes) == 18
     check(
         bytecodes,
         [
             (6, Bytecodes.send_2),
-            BC(Bytecodes.jump_on_false_top_nil, 7, note="jump offset"),
-            Bytecodes.push_field_0,
-            Bytecodes.inc,
-            Bytecodes.dup,
-            Bytecodes.pop_field_0,
+            BC(Bytecodes.jump_on_false_top_nil, 6, note="jump offset"),
+            Bytecodes.inc_field_push,
             Bytecodes.pop,
             Bytecodes.push_constant,
         ],
@@ -1178,5 +1175,80 @@ def test_trivial_method_inlining(mgenc, source, bytecode):
             Bytecodes.jump_on_false_top_nil,
             bytecode,
             Bytecodes.return_self,
+        ],
+    )
+
+
+@pytest.mark.parametrize("field_num", range(0, 7))
+def test_inc_field(cgenc, mgenc, field_num):
+    add_field(cgenc, "field0")
+    add_field(cgenc, "field1")
+    add_field(cgenc, "field2")
+    add_field(cgenc, "field3")
+    add_field(cgenc, "field4")
+    add_field(cgenc, "field5")
+    add_field(cgenc, "field6")
+
+    field_name = "field" + str(field_num)
+    bytecodes = method_to_bytecodes(
+        mgenc, "test = ( " + field_name + " := " + field_name + " + 1 )"
+    )
+    check(
+        bytecodes,
+        [
+            BC(Bytecodes.inc_field_push, field_num, 0),
+            Bytecodes.return_self,
+        ],
+    )
+
+
+@pytest.mark.parametrize("field_num", range(0, 7))
+def test_inc_field_non_trivial(cgenc, mgenc, field_num):
+    add_field(cgenc, "field0")
+    add_field(cgenc, "field1")
+    add_field(cgenc, "field2")
+    add_field(cgenc, "field3")
+    add_field(cgenc, "field4")
+    add_field(cgenc, "field5")
+    add_field(cgenc, "field6")
+
+    field_name = "field" + str(field_num)
+    bytecodes = method_to_bytecodes(
+        mgenc, "test = ( 1. " + field_name + " := " + field_name + " + 1. 2 )"
+    )
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_1,
+            Bytecodes.pop,
+            BC(Bytecodes.inc_field_push, field_num, 0),
+            Bytecodes.pop,
+            Bytecodes.push_constant_1,
+            Bytecodes.return_self,
+        ],
+    )
+
+
+@pytest.mark.parametrize("field_num", range(0, 7))
+def test_return_inc_field(cgenc, mgenc, field_num):
+    add_field(cgenc, "field0")
+    add_field(cgenc, "field1")
+    add_field(cgenc, "field2")
+    add_field(cgenc, "field3")
+    add_field(cgenc, "field4")
+    add_field(cgenc, "field5")
+    add_field(cgenc, "field6")
+
+    field_name = "field" + str(field_num)
+    bytecodes = method_to_bytecodes(
+        mgenc, "test = ( #foo. ^ " + field_name + " := " + field_name + " + 1 )"
+    )
+    check(
+        bytecodes,
+        [
+            Bytecodes.push_constant_0,
+            Bytecodes.pop,
+            BC(Bytecodes.inc_field_push, field_num, 0),
+            Bytecodes.return_local,
         ],
     )

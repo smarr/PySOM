@@ -5,6 +5,7 @@ from som.compiler.bc.bytecode_generator import (
     emit_pop,
     emit_push_constant,
     emit_jump_backward_with_offset,
+    emit_inc_field_push,
 )
 
 from som.compiler.method_generation_context import MethodGenerationContextBase
@@ -377,6 +378,51 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._last_4_bytecodes[0] = Bytecodes.invalid
 
         return True
+
+    def optimize_inc_field(self, field_idx, ctx_level):
+        """
+        Try using a INC_FIELD bytecode instead of the following sequence.
+
+          PUSH_FIELD
+          INC
+          DUP
+          POP_FIELD
+
+        return true, if it optimized it.
+        """
+        if self._last_bytecode_is(0, Bytecodes.dup) == Bytecodes.invalid:
+            return False
+
+        if self._last_bytecode_is(1, Bytecodes.inc) == Bytecodes.invalid:
+            return False
+
+        push_candidate = self._last_bytecode_is_one_of(2, PUSH_FIELD_BYTECODES)
+        if push_candidate == Bytecodes.invalid:
+            return False
+
+        assert bytecode_length(Bytecodes.dup) == 1
+        assert bytecode_length(Bytecodes.inc) == 1
+        bc_offset = 1 + 1 + bytecode_length(push_candidate)
+
+        candidate_idx, candidate_ctx = self._get_index_and_ctx_of_last(
+            push_candidate, bc_offset
+        )
+        if candidate_idx == field_idx and candidate_ctx == ctx_level:
+            self._remove_last_bytecodes(3)
+            self._reset_last_bytecode_buffer()
+            emit_inc_field_push(self, field_idx, ctx_level)
+            return True
+        return False
+
+    def _get_index_and_ctx_of_last(self, bytecode, bc_offset):
+        if bytecode == Bytecodes.push_field_0:
+            return 0, 0
+        if bytecode == Bytecodes.push_field_1:
+            return 1, 0
+
+        offset = len(self._bytecode) - bc_offset
+        assert self._bytecode[offset] == bytecode
+        return self._bytecode[offset + 1], self._bytecode[offset + 2]
 
     def _assemble_literal_return(self, return_candidate, push_candidate):
         if len(self._bytecode) != (

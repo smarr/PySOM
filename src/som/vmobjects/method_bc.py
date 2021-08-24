@@ -322,6 +322,11 @@ class BcMethod(BcAbstractMethod):
                         ctx_level - 1,
                         1 if Bytecodes.push_argument else -1,
                     )
+            elif bytecode == Bytecodes.inc_field_push:
+                idx = self.get_bytecode(i + 1)
+                ctx_level = self.get_bytecode(i + 2)
+                assert ctx_level > 0
+                emit3(mgenc, bytecode, idx, ctx_level - 1, 1)
 
             elif bytecode == Bytecodes.push_local or bytecode == Bytecodes.pop_local:
                 idx = self.get_bytecode(i + 1)
@@ -520,6 +525,7 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.pop_field
                 or bytecode == Bytecodes.push_argument
                 or bytecode == Bytecodes.pop_argument
+                or bytecode == Bytecodes.inc_field_push
             ):
                 ctx_level = self.get_bytecode(i + 2)
                 if ctx_level > removed_ctx_level:
