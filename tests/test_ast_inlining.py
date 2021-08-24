@@ -217,7 +217,7 @@ def test_if_true_and_inc_field(cgenc, mgenc):
 
     assert isinstance(field_write, FieldWriteNode)
 
-    assert field_write._field_idx == 0
+    assert field_write.field_idx == 0
     assert isinstance(field_write._self_exp, LocalFrameVarReadNode)
     assert field_write._self_exp._frame_idx == FRAME_AND_INNER_RCVR_IDX
 
