@@ -16,7 +16,7 @@ def emit_inc_field_push(mgenc, field_idx, ctx_level):
 
 
 def emit_pop(mgenc):
-    if not mgenc.optimize_dup_pop_pop_sequence():
+    if not mgenc.optimize_dup_pop_pop_sequence() and not mgenc.optimize_send_pop():
         emit1(mgenc, BC.pop, -1)
 
 
@@ -26,6 +26,7 @@ def emit_push_argument(mgenc, idx, ctx):
 
 def emit_return_self(mgenc):
     mgenc.optimize_dup_pop_pop_sequence()
+    mgenc.optimize_send_pop()
     emit1(mgenc, BC.return_self, 0)
 
 
@@ -151,6 +152,21 @@ def emit_send(mgenc, msg):
         emit2(mgenc, BC.send_3, idx, stack_effect)
     else:
         emit2(mgenc, BC.send_n, idx, stack_effect)
+
+
+def emit_send_pop(mgenc, msg):
+    idx = mgenc.add_literal_if_absent(msg)
+    num_args = msg.get_number_of_signature_arguments()
+    stack_effect = -num_args
+
+    if num_args == 1:
+        emit2(mgenc, BC.send_1_pop, idx, stack_effect)
+    elif num_args == 2:
+        emit2(mgenc, BC.send_2_pop, idx, stack_effect)
+    elif num_args == 3:
+        emit2(mgenc, BC.send_3_pop, idx, stack_effect)
+    else:
+        emit2(mgenc, BC.send_n_pop, idx, stack_effect)
 
 
 def emit_push_constant(mgenc, lit):

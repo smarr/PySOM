@@ -25,6 +25,9 @@ from som.interpreter.bc.bytecodes import (
     NUM_SINGLE_BYTE_JUMP_BYTECODES,
     FIRST_DOUBLE_BYTE_JUMP_BYTECODE,
     RETURN_FIELD_BYTECODES,
+    SEND_BYTECODES,
+    NUM_SEND_BYTECODES,
+    SEND_POP_BYTECODES,
 )
 from som.vm.globals import trueObject, falseObject
 from som.vm.symbols import sym_nil, sym_false, sym_true
@@ -236,6 +239,14 @@ class MethodGenerationContext(MethodGenerationContextBase):
             assert self._bytecode[bc_offset] == Bytecodes.inc_field
             self._bytecode[bc_offset] = Bytecodes.inc_field_push
 
+        send_candidate = self._last_bytecode_is_one_of(0, SEND_POP_BYTECODES)
+        if send_candidate != Bytecodes.invalid:
+            assert bytecode_length(send_candidate) == 2
+            self._last_4_bytecodes[3] = send_candidate - NUM_SEND_BYTECODES
+            self._bytecode[len(self._bytecode) - 2] = (
+                send_candidate - NUM_SEND_BYTECODES
+            )
+
     def add_literal_if_absent(self, lit):
         if lit in self._literals:
             return self._literals.index(lit)
@@ -357,6 +368,20 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._last_4_bytecodes[1] = Bytecodes.invalid
         self._last_4_bytecodes[2] = Bytecodes.invalid
         self._last_4_bytecodes[3] = Bytecodes.invalid
+
+    def optimize_send_pop(self):
+        if self._is_currently_inlining_a_block:
+            return False
+
+        send_candidate = self._last_bytecode_is_one_of(0, SEND_BYTECODES)
+        if send_candidate != Bytecodes.invalid:
+            assert bytecode_length(send_candidate) == 2
+            self._last_4_bytecodes[3] = send_candidate + NUM_SEND_BYTECODES
+            self._bytecode[len(self._bytecode) - 2] = (
+                send_candidate + NUM_SEND_BYTECODES
+            )
+            return True
+        return False
 
     def optimize_dup_pop_pop_sequence(self):
         # when we are inlining blocks, this already happened

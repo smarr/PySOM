@@ -16,6 +16,7 @@ from som.compiler.bc.bytecode_generator import (
     emit_pop_field_with_index,
     emit3_with_dummy,
     compute_offset,
+    emit_send_pop,
 )
 from som.interpreter.ast.frame import (
     get_inner_as_context,
@@ -398,6 +399,16 @@ class BcMethod(BcAbstractMethod):
                 sym = self._literals[literal_idx]
                 emit_send(mgenc, sym)
 
+            elif (
+                bytecode == Bytecodes.send_1_pop
+                or bytecode == Bytecodes.send_2_pop
+                or bytecode == Bytecodes.send_3_pop
+                or bytecode == Bytecodes.send_n_pop
+            ):
+                literal_idx = self.get_bytecode(i + 1)
+                sym = self._literals[literal_idx]
+                emit_send_pop(mgenc, sym)
+
             elif bytecode == Bytecodes.super_send:
                 literal_idx = self.get_bytecode(i + 1)
                 sym = self._literals[literal_idx]
@@ -509,6 +520,10 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.send_2
                 or bytecode == Bytecodes.send_3
                 or bytecode == Bytecodes.send_n
+                or bytecode == Bytecodes.send_1_pop
+                or bytecode == Bytecodes.send_2_pop
+                or bytecode == Bytecodes.send_3_pop
+                or bytecode == Bytecodes.send_n_pop
                 or bytecode == Bytecodes.super_send
                 or bytecode == Bytecodes.return_local
                 or bytecode == Bytecodes.return_field_0

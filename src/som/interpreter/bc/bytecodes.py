@@ -56,7 +56,12 @@ class Bytecodes(object):
     send_3 = send_2 + 1
     send_n = send_3 + 1
 
-    super_send = send_n + 1
+    send_1_pop = send_n + 1
+    send_2_pop = send_1_pop + 1
+    send_3_pop = send_2_pop + 1
+    send_n_pop = send_3_pop + 1
+
+    super_send = send_n_pop + 1
 
     return_local = super_send + 1
     return_non_local = return_local + 1
@@ -145,6 +150,20 @@ RETURN_FIELD_BYTECODES = [
     Bytecodes.return_field_2,
 ]
 
+SEND_BYTECODES = [
+    Bytecodes.send_1,
+    Bytecodes.send_2,
+    Bytecodes.send_3,
+    Bytecodes.send_n,
+]
+
+SEND_POP_BYTECODES = [
+    Bytecodes.send_1_pop,
+    Bytecodes.send_2_pop,
+    Bytecodes.send_3_pop,
+    Bytecodes.send_n_pop,
+]
+
 JUMP_BYTECODES = [
     Bytecodes.jump,
     Bytecodes.jump_on_true_top_nil,
@@ -162,6 +181,7 @@ JUMP_BYTECODES = [
 
 FIRST_DOUBLE_BYTE_JUMP_BYTECODE = Bytecodes.jump2
 NUM_SINGLE_BYTE_JUMP_BYTECODES = len(JUMP_BYTECODES) / 2
+NUM_SEND_BYTECODES = len(SEND_BYTECODES)
 
 RUN_TIME_ONLY_BYTECODES = [
     Bytecodes.push_frame,
@@ -236,6 +256,10 @@ _BYTECODE_LENGTH = [
     2,  # send_2
     2,  # send_3
     2,  # send_n
+    2,  # send_1_pop
+    2,  # send_2_pop
+    2,  # send_3_pop
+    2,  # send_n_pop
     2,  # super_send
     1,  # return_local
     2,  # return_non_local

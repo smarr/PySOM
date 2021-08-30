@@ -1377,3 +1377,209 @@ def test_field_read_inlining(cgenc, mgenc):
             Bytecodes.return_self,
         ],
     )
+
+
+@pytest.mark.parametrize(
+    "code,expected_bytecodes",
+    [
+        ("0 abs", [Bytecodes.push_0, Bytecodes.send_1_pop]),
+        ("0 +-+ 1", [Bytecodes.push_0, Bytecodes.push_1, Bytecodes.send_2_pop]),
+        (
+            "0 a: 1 b: 0",
+            [
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.send_3_pop,
+            ],
+        ),
+        (
+            "0 a: 1 b: 0 c: 1",
+            [
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.send_n_pop,
+            ],
+        ),
+        # with dot
+        ("0 abs.", [Bytecodes.push_0, Bytecodes.send_1_pop]),
+        ("0 +-+ 1.", [Bytecodes.push_0, Bytecodes.push_1, Bytecodes.send_2_pop]),
+        (
+            "0 a: 1 b: 0.",
+            [
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.send_3_pop,
+            ],
+        ),
+        (
+            "0 a: 1 b: 0 c: 1.",
+            [
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.send_n_pop,
+            ],
+        ),
+        # with self sends
+        ("self abs", [Bytecodes.push_argument, Bytecodes.send_1_pop]),
+        (
+            "self +-+ 1",
+            [Bytecodes.push_argument, Bytecodes.push_1, Bytecodes.send_2_pop],
+        ),
+        (
+            "self a: 1 b: 0",
+            [
+                Bytecodes.push_argument,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.send_3_pop,
+            ],
+        ),
+        (
+            "self a: 1 b: 0 c: 1",
+            [
+                Bytecodes.push_argument,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.send_n_pop,
+            ],
+        ),
+    ],
+)
+def test_send_pop(mgenc, code, expected_bytecodes):
+    bytecodes = method_to_bytecodes(mgenc, "test = ( " + code + " )")
+
+    expected_bytecodes.append(Bytecodes.return_self)
+    check(bytecodes, expected_bytecodes)
+
+
+@pytest.mark.parametrize(
+    "code,expected_bytecodes",
+    [
+        ("0 abs", [Bytecodes.push_0, Bytecodes.send_1_pop]),
+        ("0 +-+ 1", [Bytecodes.push_0, Bytecodes.push_1, Bytecodes.send_2_pop]),
+        (
+            "0 a: 1 b: 0",
+            [
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.send_3_pop,
+            ],
+        ),
+        (
+            "0 a: 1 b: 0 c: 1",
+            [
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.send_n_pop,
+            ],
+        ),
+        # with self sends
+        ("self abs", [Bytecodes.push_argument, Bytecodes.send_1_pop]),
+        (
+            "self +-+ 1",
+            [Bytecodes.push_argument, Bytecodes.push_1, Bytecodes.send_2_pop],
+        ),
+        (
+            "self a: 1 b: 0",
+            [
+                Bytecodes.push_argument,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.send_3_pop,
+            ],
+        ),
+        (
+            "self a: 1 b: 0 c: 1",
+            [
+                Bytecodes.push_argument,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.send_n_pop,
+            ],
+        ),
+    ],
+)
+def test_send_pop_in_block(bgenc, code, expected_bytecodes):
+    bytecodes = block_to_bytecodes(bgenc, "[ " + code + ". #foo ]")
+
+    expected_bytecodes.append(Bytecodes.push_constant_1)
+    expected_bytecodes.append(Bytecodes.return_local)
+    check(bytecodes, expected_bytecodes)
+
+
+@pytest.mark.parametrize(
+    "code,expected_bytecodes",
+    [
+        ("0 abs", [Bytecodes.push_0, Bytecodes.send_1]),
+        ("0 +-+ 1", [Bytecodes.push_0, Bytecodes.push_1, Bytecodes.send_2]),
+        (
+            "0 a: 1 b: 0",
+            [Bytecodes.push_0, Bytecodes.push_1, Bytecodes.push_0, Bytecodes.send_3],
+        ),
+        (
+            "0 a: 1 b: 0 c: 1",
+            [
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.send_n,
+            ],
+        ),
+        # with dot
+        ("0 abs.", [Bytecodes.push_0, Bytecodes.send_1]),
+        ("0 +-+ 1.", [Bytecodes.push_0, Bytecodes.push_1, Bytecodes.send_2]),
+        (
+            "0 a: 1 b: 0.",
+            [Bytecodes.push_0, Bytecodes.push_1, Bytecodes.push_0, Bytecodes.send_3],
+        ),
+        (
+            "0 a: 1 b: 0 c: 1.",
+            [
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.send_n,
+            ],
+        ),
+        # with self sends
+        ("self abs", [Bytecodes.push_argument, Bytecodes.send_1]),
+        ("self +-+ 1", [Bytecodes.push_argument, Bytecodes.push_1, Bytecodes.send_2]),
+        (
+            "self a: 1 b: 0",
+            [
+                Bytecodes.push_argument,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.send_3,
+            ],
+        ),
+        (
+            "self a: 1 b: 0 c: 1",
+            [
+                Bytecodes.push_argument,
+                Bytecodes.push_1,
+                Bytecodes.push_0,
+                Bytecodes.push_1,
+                Bytecodes.send_n,
+            ],
+        ),
+    ],
+)
+def test_send_pop_in_block_not_triggering(bgenc, code, expected_bytecodes):
+    bytecodes = block_to_bytecodes(bgenc, "[ " + code + " ]")
+
+    expected_bytecodes.append(Bytecodes.return_local)
+    check(bytecodes, expected_bytecodes)

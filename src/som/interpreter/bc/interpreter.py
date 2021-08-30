@@ -432,6 +432,107 @@ def interpret(method, frame, max_stack_size):
                     receiver, signature, stack, stack_ptr
                 )
 
+        elif bytecode == Bytecodes.send_1_pop:
+            signature = method.get_constant(current_bc_idx)
+            receiver = stack[stack_ptr]
+
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, signature, method, current_bc_idx)
+            if invokable is not None:
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                invokable.invoke_1(receiver)
+                stack_ptr -= 1
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, signature, stack, stack_ptr
+                )
+                stack[stack_ptr] = None
+                stack_ptr -= 1
+
+        elif bytecode == Bytecodes.send_2_pop:
+            signature = method.get_constant(current_bc_idx)
+            receiver = stack[stack_ptr - 1]
+
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, signature, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                    stack[stack_ptr - 1] = None
+                stack_ptr -= 2
+                invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, signature, stack, stack_ptr
+                )
+                stack[stack_ptr] = None
+                stack_ptr -= 1
+
+        elif bytecode == Bytecodes.send_3_pop:
+            signature = method.get_constant(current_bc_idx)
+            receiver = stack[stack_ptr - 2]
+
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, signature, method, current_bc_idx)
+            if invokable is not None:
+                arg2 = stack[stack_ptr]
+                arg1 = stack[stack_ptr - 1]
+
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                    stack[stack_ptr - 1] = None
+                    stack[stack_ptr - 2] = None
+
+                stack_ptr -= 3
+                invokable.invoke_3(receiver, arg1, arg2)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, signature, stack, stack_ptr
+                )
+                stack[stack_ptr] = None
+                stack_ptr -= 1
+
+        elif bytecode == Bytecodes.send_n_pop:
+            signature = method.get_constant(current_bc_idx)
+            receiver = stack[
+                stack_ptr - (signature.get_number_of_signature_arguments() - 1)
+            ]
+
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, signature, method, current_bc_idx)
+            if invokable is not None:
+                stack_ptr = invokable.invoke_n(stack, stack_ptr)
+                stack[stack_ptr] = None
+                stack_ptr -= 1
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, signature, stack, stack_ptr
+                )
+                stack[stack_ptr] = None
+                stack_ptr -= 1
+
         elif bytecode == Bytecodes.super_send:
             stack_ptr = _do_super_send(current_bc_idx, method, stack, stack_ptr)
 
