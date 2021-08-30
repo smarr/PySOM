@@ -26,6 +26,7 @@ from som.interpreter.bc.bytecodes import (
     FIRST_DOUBLE_BYTE_JUMP_BYTECODE,
     RETURN_FIELD_BYTECODES,
 )
+from som.vm.globals import trueObject, falseObject
 from som.vm.symbols import sym_nil, sym_false, sym_true
 from som.vmobjects.integer import int_0, int_1
 from som.vmobjects.method_trivial import (
@@ -497,7 +498,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         if len(self._literals) == 1:
             from som.vmobjects.symbol import Symbol
-            from som.vm.globals import trueObject, falseObject
 
             global_name = self._literals[0]
             assert isinstance(global_name, Symbol)
@@ -710,6 +710,45 @@ class MethodGenerationContext(MethodGenerationContextBase):
         )
 
         self._is_currently_inlining_a_block = False
+
+        return True
+
+    def inline_andor(self, parser, is_or):
+        # HACK: We do assume that the receiver on the stack is a boolean,
+        # HACK: similar to the IfTrueIfFalseNode.
+        # HACK: We don't support anything but booleans at the moment.
+        push_block_candidate = self._last_bytecode_is_one_of(0, PUSH_BLOCK_BYTECODES)
+        if push_block_candidate == Bytecodes.invalid:
+            return False
+
+        assert bytecode_length(push_block_candidate) == 2
+        block_literal_idx = self._bytecode[-1]
+
+        self._remove_last_bytecodes(1)  # remove push_block*
+
+        jump_offset_idx_to_skip_branch = emit_jump_on_bool_with_dummy_offset(
+            self, not is_or, True
+        )
+
+        to_be_inlined = self._literals[block_literal_idx]
+
+        self._is_currently_inlining_a_block = True
+        to_be_inlined.inline(self)
+        self._is_currently_inlining_a_block = False
+
+        jump_offset_idx_to_skip_push_true = emit_jump_with_dummy_offset(self)
+
+        self.patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_skip_branch, parser
+        )
+
+        emit_push_constant(self, trueObject if is_or else falseObject)
+
+        self.patch_jump_offset_to_point_to_next_instruction(
+            jump_offset_idx_to_skip_push_true, parser
+        )
+
+        self._reset_last_bytecode_buffer()
 
         return True
 
