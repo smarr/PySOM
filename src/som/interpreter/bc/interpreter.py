@@ -127,9 +127,6 @@ def interpret(method, frame, max_stack_size):
         promote(stack_ptr)
 
         # Handle the current bytecode
-        if bytecode == Bytecodes.halt:
-            return stack[stack_ptr]
-
         if bytecode == Bytecodes.dup:
             val = stack[stack_ptr]
             stack_ptr += 1

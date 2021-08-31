@@ -4,8 +4,7 @@ from rlib import jit
 class Bytecodes(object):
 
     # Bytecodes used by the Simple Object Machine (SOM)
-    halt = 0
-    dup = halt + 1
+    dup = 0
 
     push_frame = dup + 1
     push_frame_0 = push_frame + 1
@@ -205,7 +204,6 @@ RUN_TIME_ONLY_BYTECODES = [
 ]
 
 NOT_EXPECTED_IN_BLOCK_BYTECODES = [
-    Bytecodes.halt,
     Bytecodes.push_field_0,
     Bytecodes.push_field_1,
     Bytecodes.pop_field_0,
@@ -217,7 +215,6 @@ NOT_EXPECTED_IN_BLOCK_BYTECODES = [
 ]
 
 _BYTECODE_LENGTH = [
-    1,  # halt
     1,  # dup
     3,  # push_frame
     3,  # push_frame_0

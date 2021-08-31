@@ -296,10 +296,7 @@ class BcMethod(BcAbstractMethod):
             bytecode = self.get_bytecode(i)
             bc_length = bytecode_length(bytecode)
 
-            if bytecode == Bytecodes.halt:
-                emit1(mgenc, bytecode, 0)
-
-            elif bytecode == Bytecodes.dup:
+            if bytecode == Bytecodes.dup:
                 emit1(mgenc, bytecode, 1)
 
             elif (
@@ -504,8 +501,7 @@ class BcMethod(BcAbstractMethod):
             bc_length = bytecode_length(bytecode)
 
             if (
-                bytecode == Bytecodes.halt
-                or bytecode == Bytecodes.dup
+                bytecode == Bytecodes.dup
                 or bytecode == Bytecodes.push_block_no_ctx
                 or bytecode == Bytecodes.push_constant
                 or bytecode == Bytecodes.push_constant_0
