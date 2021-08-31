@@ -246,32 +246,30 @@ def interpret(method, frame, max_stack_size):
             stack_ptr -= 1
 
         elif bytecode == Bytecodes.pop_frame:
-            value = stack[stack_ptr]
+            write_frame(
+                frame, method.get_bytecode(current_bc_idx + 1), stack[stack_ptr]
+            )
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-            write_frame(frame, method.get_bytecode(current_bc_idx + 1), value)
 
         elif bytecode == Bytecodes.pop_frame_0:
-            value = stack[stack_ptr]
+            write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 0, stack[stack_ptr])
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-            write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 0, value)
 
         elif bytecode == Bytecodes.pop_frame_1:
-            value = stack[stack_ptr]
+            write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 1, stack[stack_ptr])
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-            write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 1, value)
 
         elif bytecode == Bytecodes.pop_frame_2:
-            value = stack[stack_ptr]
+            write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 2, stack[stack_ptr])
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-            write_frame(frame, FRAME_AND_INNER_RCVR_IDX + 2, value)
 
         elif bytecode == Bytecodes.pop_inner:
             idx = method.get_bytecode(current_bc_idx + 1)
@@ -288,60 +286,43 @@ def interpret(method, frame, max_stack_size):
                 block.set_outer(idx, value)
 
         elif bytecode == Bytecodes.pop_inner_0:
-            value = stack[stack_ptr]
+            write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 0, stack[stack_ptr])
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-
-            write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 0, value)
 
         elif bytecode == Bytecodes.pop_inner_1:
-            value = stack[stack_ptr]
+            write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 1, stack[stack_ptr])
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-
-            write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 1, value)
 
         elif bytecode == Bytecodes.pop_inner_2:
-            value = stack[stack_ptr]
+            write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 2, stack[stack_ptr])
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-
-            write_inner(frame, FRAME_AND_INNER_RCVR_IDX + 2, value)
 
         elif bytecode == Bytecodes.pop_field:
             field_idx = method.get_bytecode(current_bc_idx + 1)
             ctx_level = method.get_bytecode(current_bc_idx + 2)
-            self_obj = get_self(frame, ctx_level)
 
-            value = stack[stack_ptr]
+            get_self(frame, ctx_level).set_field(field_idx, stack[stack_ptr])
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-
-            self_obj.set_field(field_idx, value)
 
         elif bytecode == Bytecodes.pop_field_0:
-            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
-
-            value = stack[stack_ptr]
+            read_frame(frame, FRAME_AND_INNER_RCVR_IDX).set_field(0, stack[stack_ptr])
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-
-            self_obj.set_field(0, value)
 
         elif bytecode == Bytecodes.pop_field_1:
-            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
-
-            value = stack[stack_ptr]
+            read_frame(frame, FRAME_AND_INNER_RCVR_IDX).set_field(1, stack[stack_ptr])
             if we_are_jitted():
                 stack[stack_ptr] = None
             stack_ptr -= 1
-
-            self_obj.set_field(1, value)
 
         elif bytecode == Bytecodes.send_1:
             signature = method.get_constant(current_bc_idx)
@@ -546,16 +527,13 @@ def interpret(method, frame, max_stack_size):
             return read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
 
         elif bytecode == Bytecodes.return_field_0:
-            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
-            return self_obj.get_field(0)
+            return read_frame(frame, FRAME_AND_INNER_RCVR_IDX).get_field(0)
 
         elif bytecode == Bytecodes.return_field_1:
-            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
-            return self_obj.get_field(1)
+            return read_frame(frame, FRAME_AND_INNER_RCVR_IDX).get_field(1)
 
         elif bytecode == Bytecodes.return_field_2:
-            self_obj = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
-            return self_obj.get_field(2)
+            return read_frame(frame, FRAME_AND_INNER_RCVR_IDX).get_field(2)
 
         elif bytecode == Bytecodes.inc:
             val = stack[stack_ptr]
