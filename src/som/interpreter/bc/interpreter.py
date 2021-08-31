@@ -14,6 +14,18 @@ from som.interpreter.bc.frame import (
 from som.interpreter.control_flow import ReturnException
 from som.interpreter.send import lookup_and_send_2, lookup_and_send_3
 from som.vm.globals import nilObject, trueObject, falseObject
+from som.vm.symbols import (
+    sym_plus,
+    sym_minus,
+    sym_dbl_div,
+    sym_equal_equal,
+    sym_is_nil,
+    sym_not_nil,
+    sym_at_msg,
+    sym_at_put_msg,
+    sym_multi,
+    sym_equal,
+)
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import BcBlock
 from som.vmobjects.integer import int_0, int_1
@@ -513,6 +525,210 @@ def interpret(method, frame, max_stack_size):
 
         elif bytecode == Bytecodes.super_send:
             stack_ptr = _do_super_send(current_bc_idx, method, stack, stack_ptr)
+
+        elif bytecode == Bytecodes.send_plus:
+            receiver = stack[stack_ptr - 1]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_plus, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_plus, stack, stack_ptr
+                )
+
+        elif bytecode == Bytecodes.send_minus:
+            receiver = stack[stack_ptr - 1]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_minus, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_minus, stack, stack_ptr
+                )
+
+        elif bytecode == Bytecodes.send_multi:
+            receiver = stack[stack_ptr - 1]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_multi, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_multi, stack, stack_ptr
+                )
+
+        elif bytecode == Bytecodes.send_dbl_div:
+            receiver = stack[stack_ptr - 1]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_dbl_div, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_dbl_div, stack, stack_ptr
+                )
+
+        elif bytecode == Bytecodes.send_equal:
+            receiver = stack[stack_ptr - 1]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_equal, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_equal, stack, stack_ptr
+                )
+
+        elif bytecode == Bytecodes.send_equal_equal:
+            receiver = stack[stack_ptr - 1]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_equal_equal, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_equal_equal, stack, stack_ptr
+                )
+
+        elif bytecode == Bytecodes.send_is_nil:
+            receiver = stack[stack_ptr - 1]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_is_nil, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_is_nil, stack, stack_ptr
+                )
+
+        elif bytecode == Bytecodes.send_not_nil:
+            receiver = stack[stack_ptr - 1]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_not_nil, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_not_nil, stack, stack_ptr
+                )
+
+        elif bytecode == Bytecodes.send_at:
+            receiver = stack[stack_ptr - 1]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_at_msg, method, current_bc_idx)
+            if invokable is not None:
+                arg = stack[stack_ptr]
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                stack[stack_ptr] = invokable.invoke_2(receiver, arg)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_at_msg, stack, stack_ptr
+                )
+
+        elif bytecode == Bytecodes.send_at_put:
+            receiver = stack[stack_ptr - 2]
+            layout = receiver.get_object_layout(current_universe)
+            invokable = _lookup(layout, sym_at_put_msg, method, current_bc_idx)
+            if invokable is not None:
+                arg2 = stack[stack_ptr]
+                arg1 = stack[stack_ptr - 1]
+
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                    stack[stack_ptr - 1] = None
+
+                stack_ptr -= 2
+                stack[stack_ptr] = invokable.invoke_3(receiver, arg1, arg2)
+            elif not layout.is_latest:
+                _update_object_and_invalidate_old_caches(
+                    receiver, method, current_bc_idx, current_universe
+                )
+                next_bc_idx = current_bc_idx
+            else:
+                stack_ptr = _send_does_not_understand(
+                    receiver, sym_at_put_msg, stack, stack_ptr
+                )
 
         elif bytecode == Bytecodes.return_local:
             return stack[stack_ptr]

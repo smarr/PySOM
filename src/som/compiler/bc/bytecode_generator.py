@@ -1,6 +1,20 @@
 from som.interpreter.bc.bytecodes import Bytecodes as BC
 from som.vm.globals import nilObject, trueObject, falseObject
-from som.vm.symbols import sym_nil, sym_true, sym_false
+from som.vm.symbols import (
+    sym_nil,
+    sym_true,
+    sym_false,
+    sym_plus,
+    sym_minus,
+    sym_at_put_msg,
+    sym_equal,
+    sym_multi,
+    sym_dbl_div,
+    sym_equal_equal,
+    sym_is_nil,
+    sym_not_nil,
+    sym_at_msg,
+)
 
 
 def emit_inc(mgenc):
@@ -167,6 +181,40 @@ def emit_send_pop(mgenc, msg):
         emit2(mgenc, BC.send_3_pop, idx, stack_effect)
     else:
         emit2(mgenc, BC.send_n_pop, idx, stack_effect)
+
+
+def emit_special_send(mgenc, msg):
+    if msg is sym_plus:
+        emit1(mgenc, BC.send_plus, -1)
+        return True
+    if msg is sym_minus:
+        emit1(mgenc, BC.send_minus, -1)
+        return True
+    if msg is sym_multi:
+        emit1(mgenc, BC.send_multi, -1)
+        return True
+    if msg is sym_dbl_div:
+        emit1(mgenc, BC.send_dbl_div, -1)
+        return True
+    if msg is sym_equal:
+        emit1(mgenc, BC.send_equal, -1)
+        return True
+    if msg is sym_equal_equal:
+        emit1(mgenc, BC.send_equal_equal, -1)
+        return True
+    if msg is sym_is_nil:
+        emit1(mgenc, BC.send_is_nil, -1)
+        return True
+    if msg is sym_not_nil:
+        emit1(mgenc, BC.send_not_nil, -1)
+        return True
+    if msg is sym_at_msg:
+        emit1(mgenc, BC.send_at, -1)
+        return True
+    if msg is sym_at_put_msg:
+        emit1(mgenc, BC.send_at_put, -2)
+        return True
+    return False
 
 
 def emit_push_constant(mgenc, lit):

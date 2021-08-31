@@ -511,16 +511,16 @@ def test_nested_ifs(cgenc, mgenc):
         )""",
     )
 
-    assert len(bytecodes) == 16
+    assert len(bytecodes) == 15
     check(
         bytecodes,
         [
             Bytecodes.push_constant_0,
-            BC(Bytecodes.jump_on_false_top_nil, 14, note="jump offset"),
+            BC(Bytecodes.jump_on_false_top_nil, 13, note="jump offset"),
             (5, Bytecodes.jump_on_true_top_nil),
             Bytecodes.push_field_0,
             BC(Bytecodes.push_argument, 1, 0),
-            Bytecodes.send_2,
+            Bytecodes.send_minus,
             Bytecodes.return_local,
             Bytecodes.return_self,
         ],
@@ -545,18 +545,18 @@ def test_nested_ifs_and_locals(cgenc, mgenc):
               ^ i - j - f - g - d ] ] )""",
     )
 
-    assert len(bytecodes) == 54
+    assert len(bytecodes) == 50
     check(
         bytecodes,
         [
             BC(Bytecodes.push_local, 1, 0),
             BC(Bytecodes.pop_local, 0, 0),
-            (7, BC(Bytecodes.jump_on_false_top_nil, 46)),
+            (7, BC(Bytecodes.jump_on_false_top_nil, 42)),
             (12, BC(Bytecodes.pop_local, 4, 0)),
             (17, BC(Bytecodes.pop_local, 2, 0)),
-            (22, BC(Bytecodes.jump_on_true_top_nil, 31)),
+            (22, BC(Bytecodes.jump_on_true_top_nil, 27)),
             (26, BC(Bytecodes.pop_local, 7, 0)),
-            (47, BC(Bytecodes.push_local, 3, 0)),
+            (44, BC(Bytecodes.push_local, 3, 0)),
         ],
     )
 
@@ -605,7 +605,9 @@ def test_nested_ifs_and_non_inlined_blocks(cgenc, mgenc):
         [
             BC(Bytecodes.push_local, 2, 1, note="local h"),
             BC(Bytecodes.push_local, 0, 1, note="local a"),
-            (8, BC(Bytecodes.push_local, 1, 1, note="local e")),
+            Bytecodes.send_plus,
+            BC(Bytecodes.push_local, 1, 1, note="local e"),
+            Bytecodes.send_plus,
         ],
     )
 

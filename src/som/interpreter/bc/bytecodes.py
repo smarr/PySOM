@@ -62,7 +62,20 @@ class Bytecodes(object):
 
     super_send = send_n_pop + 1
 
-    return_local = super_send + 1
+    send_plus = super_send + 1
+    send_minus = send_plus + 1
+    send_multi = send_minus + 1
+    send_dbl_div = send_multi + 1
+
+    send_equal = send_dbl_div + 1
+    send_equal_equal = send_equal + 1
+    send_is_nil = send_equal_equal + 1
+    send_not_nil = send_is_nil + 1
+
+    send_at = send_not_nil + 1
+    send_at_put = send_at + 1
+
+    return_local = send_at_put + 1
     return_non_local = return_local + 1
     return_self = return_non_local + 1
 
@@ -258,6 +271,16 @@ _BYTECODE_LENGTH = [
     2,  # send_3_pop
     2,  # send_n_pop
     2,  # super_send
+    1,  # send_plus,
+    1,  # send_minus
+    1,  # send_multi
+    1,  # send_dbl_div
+    1,  # send_equal
+    1,  # send_equal_equal
+    1,  # send_is_nil
+    1,  # send_not_nil
+    1,  # send_at
+    1,  # send_at_put
     1,  # return_local
     2,  # return_non_local
     1,  # return_self

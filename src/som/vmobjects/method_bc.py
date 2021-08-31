@@ -411,6 +411,21 @@ class BcMethod(BcAbstractMethod):
                 sym = self._literals[literal_idx]
                 emit_super_send(mgenc, sym)
 
+            elif (
+                bytecode == Bytecodes.send_plus
+                or bytecode == Bytecodes.send_minus
+                or bytecode == Bytecodes.send_multi
+                or bytecode == Bytecodes.send_dbl_div
+                or bytecode == Bytecodes.send_equal
+                or bytecode == Bytecodes.send_equal_equal
+                or bytecode == Bytecodes.send_is_nil
+                or bytecode == Bytecodes.send_not_nil
+                or bytecode == Bytecodes.send_at
+            ):
+                emit1(mgenc, bytecode, -1)
+            elif bytecode == Bytecodes.send_at_put:
+                emit1(mgenc, bytecode, -2)
+
             elif bytecode == Bytecodes.return_local:
                 # NO OP, doesn't need to be translated
                 pass
@@ -521,6 +536,16 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.send_3_pop
                 or bytecode == Bytecodes.send_n_pop
                 or bytecode == Bytecodes.super_send
+                or bytecode == Bytecodes.send_plus
+                or bytecode == Bytecodes.send_minus
+                or bytecode == Bytecodes.send_multi
+                or bytecode == Bytecodes.send_dbl_div
+                or bytecode == Bytecodes.send_equal
+                or bytecode == Bytecodes.send_equal_equal
+                or bytecode == Bytecodes.send_is_nil
+                or bytecode == Bytecodes.send_not_nil
+                or bytecode == Bytecodes.send_at
+                or bytecode == Bytecodes.send_at_put
                 or bytecode == Bytecodes.return_local
                 or bytecode == Bytecodes.return_field_0
                 or bytecode == Bytecodes.return_field_1

@@ -18,6 +18,7 @@ from som.compiler.bc.bytecode_generator import (
     emit_push_constant,
     emit_push_constant_index,
     emit_return_non_local,
+    emit_special_send,
 )
 from som.compiler.bc.method_generation_context import MethodGenerationContext
 from som.compiler.parser import ParserBase
@@ -234,10 +235,9 @@ class Parser(ParserBase):
         self._binary_operand(mgenc)
 
         if not is_super_send and (
-            msg.get_embedded_string() == "||"
-            and mgenc.inline_andor(self, True)
-            or msg.get_embedded_string() == "&&"
-            and mgenc.inline_andor(self, False)
+            (msg.get_embedded_string() == "||" and mgenc.inline_andor(self, True))
+            or (msg.get_embedded_string() == "&&" and mgenc.inline_andor(self, False))
+            or emit_special_send(mgenc, msg)
         ):
             return
 
