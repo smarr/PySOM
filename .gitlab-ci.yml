@@ -1,21 +1,25 @@
 stages:
-  - build-test-benchmark
+  - build-test
+  - benchmark
+  - benchmark-completion
 
 variables:
   PYTHONUNBUFFERED: "true"
-  PYPY_DIR: /home/gitlab-runner/.local/pypy2.7-v7.3.1-src
+  PYPY_DIR: /home/gitlab-runner/.local/pypy2.7-v7.3.5-src
 
 before_script:
   - git submodule update --init
 
-bc_build_test_benchmark_job:
-  stage: build-test-benchmark
-  tags: [benchmarks, infinity]
+build-and-test-interpreters:
+  stage: build-test
+  tags: [yuria]
   script:
     # Setup
+    - export PROJECT_FOLDER=$(pwd)
     - export PYTHONPATH=$PYTHONPATH:$PYPY_DIR:src
     - export RPYTHON=$PYPY_DIR/rpython/bin/rpython
-    - export PATH=$PATH:/home/gitlab-runner/.local/pypy2.7-v7.3.1-linux64/bin
+    - export PATH=$PATH:/home/gitlab-runner/.local/pypy2.7-v7.3.5-linux64/bin
+
     - export SOM_INTERP=BC
     
     # Unit Tests
@@ -25,37 +29,130 @@ bc_build_test_benchmark_job:
     # Interpreter
     - $RPYTHON --batch src/main_rpython.py
     - ./som-bc-interp -cp Smalltalk TestSuite/TestHarness.som
-    
-    # JIT Compiled Version
-    - $RPYTHON --batch -Ojit src/main_rpython.py
-    - ./som-bc-jit -cp Smalltalk TestSuite/TestHarness.som
-    
-    # Run Benchmarks
-    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf all e:RPySOM-bc-jit e:RPySOM-bc-interp e:SomSom-bc-interp
-    # - rebench --experiment="CI ID $CI_PIPELINE_ID" --report-completion rebench.conf
 
-ast_build_test_benchmark_job:
-  stage: build-test-benchmark
-  tags: [benchmarks, infinity]
-  script:
-    # Setup
-    - export PYTHONPATH=$PYTHONPATH:$PYPY_DIR:src
-    - export RPYTHON=$PYPY_DIR/rpython/bin/rpython
-    - export PATH=$PATH:/home/gitlab-runner/.local/pypy2.7-v7.3.1-linux64/bin
     - export SOM_INTERP=AST
     
     # Unit Tests
     - PYTHONPATH=src python3 -m pytest
     - ./som.sh -cp Smalltalk TestSuite/TestHarness.som
-
+    
     # Interpreter
     - $RPYTHON --batch src/main_rpython.py
     - ./som-ast-interp -cp Smalltalk TestSuite/TestHarness.som
+
+
+    # Package and Upload
+    - lz4 som-ast-interp som-ast-interp.lz4
+    - lz4 som-bc-interp  som-bc-interp.lz4
+    
+    - |
+      sftp tmp-artifacts << EOF
+        -mkdir incoming/${CI_PIPELINE_ID}/
+        put ${PROJECT_FOLDER}/som-ast-interp.lz4 incoming/${CI_PIPELINE_ID}/
+        put ${PROJECT_FOLDER}/som-bc-interp.lz4 incoming/${CI_PIPELINE_ID}/
+      EOF
+
+build-and-test-jit-bc:
+  stage: build-test
+  tags: [yuria2]
+  script:
+    # Setup
+    - export PROJECT_FOLDER=$(pwd)
+    - export PYTHONPATH=$PYTHONPATH:$PYPY_DIR:src
+    - export RPYTHON=$PYPY_DIR/rpython/bin/rpython
+    - export PATH=$PATH:/home/gitlab-runner/.local/pypy2.7-v7.3.5-linux64/bin
+    - export SOM_INTERP=BC
+    
+    # JIT Compiled Version
+    - $RPYTHON --batch -Ojit src/main_rpython.py
+    - ./som-bc-jit -cp Smalltalk TestSuite/TestHarness.som
+
+    # Package and Upload
+    - lz4 som-bc-jit som-bc-jit.lz4
+    
+    - |
+      sftp tmp-artifacts << EOF
+        -mkdir incoming/${CI_PIPELINE_ID}/
+        put ${PROJECT_FOLDER}/som-bc-jit.lz4 incoming/${CI_PIPELINE_ID}/
+      EOF
+
+build-and-test-jit-ast:
+  stage: build-test
+  tags: [yuria3]
+  script:
+    # Setup
+    - export PROJECT_FOLDER=$(pwd)
+    - export PYTHONPATH=$PYTHONPATH:$PYPY_DIR:src
+    - export RPYTHON=$PYPY_DIR/rpython/bin/rpython
+    - export PATH=$PATH:/home/gitlab-runner/.local/pypy2.7-v7.3.5-linux64/bin
+    - export SOM_INTERP=AST
     
     # JIT Compiled Version
     - $RPYTHON --batch -Ojit src/main_rpython.py
     - ./som-ast-jit -cp Smalltalk TestSuite/TestHarness.som
+
+    # Package and Upload
+    - lz4 som-ast-jit som-ast-jit.lz4
     
+    - |
+      sftp tmp-artifacts << EOF
+        -mkdir incoming/${CI_PIPELINE_ID}/
+        put ${PROJECT_FOLDER}/som-ast-jit.lz4 incoming/${CI_PIPELINE_ID}/
+      EOF
+
+benchmark-y1:
+  stage: benchmark
+  tags: [yuria]
+  script:
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-jit.lz4
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-interp.lz4
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-jit.lz4
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-interp.lz4
+    
+    - lz4 -d som-ast-jit.lz4    som-ast-jit
+    - lz4 -d som-ast-interp.lz4 som-ast-interp
+    - lz4 -d som-bc-jit.lz4     som-bc-jit
+    - lz4 -d som-bc-interp.lz4  som-bc-interp
+
     # Run Benchmarks
-    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf all e:RPySOM-ast-jit e:RPySOM-ast-interp e:SomSom-ast-interp
+    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf m:yuria
+
+benchmark-y2:
+  stage: benchmark
+  tags: [yuria2]
+  script:
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-jit.lz4
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-interp.lz4
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-jit.lz4
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-interp.lz4
+    
+    - lz4 -d som-ast-jit.lz4    som-ast-jit
+    - lz4 -d som-ast-interp.lz4 som-ast-interp
+    - lz4 -d som-bc-jit.lz4     som-bc-jit
+    - lz4 -d som-bc-interp.lz4  som-bc-interp
+
+    # Run Benchmarks
+    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf m:yuria2
+
+benchmark-y3:
+  stage: benchmark
+  tags: [yuria3]
+  script:
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-jit.lz4
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-interp.lz4
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-jit.lz4
+    - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-interp.lz4
+    
+    - lz4 -d som-ast-jit.lz4    som-ast-jit
+    - lz4 -d som-ast-interp.lz4 som-ast-interp
+    - lz4 -d som-bc-jit.lz4     som-bc-jit
+    - lz4 -d som-bc-interp.lz4  som-bc-interp
+
+    # Run Benchmarks
+    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf m:yuria3
+
+report-completion:
+  stage: benchmark-completion
+  tags: [yuria]
+  script:
     - rebench --experiment="CI ID $CI_PIPELINE_ID" --report-completion rebench.conf
