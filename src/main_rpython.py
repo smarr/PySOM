@@ -5,7 +5,6 @@ import os
 import sys
 
 from som.compiler.parse_error import ParseError
-from som.interp_type import is_ast_interpreter, is_bytecode_interpreter
 from som.vm.universe import main, Exit
 
 try:
@@ -37,10 +36,7 @@ def entry_point(argv):
 
 def target(driver, _args):
     exe_name = "som-"
-    if is_ast_interpreter():
-        exe_name += "ast-"
-    elif is_bytecode_interpreter():
-        exe_name += "bc-"
+    exe_name += "ast-"
 
     if driver.config.translation.jit:
         exe_name += "jit"

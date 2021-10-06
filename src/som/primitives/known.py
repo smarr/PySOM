@@ -1,8 +1,6 @@
 from functools import reduce
 from rlib.unroll import unrolling_iterable
 
-from som.interp_type import is_ast_interpreter, is_bytecode_interpreter
-
 """Captures the known primitives at load time of this module, i.e., at compile
    time with RPython.
 """
@@ -38,13 +36,8 @@ def _setup_primitives():
     from glob import glob
 
     base_package = "som.primitives."
-    if is_ast_interpreter():
-        base_package += "ast."
-        interp_dir = "ast"
-    else:
-        assert is_bytecode_interpreter()
-        base_package += "bc."
-        interp_dir = "bc"
+    base_package += "ast."
+    interp_dir = "ast"
 
     directory = (
         __file__.replace("known.pyc", "").replace("known.py", "") + interp_dir + "/"

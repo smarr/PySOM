@@ -1,12 +1,8 @@
-from som.interp_type import is_ast_interpreter
 from som.primitives.primitives import Primitives
 from som.vm.globals import trueObject, falseObject, nilObject
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 
-if is_ast_interpreter():
-    from som.vmobjects.block_ast import AstBlock as _Block
-else:
-    from som.vmobjects.block_bc import BcBlock as _Block
+from som.vmobjects.block_ast import AstBlock as _Block
 
 
 def _not(_rcvr):

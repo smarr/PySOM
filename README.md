@@ -26,28 +26,24 @@ This repository contains a Python-base implementation of SOM, including
 SOM's standard library, and a number of benchmarks. The [main project
 page][SOMst] has links to other SOM VM implementations.
 
-PySOM implementation use either an abstract-syntax-tree or a 
-bytecode-based interpreter. One can choose between them with the `SOM_INTERP` environment variable.
-
- - AST-based interpreter: `SOM_INTERP=AST`
- - bytecode-based interpreter: `SOM_INTERP=BC`
+PySOM implementation use an abstract-syntax-tree.
 
 To check out the code, run:
 
-    git clone --recurse-submodules https://github.com/SOM-st/PySOM.git
+    git clone -b ast-only --recurse-submodules https://github.com/SOM-st/PySOM.git
 
 Note the `--recurse-submodules` option. It makes sure that the core library,
 i.e., the Smalltalk code is downloaded.
 
 PySOM's tests can be executed with:
 
-    SOM_INTERP=AST ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+    ./som.sh -cp Smalltalk TestSuite/TestHarness.som
    
 A simple Hello World program can be started with:
 
-    SOM_INTERP=AST ./som.sh -cp Smalltalk Examples/Hello.som
+    ./som.sh -cp Smalltalk Examples/Hello.som
 
-To compile PySOM, a recent PyPy is recommended and the RPython source
+Optinal: To compile PySOM, a recent PyPy is recommended and the RPython source
 code is required. The source distribution of PyPy 7.3 can be used like this:
 
     wget https://downloads.python.org/pypy/pypy2.7-v7.3.1-src.tar.bz2

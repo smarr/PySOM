@@ -9,7 +9,7 @@ from rlib import rgc
 from som.vm.symbols import symbol_for, sym_false, sym_true, sym_nil
 
 from som.vmobjects.array import Array
-from som.vmobjects.block_bc import block_evaluation_primitive
+from som.vmobjects.block_ast import block_evaluation_primitive
 from som.vmobjects.clazz import Class
 from som.vmobjects.object_without_fields import ObjectWithoutFields
 from som.vmobjects.object_with_layout import Object

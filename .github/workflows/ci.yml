@@ -13,10 +13,6 @@ jobs:
             id:   ast
             interp: AST
             python-version: pypy2
-          - name: Bytecode Interpreter PyPy2
-            id:   bc
-            interp: BC
-            python-version: pypy2
           - name: Basics Python 2.7
             python-version: 2.7
             id: basic
@@ -51,10 +47,8 @@ jobs:
         run: |
           export PYTHON=python
           export PYTHONPATH=src
-          SOM_INTERP=AST pytest
-          SOM_INTERP=BC  pytest
-          SOM_INTERP=AST ./som.sh -cp Smalltalk TestSuite/TestHarness.som
-          SOM_INTERP=BC  ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+          pytest
+          ./som.sh -cp Smalltalk TestSuite/TestHarness.som
 
       - name: Full Tests
         if: matrix.id != 'basic'

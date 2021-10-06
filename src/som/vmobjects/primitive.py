@@ -1,4 +1,3 @@
-from som.interp_type import is_ast_interpreter
 from som.vm.symbols import symbol_for
 from som.vmobjects.abstract_object import AbstractObject
 
@@ -138,12 +137,8 @@ def _empty_invoke_bc(ivkbl, _stack, stack_ptr):
     return stack_ptr
 
 
-if is_ast_interpreter():
-    Primitive = _AstPrimitive
-    _empty_invoke = _empty_invoke_ast
-else:
-    Primitive = _BcPrimitive
-    _empty_invoke = _empty_invoke_bc
+Primitive = _AstPrimitive
+_empty_invoke = _empty_invoke_ast
 
 
 def empty_primitive(signature_string):

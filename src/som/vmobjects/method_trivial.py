@@ -1,12 +1,5 @@
 from rlib.jit import elidable_promote, unroll_safe
-from som.compiler.bc.bytecode_generator import (
-    emit_push_constant,
-    emit_push_global,
-    emit_push_field_with_index,
-)
-from som.interp_type import is_ast_interpreter
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
-from som.interpreter.bc.frame import stack_pop_old_arguments_and_push_result
 from som.interpreter.send import lookup_and_send_2
 
 from som.vmobjects.method import AbstractMethod
@@ -60,25 +53,10 @@ class LiteralReturn(AbstractTrivialMethod):
     def invoke_3(self, _rcvr, _arg1, _arg2):
         return self._value
 
-    def invoke_n(self, stack, stack_ptr):
-        return stack_pop_old_arguments_and_push_result(
-            stack,
-            stack_ptr,
-            self._signature.get_number_of_signature_arguments(),
-            self._value,
-        )
+    def inline(self, _mgenc):
+        from som.interpreter.ast.nodes.literal_node import LiteralNode
 
-    if is_ast_interpreter():
-
-        def inline(self, _mgenc):
-            from som.interpreter.ast.nodes.literal_node import LiteralNode
-
-            return LiteralNode(self._value)
-
-    else:
-
-        def inline(self, mgenc):
-            emit_push_constant(mgenc, self._value)
+        return LiteralNode(self._value)
 
 
 class GlobalRead(AbstractTrivialMethod):
@@ -112,28 +90,10 @@ class GlobalRead(AbstractTrivialMethod):
     def invoke_3(self, rcvr, _arg1, _arg2):
         return self.invoke_1(rcvr)
 
-    def invoke_n(self, stack, stack_ptr):
-        num_args = self._signature.get_number_of_signature_arguments()
-        rcvr = stack[stack_ptr - (num_args - 1)]
-        value = self.invoke_1(rcvr)
-        return stack_pop_old_arguments_and_push_result(
-            stack,
-            stack_ptr,
-            num_args,
-            value,
-        )
+    def inline(self, mgenc):
+        from som.interpreter.ast.nodes.global_read_node import create_global_node
 
-    if is_ast_interpreter():
-
-        def inline(self, mgenc):
-            from som.interpreter.ast.nodes.global_read_node import create_global_node
-
-            return create_global_node(self._global_name, self.universe, mgenc, None)
-
-    else:
-
-        def inline(self, mgenc):
-            emit_push_global(mgenc, self._global_name)
+        return create_global_node(self._global_name, self.universe, mgenc, None)
 
 
 class FieldRead(AbstractTrivialMethod):
@@ -157,28 +117,10 @@ class FieldRead(AbstractTrivialMethod):
     def invoke_3(self, rcvr, _arg1, _arg2):
         return self.invoke_1(rcvr)
 
-    def invoke_n(self, stack, stack_ptr):
-        num_args = self._signature.get_number_of_signature_arguments()
-        rcvr = stack[stack_ptr - (num_args - 1)]
-        value = self.invoke_1(rcvr)
-        return stack_pop_old_arguments_and_push_result(
-            stack,
-            stack_ptr,
-            num_args,
-            value,
-        )
+    def inline(self, mgenc):
+        from som.interpreter.ast.nodes.field_node import FieldReadNode
 
-    if is_ast_interpreter():
-
-        def inline(self, mgenc):
-            from som.interpreter.ast.nodes.field_node import FieldReadNode
-
-            return FieldReadNode(mgenc.get_self_read(), self._field_idx, None)
-
-    else:
-
-        def inline(self, mgenc):
-            emit_push_field_with_index(mgenc, self._field_idx, self._context_level - 1)
+        return FieldReadNode(mgenc.get_self_read(), self._field_idx, None)
 
 
 class FieldWrite(AbstractTrivialMethod):
@@ -202,15 +144,3 @@ class FieldWrite(AbstractTrivialMethod):
         if self._arg_idx == 1:
             return self.invoke_2(rcvr, arg1)
         return self.invoke_2(rcvr, arg2)
-
-    def invoke_n(self, stack, stack_ptr):
-        num_args = self._signature.get_number_of_signature_arguments()
-        rcvr = stack[stack_ptr - (num_args - 1)]
-        arg = stack[stack_ptr - (num_args - self._arg_idx)]
-        self.invoke_2(rcvr, arg)
-        return stack_pop_old_arguments_and_push_result(
-            stack,
-            stack_ptr,
-            num_args,
-            rcvr,
-        )

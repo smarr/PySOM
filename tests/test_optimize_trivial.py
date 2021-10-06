@@ -2,13 +2,10 @@
 import pytest
 from rlib.string_stream import StringStream
 
-from som.compiler.bc.disassembler import dump_method
 from som.compiler.class_generation_context import ClassGenerationContext
-from som.interp_type import is_ast_interpreter
 from som.vm.current import current_universe
 from som.vm.symbols import symbol_for
 from som.vmobjects.method_ast import AstMethod
-from som.vmobjects.method_bc import BcMethod
 from som.vmobjects.method_trivial import (
     LiteralReturn,
     GlobalRead,
@@ -16,20 +13,12 @@ from som.vmobjects.method_trivial import (
     FieldWrite,
 )
 
-if is_ast_interpreter():
-    from som.compiler.ast.method_generation_context import MethodGenerationContext
-    from som.compiler.ast.parser import Parser
-else:
-    from som.compiler.bc.method_generation_context import MethodGenerationContext
-    from som.compiler.bc.parser import Parser
+from som.compiler.ast.method_generation_context import MethodGenerationContext
+from som.compiler.ast.parser import Parser
 
 
 def add_field(cgenc, name):
     cgenc.add_instance_field(symbol_for(name))
-
-
-def dump(mgenc):
-    dump_method(mgenc, b"")
 
 
 @pytest.fixture
@@ -96,7 +85,7 @@ def test_global_return(mgenc, source):
 def test_non_trivial_global_return(mgenc):
     body_or_none = parse_method(mgenc, "test = ( #foo. ^ system )")
     m = mgenc.assemble(body_or_none)
-    assert isinstance(m, AstMethod) or isinstance(m, BcMethod)
+    assert isinstance(m, AstMethod)
 
 
 def test_field_getter_0(cgenc, mgenc):
@@ -122,7 +111,7 @@ def test_non_trivial_getter_0(cgenc, mgenc):
     add_field(cgenc, "field")
     body = parse_method(mgenc, "test = ( 0. ^ field )")
     m = mgenc.assemble(body)
-    assert isinstance(m, AstMethod) or isinstance(m, BcMethod)
+    assert isinstance(m, AstMethod)
 
 
 def test_non_trivial_getter_n(cgenc, mgenc):
@@ -134,7 +123,7 @@ def test_non_trivial_getter_n(cgenc, mgenc):
     add_field(cgenc, "field")
     body = parse_method(mgenc, "test = ( 0. ^ field )")
     m = mgenc.assemble(body)
-    assert isinstance(m, AstMethod) or isinstance(m, BcMethod)
+    assert isinstance(m, AstMethod)
 
 
 @pytest.mark.parametrize(
@@ -166,7 +155,7 @@ def test_non_trivial_field_setter_0(cgenc, mgenc):
     add_field(cgenc, "field")
     body_or_none = parse_method(mgenc, "test: val = ( 0. field := value )")
     m = mgenc.assemble(body_or_none)
-    assert isinstance(m, AstMethod) or isinstance(m, BcMethod)
+    assert isinstance(m, AstMethod)
 
 
 def test_non_trivial_field_setter_n(cgenc, mgenc):
@@ -178,7 +167,7 @@ def test_non_trivial_field_setter_n(cgenc, mgenc):
     add_field(cgenc, "field")
     body_or_none = parse_method(mgenc, "test: val = ( 0. field := value )")
     m = mgenc.assemble(body_or_none)
-    assert isinstance(m, AstMethod) or isinstance(m, BcMethod)
+    assert isinstance(m, AstMethod)
 
 
 @pytest.mark.parametrize(
@@ -199,7 +188,7 @@ def test_non_trivial_field_setter_n(cgenc, mgenc):
 def test_literal_no_return(mgenc, source):
     body_or_none = parse_method(mgenc, "test = ( " + source + " )")
     m = mgenc.assemble(body_or_none)
-    assert isinstance(m, AstMethod) or isinstance(m, BcMethod)
+    assert isinstance(m, AstMethod)
 
 
 @pytest.mark.parametrize(
@@ -220,13 +209,13 @@ def test_literal_no_return(mgenc, source):
 def test_non_trivial_literal_return(mgenc, source):
     body_or_none = parse_method(mgenc, "test = ( 1. ^ " + source + " )")
     m = mgenc.assemble(body_or_none)
-    assert isinstance(m, AstMethod) or isinstance(m, BcMethod)
+    assert isinstance(m, AstMethod)
 
 
 def test_block_return(mgenc):
     body_or_none = parse_method(mgenc, "test = ( ^ [] )")
     m = mgenc.assemble(body_or_none)
-    assert isinstance(m, AstMethod) or isinstance(m, BcMethod)
+    assert isinstance(m, AstMethod)
 
 
 @pytest.mark.parametrize(

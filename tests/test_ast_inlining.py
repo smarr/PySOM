@@ -6,7 +6,6 @@ from som.compiler.ast.method_generation_context import MethodGenerationContext
 from som.compiler.ast.parser import Parser
 from som.compiler.ast.variable import Argument
 from som.compiler.class_generation_context import ClassGenerationContext
-from som.interp_type import is_bytecode_interpreter
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
 from som.interpreter.ast.nodes.field_node import FieldReadNode, FieldIncrementNode
@@ -32,10 +31,6 @@ from som.interpreter.ast.nodes.variable_node import (
 from som.vm.current import current_universe
 from som.vm.globals import trueObject, falseObject
 from som.vm.symbols import symbol_for
-
-pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
-    is_bytecode_interpreter(), reason="Tests are specific to AST interpreter"
-)
 
 
 def add_field(cgenc, name):

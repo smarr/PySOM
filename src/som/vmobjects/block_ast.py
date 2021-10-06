@@ -2,7 +2,7 @@ from rlib.jit import promote
 from som.interpreter.ast.frame import is_on_stack
 
 from som.vmobjects.abstract_object import AbstractObject
-
+from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 
 VALUE_SIGNATURE = [
     "UNUSED",  # there aren't any 0-arg methods/blocks
@@ -49,3 +49,25 @@ class AstBlock(AbstractObject):
 
     def get_object_layout(self, universe):
         return universe.block_layouts[self._method.get_number_of_arguments()]
+
+
+def block_evaluation_primitive(num_args):
+    if num_args == 1:
+        return UnaryPrimitive(VALUE_SIGNATURE[num_args], _invoke_1)
+    if num_args == 2:
+        return BinaryPrimitive(VALUE_SIGNATURE[num_args], _invoke_2)
+    if num_args == 3:
+        return TernaryPrimitive(VALUE_SIGNATURE[num_args], _invoke_3)
+    raise Exception("Unsupported number of arguments for block: " + str(num_args))
+
+
+def _invoke_1(rcvr):
+    return rcvr.get_method().invoke_1(rcvr)
+
+
+def _invoke_2(rcvr, arg):
+    return rcvr.get_method().invoke_2(rcvr, arg)
+
+
+def _invoke_3(rcvr, arg1, arg2):
+    return rcvr.get_method().invoke_3(rcvr, arg1, arg2)

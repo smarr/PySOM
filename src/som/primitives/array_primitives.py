@@ -1,16 +1,11 @@
 from rlib.jit import JitDriver
 
-from som.interp_type import is_ast_interpreter
 from som.vmobjects.array import Array
 from som.vmobjects.primitive import UnaryPrimitive, BinaryPrimitive, TernaryPrimitive
 from som.vmobjects.method import AbstractMethod
 from som.primitives.primitives import Primitives
 
-
-if is_ast_interpreter():
-    from som.vmobjects.block_ast import AstBlock as _Block
-else:
-    from som.vmobjects.block_bc import BcBlock as _Block
+from som.vmobjects.block_ast import AstBlock as _Block
 
 
 def _at(rcvr, i):

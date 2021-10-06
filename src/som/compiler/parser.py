@@ -5,14 +5,10 @@ from som.compiler.lexer import Lexer
 from som.compiler.parse_error import ParseError, ParseErrorSymList
 from som.compiler.symbol import Symbol
 
-from som.interp_type import is_ast_interpreter
 from som.vm.symbols import sym_object, symbol_for, sym_nil
 from som.vmobjects.double import Double
 
-if is_ast_interpreter():
-    from som.compiler.ast.method_generation_context import MethodGenerationContext
-else:
-    from som.compiler.bc.method_generation_context import MethodGenerationContext
+from som.compiler.ast.method_generation_context import MethodGenerationContext
 
 
 class ParserBase(object):
