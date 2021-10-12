@@ -170,7 +170,8 @@ disable=print-statement,
         import-outside-toplevel,
         consider-using-in,
         consider-merging-isinstance,
-        duplicate-code
+        duplicate-code,
+        consider-using-f-string
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
