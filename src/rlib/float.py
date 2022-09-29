@@ -9,7 +9,6 @@ try:
     def float_to_str(value):
         return formatd(value, "g", DTSF_STR_PRECISION, DTSF_ADD_DOT_0)
 
-
 except ImportError:
     "NOT_RPYTHON"
 
