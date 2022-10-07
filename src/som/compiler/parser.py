@@ -158,14 +158,14 @@ class ParserBase(object):
         if self._accept(s):
             return True
         raise ParseError(
-            "Unexpected symbol. Expected %(expected)s, but found " "%(found)s", s, self
+            "Unexpected symbol. Expected %(expected)s, but found %(found)s", s, self
         )
 
     def _expect_one_of(self, symbol_list):
         if self._accept_one_of(symbol_list):
             return True
         raise ParseErrorSymList(
-            "Unexpected symbol. Expected one of " "%(expected)s, but found %(found)s",
+            "Unexpected symbol. Expected one of %(expected)s, but found %(found)s",
             symbol_list,
             self,
         )
