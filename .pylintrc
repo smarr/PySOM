@@ -100,7 +100,8 @@ disable=raw-checker-failed,
         consider-using-in,
         consider-merging-isinstance,
         duplicate-code,
-        consider-using-f-string
+        consider-using-f-string,
+        cyclic-import
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
