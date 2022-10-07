@@ -267,10 +267,10 @@ class ParserBase(object):
             return self._assignation(mgenc)
         return self._evaluation(mgenc)
 
-    def _assignation(self, _):  # pylint: disable=no-self-use
+    def _assignation(self, _):
         raise Exception("Implemented in subclass")
 
-    def _evaluation(self, _):  # pylint: disable=no-self-use
+    def _evaluation(self, _):
         raise Exception("Implemented in subclass")
 
     def _nested_term(self, mgenc):
@@ -374,7 +374,7 @@ class ParserBase(object):
             return self._primitive_block()
         return self._method_block(mgenc)
 
-    def _method_block(self, _):  # pylint: disable=no-self-use
+    def _method_block(self, _):
         raise Exception("Implemented in subclass")
 
     def _block_contents(self, mgenc):
@@ -386,7 +386,7 @@ class ParserBase(object):
 
         return self._block_body(mgenc, False)
 
-    def _block_body(self, _a, _b):  # pylint: disable=no-self-use
+    def _block_body(self, _a, _b):
         raise Exception("Implemented in subclass")
 
     def _primitive_block(self):

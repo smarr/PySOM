@@ -21,10 +21,10 @@ def determine_outer_self(rcvr, context_level):
 
 
 class AbstractTrivialMethod(AbstractMethod):
-    def get_number_of_locals(self):  # pylint: disable=no-self-use
+    def get_number_of_locals(self):
         return 0
 
-    def get_maximum_number_of_stack_elements(self):  # pylint: disable=no-self-use
+    def get_maximum_number_of_stack_elements(self):
         return 0
 
     def set_holder(self, value):

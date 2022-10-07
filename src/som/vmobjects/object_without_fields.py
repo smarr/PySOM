@@ -22,7 +22,7 @@ class ObjectWithoutFields(AbstractObject):
         assert layout is not None
         self._object_layout = layout
 
-    def get_number_of_fields(self):  # pylint: disable=no-self-use
+    def get_number_of_fields(self):
         return 0
 
     def __str__(self):

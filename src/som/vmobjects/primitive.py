@@ -87,7 +87,7 @@ class UnaryPrimitive(_AbstractPrimitive):
         prim_fn = self._prim_fn
         return prim_fn(rcvr)
 
-    def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
+    def get_number_of_signature_arguments(self):
         return 1
 
 
@@ -102,7 +102,7 @@ class BinaryPrimitive(_AbstractPrimitive):
         prim_fn = self._prim_fn
         return prim_fn(rcvr, arg)
 
-    def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
+    def get_number_of_signature_arguments(self):
         return 2
 
 
@@ -117,7 +117,7 @@ class TernaryPrimitive(_AbstractPrimitive):
         prim_fn = self._prim_fn
         return prim_fn(rcvr, arg1, arg2)
 
-    def get_number_of_signature_arguments(self):  # pylint: disable=no-self-use
+    def get_number_of_signature_arguments(self):
         return 3
 
 

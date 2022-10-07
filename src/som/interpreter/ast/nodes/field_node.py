@@ -61,7 +61,7 @@ class FieldWriteNode(_AbstractFieldNode):
             return FieldWrite(signature, self.field_idx, arg_idx)
         return None
 
-    def is_trivial_in_sequence(self):  # pylint: disable=no-self-use
+    def is_trivial_in_sequence(self):
         return True
 
 
