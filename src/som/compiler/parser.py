@@ -158,14 +158,14 @@ class ParserBase(object):
         if self._accept(s):
             return True
         raise ParseError(
-            "Unexpected symbol. Expected %(expected)s, but found " "%(found)s", s, self
+            "Unexpected symbol. Expected %(expected)s, but found %(found)s", s, self
         )
 
     def _expect_one_of(self, symbol_list):
         if self._accept_one_of(symbol_list):
             return True
         raise ParseErrorSymList(
-            "Unexpected symbol. Expected one of " "%(expected)s, but found %(found)s",
+            "Unexpected symbol. Expected one of %(expected)s, but found %(found)s",
             symbol_list,
             self,
         )
@@ -267,10 +267,10 @@ class ParserBase(object):
             return self._assignation(mgenc)
         return self._evaluation(mgenc)
 
-    def _assignation(self, _):  # pylint: disable=no-self-use
+    def _assignation(self, _):
         raise Exception("Implemented in subclass")
 
-    def _evaluation(self, _):  # pylint: disable=no-self-use
+    def _evaluation(self, _):
         raise Exception("Implemented in subclass")
 
     def _nested_term(self, mgenc):
@@ -374,7 +374,7 @@ class ParserBase(object):
             return self._primitive_block()
         return self._method_block(mgenc)
 
-    def _method_block(self, _):  # pylint: disable=no-self-use
+    def _method_block(self, _):
         raise Exception("Implemented in subclass")
 
     def _block_contents(self, mgenc):
@@ -386,7 +386,7 @@ class ParserBase(object):
 
         return self._block_body(mgenc, False)
 
-    def _block_body(self, _a, _b):  # pylint: disable=no-self-use
+    def _block_body(self, _a, _b):
         raise Exception("Implemented in subclass")
 
     def _primitive_block(self):

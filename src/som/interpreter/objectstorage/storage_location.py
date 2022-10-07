@@ -182,7 +182,7 @@ def _make_object_direct_inc(field_idx):
 
 
 def _make_object_direct_write(field_idx):
-    def write_location(_node, obj, value):  # pylint: disable=no-self-use
+    def write_location(_node, obj, value):
         setattr(obj, "_field" + str(field_idx), value)
 
     return write_location

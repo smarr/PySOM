@@ -169,7 +169,6 @@ if sys.version_info.major <= 2:
             range(rcvr.get_embedded_integer(), arg.get_embedded_integer() + 1)
         )
 
-
 else:
 
     def _to(rcvr, arg):

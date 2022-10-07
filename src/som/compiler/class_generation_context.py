@@ -64,7 +64,7 @@ class ClassGenerationContext(object):
     def add_instance_field(self, field):
         self._instance_fields.append(field)
 
-    def get_instance_field_name(self, _idx):  # pylint: disable=no-self-use
+    def get_instance_field_name(self, _idx):
         return "not yet implemented"
         # TODO: return self._instance_fields[idx] and support of super classes, I think
 

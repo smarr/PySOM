@@ -593,7 +593,7 @@ class _EmptyStrategy(_ArrayStrategy):
     def new_storage_with_values(values):
         return _empty_strategy.erase(len(values))
 
-    def copy(self, storage):  # pylint: disable=no-self-use
+    def copy(self, storage):
         return Array(_empty_strategy, storage)
 
     def copy_and_extend_with(self, storage, value):

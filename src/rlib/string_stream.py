@@ -4,7 +4,6 @@ try:
     def encode_to_bytes(str_value):
         return str_value
 
-
 except ImportError:
     "NOT_RPYTHON"
 
@@ -33,10 +32,10 @@ class StringStream(Stream):
         self.pos = 0
         self.max = len(string) - 1
 
-    def write(self, data):  # pylint: disable=no-self-use
+    def write(self, data):
         raise StreamError("StringStream is not writable")
 
-    def truncate(self, size):  # pylint: disable=no-self-use
+    def truncate(self, size):
         raise StreamError("StringStream is immutable")
 
     def tell(self):

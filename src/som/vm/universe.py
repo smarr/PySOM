@@ -101,7 +101,7 @@ class Universe(object):
         self._object_system_initialized = False
 
     def reset(self, avoid_exit):
-        self.__init__(avoid_exit)
+        self.__init__(avoid_exit)  # pylint: disable=unnecessary-dunder-call
 
     def exit(self, error_code):
         if self._avoid_exit:
