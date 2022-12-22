@@ -30,6 +30,7 @@ class ParserBase(object):
         Symbol.Less,
         Symbol.Comma,
         Symbol.At,
+        Symbol.Minus,
         Symbol.Per,
     ]
 
@@ -218,15 +219,7 @@ class ParserBase(object):
     def _binary_selector(self):
         s = self._text
 
-        if self._accept(Symbol.Or):
-            pass
-        elif self._accept(Symbol.Comma):
-            pass
-        elif self._accept(Symbol.Minus):
-            pass
-        elif self._accept(Symbol.Equal):
-            pass
-        elif self._accept_one_of(self._single_op_syms):
+        if self._accept_one_of(self._single_op_syms):
             pass
         elif self._accept(Symbol.OperatorSequence):
             pass
