@@ -11,6 +11,10 @@ def _as_string(rcvr):
 def _equals(op1, op2):
     if op1 is op2:
         return trueObject
+
+    if isinstance(op2, String):
+        if op1.get_embedded_string() == op2.get_embedded_string():
+            return trueObject
     return falseObject
 
 
