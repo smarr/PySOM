@@ -1,5 +1,4 @@
 from rlib.objectmodel import compute_hash
-from som.compiler.symbol import Symbol
 from som.primitives.primitives import Primitives
 
 from som.vm.globals import trueObject, falseObject
@@ -22,14 +21,11 @@ def _length(rcvr):
 
 
 def _equals(op1, op2):
-    if isinstance(op1, String):
-        if isinstance(op1, Symbol) and isinstance(op2, Symbol):
-            if op1 is op2:
-                return trueObject
-            return falseObject
-        if isinstance(op2, String):
-            if op1.get_embedded_string() == op2.get_embedded_string():
-                return trueObject
+    if (
+        isinstance(op2, String)
+        and op1.get_embedded_string() == op2.get_embedded_string()
+    ):
+        return trueObject
     return falseObject
 
 
