@@ -5,7 +5,8 @@ stages:
 
 variables:
   PYTHONUNBUFFERED: "true"
-  PYPY_DIR: /home/gitlab-runner/.local/pypy2.7-v7.3.5-src
+  PYPY_SRC_DIR: /home/gitlab-runner/.local/pypy2.7-v7.3.11-src
+  PYPY_BIN_DIR: /home/gitlab-runner/.local/pypy2.7-v7.3.11-linux64/bin
 
 before_script:
   - git submodule update --init
@@ -16,9 +17,9 @@ build-and-test-interpreters:
   script:
     # Setup
     - export PROJECT_FOLDER=$(pwd)
-    - export PYTHONPATH=$PYTHONPATH:$PYPY_DIR:src
-    - export RPYTHON=$PYPY_DIR/rpython/bin/rpython
-    - export PATH=$PATH:/home/gitlab-runner/.local/pypy2.7-v7.3.5-linux64/bin
+    - export PYTHONPATH=$PYTHONPATH:$PYPY_SRC_DIR:src
+    - export RPYTHON=$PYPY_SRC_DIR/rpython/bin/rpython
+    - export PATH=$PATH:$PYPY_BIN_DIR
 
     - export SOM_INTERP=BC
     
@@ -58,9 +59,9 @@ build-and-test-jit-bc:
   script:
     # Setup
     - export PROJECT_FOLDER=$(pwd)
-    - export PYTHONPATH=$PYTHONPATH:$PYPY_DIR:src
-    - export RPYTHON=$PYPY_DIR/rpython/bin/rpython
-    - export PATH=$PATH:/home/gitlab-runner/.local/pypy2.7-v7.3.5-linux64/bin
+    - export PYTHONPATH=$PYTHONPATH:$PYPY_SRC_DIR:src
+    - export RPYTHON=$PYPY_SRC_DIR/rpython/bin/rpython
+    - export PATH=$PATH:$PYPY_BIN_DIR
     - export SOM_INTERP=BC
     
     # JIT Compiled Version
@@ -82,9 +83,9 @@ build-and-test-jit-ast:
   script:
     # Setup
     - export PROJECT_FOLDER=$(pwd)
-    - export PYTHONPATH=$PYTHONPATH:$PYPY_DIR:src
-    - export RPYTHON=$PYPY_DIR/rpython/bin/rpython
-    - export PATH=$PATH:/home/gitlab-runner/.local/pypy2.7-v7.3.5-linux64/bin
+    - export PYTHONPATH=$PYTHONPATH:$PYPY_SRC_DIR:src
+    - export RPYTHON=$PYPY_SRC_DIR/rpython/bin/rpython
+    - export PATH=$PATH:$PYPY_BIN_DIR
     - export SOM_INTERP=AST
     
     # JIT Compiled Version
