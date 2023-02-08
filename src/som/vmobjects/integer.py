@@ -6,7 +6,6 @@ from som.vm.globals import trueObject, falseObject
 
 
 class Integer(AbstractObject):
-
     _immutable_fields_ = ["_embedded_integer"]
 
     def __init__(self, value):

@@ -13,7 +13,6 @@ from rlib.jit import elidable_promote
 
 
 class ObjectLayout(object):
-
     _immutable_fields_ = [
         "for_class",
         "_prim_locations_used",

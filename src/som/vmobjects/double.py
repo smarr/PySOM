@@ -5,7 +5,6 @@ from som.vmobjects.abstract_object import AbstractObject
 
 
 class Double(AbstractObject):
-
     _immutable_fields_ = ["_embedded_double"]
 
     def __init__(self, value):

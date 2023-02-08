@@ -65,7 +65,6 @@ class NodeTest(unittest.TestCase):
 
 
 class RootNode(Node):
-
     _child_nodes_ = ["child_node1", "child_node2"]
 
     def __init__(self, child_node1=None, child_node2=None):
@@ -75,7 +74,6 @@ class RootNode(Node):
 
 
 class RootNodeWithChildList(Node):
-
     _child_nodes_ = ["child_nodes[*]"]
 
     def __init__(self, child_nodes=None):

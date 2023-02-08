@@ -44,7 +44,6 @@ from som.vmobjects.method import AbstractMethod
 
 
 class BcAbstractMethod(AbstractMethod):
-
     _immutable_fields_ = [
         "_bytecodes?[*]",
         "_literals[*]",

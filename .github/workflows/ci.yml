@@ -20,8 +20,8 @@ jobs:
           - name: Basics Python 2.7
             python-version: 2.7
             id: basic
-          - name: Basics Python 3.8
-            python-version: 3.8
+          - name: Basics Python 3.11
+            python-version: 3.11
             id: basic
 
     steps:
@@ -38,9 +38,10 @@ jobs:
       - name: Download PyPy Sources
         if: matrix.id != 'basic'
         run: |
-          curl https://downloads.python.org/pypy/pypy2.7-v7.3.1-src.tar.bz2 -o pypy.tar.bz2
+          export PYPYVER=v7.3.11
+          curl https://downloads.python.org/pypy/pypy2.7-${PYPYVER}-src.tar.bz2 -o pypy.tar.bz2
           tar -xjf pypy.tar.bz2
-          mv pypy2.7-v7.3.1-src .pypy
+          mv pypy2.7-${PYPYVER}-src .pypy
 
       - name: Install PyTest
         run: |
@@ -75,13 +76,13 @@ jobs:
         run: |
           pip install black
           black --check --diff src tests
-        if: matrix.python-version == '3.8'
+        if: matrix.python-version == '3.11'
 
       - name: Install and Run PyLint
         run: |
           pip install pylint
           pylint --init-hook="import sys; sys.setrecursionlimit(2000)" src tests
-        if: matrix.python-version == '3.8'
+        if: matrix.python-version == '3.11'
 
 
 concurrency:

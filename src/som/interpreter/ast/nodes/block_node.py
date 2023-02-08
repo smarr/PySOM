@@ -4,7 +4,6 @@ from som.interpreter.ast.nodes.literal_node import LiteralNode
 
 
 class BlockNode(LiteralNode):
-
     _immutable_fields_ = ["universe"]
 
     def __init__(self, value, universe, source_section=None):

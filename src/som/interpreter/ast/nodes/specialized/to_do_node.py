@@ -9,7 +9,6 @@ from som.vmobjects.method_ast import AstMethod
 
 
 class AbstractToDoNode(ExpressionNode):
-
     _immutable_fields_ = ["_rcvr_expr?", "_limit_expr?", "_body_expr?", "universe"]
     _child_nodes_ = ["_rcvr_expr", "_limit_expr", "_body_expr"]
 

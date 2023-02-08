@@ -228,7 +228,6 @@ class _ArrayStrategy(object):
 
 
 class _ObjectStrategy(_ArrayStrategy):
-
     erase, unerase = new_erasing_pair("obj_list")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
@@ -293,7 +292,6 @@ class _ObjectStrategy(_ArrayStrategy):
 
 
 class _LongStrategy(_ArrayStrategy):
-
     erase, unerase = new_erasing_pair("int_list")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
@@ -379,7 +377,6 @@ class _LongStrategy(_ArrayStrategy):
 
 
 class _DoubleStrategy(_ArrayStrategy):
-
     erase, unerase = new_erasing_pair("double_list")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
@@ -453,7 +450,6 @@ class _DoubleStrategy(_ArrayStrategy):
 
 
 class _BoolStrategy(_ArrayStrategy):
-
     erase, unerase = new_erasing_pair("bool_list")
     erase = staticmethod(erase)
     unerase = staticmethod(unerase)
@@ -527,7 +523,6 @@ class _BoolStrategy(_ArrayStrategy):
 
 
 class _EmptyStrategy(_ArrayStrategy):
-
     # We have these basic erase/unerase methods, and then the once to be used, which
     # do also the wrapping with Integer objects of the integer value
     _erase, _unerase = new_erasing_pair("Integer")
@@ -606,7 +601,6 @@ class _EmptyStrategy(_ArrayStrategy):
 
 
 class _PartialStorage(object):
-
     _immutable_fields_ = ["storage", "size"]
 
     def __init__(self, storage, size, num_empty, storage_type):
@@ -782,7 +776,6 @@ def _determine_strategy(values):
 
 
 class Array(AbstractObject):
-
     # strategy is the strategy object
     # storage depends on the strategy, can be for instance a typed list,
     # or for the empty strategy the size as an Integer object,

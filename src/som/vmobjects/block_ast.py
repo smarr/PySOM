@@ -13,7 +13,6 @@ VALUE_SIGNATURE = [
 
 
 class AstBlock(AbstractObject):
-
     _immutable_fields_ = ["_method", "_outer"]
 
     def __init__(self, method, context_values):

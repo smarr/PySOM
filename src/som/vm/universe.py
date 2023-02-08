@@ -25,7 +25,6 @@ from som.compiler.sourcecode_compiler import (
 
 
 class Assoc(object):
-
     _immutable_fields_ = ["global_name", "value?"]
 
     def __init__(self, global_name, value):
@@ -37,7 +36,6 @@ class Assoc(object):
 
 
 class Universe(object):
-
     _immutable_fields_ = [
         "object_class",
         "class_class",

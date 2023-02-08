@@ -8,7 +8,6 @@ INLINE_CACHE_SIZE = 6
 
 
 class _AbstractDispatchNode(object):
-
     _immutable_fields_ = ["expected_layout", "next_entry?"]
     _child_nodes_ = ["next_entry"]
 
@@ -70,7 +69,6 @@ class GenericDispatchNode(_AbstractDispatchNode):
 
 
 class CachedDispatchNode(_AbstractDispatchNode):
-
     _immutable_fields_ = ["_cached_method"]
 
     def __init__(self, rcvr_class, method, next_entry):
@@ -91,7 +89,6 @@ class CachedDispatchNode(_AbstractDispatchNode):
 
 
 class CachedDnuNode(_AbstractDispatchNode):
-
     _immutable_fields_ = ["_selector", "_cached_method"]
 
     def __init__(self, selector, layout, next_entry):

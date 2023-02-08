@@ -6,7 +6,6 @@ from som.interpreter.objectstorage.object_layout import ObjectLayout
 
 
 class Class(Object):
-
     _immutable_fields_ = [
         "_super_class",
         "_name",

@@ -1,5 +1,4 @@
 class ReturnException(Exception):
-
     _immutable_fields_ = ["_result", "_target"]
 
     def __init__(self, result, target):  # pylint: disable=super-init-not-called

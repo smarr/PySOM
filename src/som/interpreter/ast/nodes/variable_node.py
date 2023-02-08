@@ -12,7 +12,6 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 class UninitializedReadNode(ExpressionNode):
-
     _immutable_fields_ = ["var", "_context_level"]
 
     def __init__(self, var, context_level, source_section):
@@ -62,7 +61,6 @@ class UninitializedReadNode(ExpressionNode):
 
 
 class UninitializedWriteNode(ExpressionNode):
-
     _immutable_fields_ = ["_var", "_context_level", "_value_expr?"]
     _child_nodes_ = ["_value_expr"]
 
@@ -114,7 +112,6 @@ class UninitializedWriteNode(ExpressionNode):
 
 
 class _NonLocalVariableNode(ContextualNode):
-
     _immutable_fields_ = ["_frame_idx"]
 
     def __init__(self, context_level, frame_idx, source_section):
@@ -152,7 +149,6 @@ class NonLocalVariableReadNode(_NonLocalVariableNode):
 
 
 class NonLocalVariableWriteNode(_NonLocalVariableNode):
-
     _immutable_fields_ = ["_value_expr?"]
     _child_nodes_ = ["_value_expr"]
 
@@ -167,7 +163,6 @@ class NonLocalVariableWriteNode(_NonLocalVariableNode):
 
 
 class _LocalVariableNode(ExpressionNode):
-
     _immutable_fields_ = ["_frame_idx"]
 
     def __init__(self, frame_idx, source_section):
@@ -177,7 +172,6 @@ class _LocalVariableNode(ExpressionNode):
 
 
 class _LocalVariableWriteNode(_LocalVariableNode):
-
     _immutable_fields_ = ["_expr?"]
     _child_nodes_ = ["_expr"]
 

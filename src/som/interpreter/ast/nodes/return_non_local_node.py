@@ -30,7 +30,6 @@ class ReturnLocalNode(ExpressionNode):
 
 
 class ReturnNonLocalNode(ContextualNode):
-
     _immutable_fields_ = ["_expr?", "universe"]
     _child_nodes_ = ["_expr"]
 
@@ -67,7 +66,6 @@ class ReturnNonLocalNode(ContextualNode):
 
 
 class CatchNonLocalReturnNode(ExpressionNode):
-
     _immutable_fields_ = ["_method_body?"]
     _child_nodes_ = ["_method_body"]
 
