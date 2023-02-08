@@ -5,7 +5,6 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 class ContextualNode(ExpressionNode):
-
     _immutable_fields_ = ["_context_level"]
 
     def __init__(self, context_level, source_section=None):

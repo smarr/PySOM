@@ -1,5 +1,4 @@
 class SourceCoordinate(object):
-
     _immutable_fields_ = ["start_line", "start_column", "char_idx"]
 
     def __init__(self, start_line, start_column, char_idx):
@@ -9,7 +8,6 @@ class SourceCoordinate(object):
 
 
 class SourceSection(object):
-
     _immutable_fields_ = ["source", "identifier", "coord", "char_length"]
 
     def __init__(

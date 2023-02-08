@@ -3,7 +3,6 @@ from som.vm.globals import trueObject, falseObject
 
 
 class AndInlinedNode(ExpressionNode):
-
     _immutable_fields_ = ["_rcvr_expr?", "_arg_expr?"]
     _child_nodes_ = ["_rcvr_expr", "_arg_expr"]
 
@@ -21,7 +20,6 @@ class AndInlinedNode(ExpressionNode):
 
 
 class OrInlinedNode(ExpressionNode):
-
     _immutable_fields_ = ["_rcvr_expr?", "_arg_expr?"]
     _child_nodes_ = ["_rcvr_expr", "_arg_expr"]
 

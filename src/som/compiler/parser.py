@@ -16,7 +16,6 @@ else:
 
 
 class ParserBase(object):
-
     _single_op_syms = [
         Symbol.Not,
         Symbol.And,

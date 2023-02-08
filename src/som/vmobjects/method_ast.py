@@ -73,7 +73,6 @@ class _Invokable(Node):
 
 
 class AstMethod(AbstractMethod):
-
     _immutable_fields_ = [
         "invokable",
         "_arg_inner_access[*]",

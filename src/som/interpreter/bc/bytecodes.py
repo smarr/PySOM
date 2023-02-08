@@ -2,7 +2,6 @@ from rlib import jit
 
 
 class Bytecodes(object):
-
     # Bytecodes used by the Simple Object Machine (SOM)
     halt = 0
     dup = halt + 1

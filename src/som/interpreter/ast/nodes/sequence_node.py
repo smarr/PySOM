@@ -5,7 +5,6 @@ from som.interpreter.ast.nodes.variable_node import LocalFrameVarReadNode
 
 
 class SequenceNode(ExpressionNode):
-
     _immutable_fields_ = ["_exprs?[*]"]
     _child_nodes_ = ["_exprs[*]"]
 

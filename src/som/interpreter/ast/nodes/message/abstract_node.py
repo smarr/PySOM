@@ -7,7 +7,6 @@ from som.vmobjects.abstract_object import AbstractObject
 
 
 class AbstractMessageNode(ExpressionNode):
-
     _immutable_fields_ = ["_selector", "universe", "_rcvr_expr?", "_arg_exprs?[*]"]
     _child_nodes_ = ["_rcvr_expr", "_arg_exprs[*]"]
 

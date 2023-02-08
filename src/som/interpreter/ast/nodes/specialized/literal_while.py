@@ -19,7 +19,6 @@ while_driver = JitDriver(
 
 
 class WhileInlinedNode(ExpressionNode):
-
     _immutable_fields_ = [
         "_condition_expr?",
         "_body_expr?",

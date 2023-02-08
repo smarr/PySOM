@@ -11,7 +11,6 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 class _AbstractGenericMessageNode(ExpressionNode):
-
     _immutable_fields_ = ["_selector", "_dispatch?", "_rcvr_expr?", "universe"]
     _child_nodes_ = ["_rcvr_expr"]
 
@@ -115,7 +114,6 @@ class UnarySend(_AbstractGenericMessageNode):
 
 
 class BinarySend(_AbstractGenericMessageNode):
-
     _immutable_fields_ = ["_arg_expr?"]
     _child_nodes_ = ["_arg_expr"]
 
@@ -142,7 +140,6 @@ class BinarySend(_AbstractGenericMessageNode):
 
 
 class TernarySend(_AbstractGenericMessageNode):
-
     _immutable_fields_ = ["_arg1_expr?", "_arg2_expr?"]
     _child_nodes_ = ["_arg1_expr", "_arg2_expr"]
 
@@ -173,7 +170,6 @@ class TernarySend(_AbstractGenericMessageNode):
 
 
 class NArySend(_AbstractGenericMessageNode):
-
     _immutable_fields_ = ["_arg_exprs?[*]"]
     _child_nodes_ = ["_arg_exprs[*]"]
 

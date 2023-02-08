@@ -28,7 +28,6 @@ def create_global_node(global_name, universe, mgenc, source_section):
 
 
 class _UninitializedGlobalReadNode(ContextualNode):
-
     _immutable_fields_ = ["_global_name", "universe"]
 
     def __init__(self, global_name, universe, context_level, source_section=None):
@@ -60,7 +59,6 @@ class _UninitializedGlobalReadNode(ContextualNode):
 
 
 class _CachedGlobalReadNode(ExpressionNode):
-
     _immutable_fields_ = ["_assoc"]
 
     def __init__(self, assoc, source_section):

@@ -2,7 +2,6 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 
 
 class AbstractSuperMessageNode(ExpressionNode):
-
     _immutable_fields_ = ["_method?", "_super_class", "_selector", "_rcvr_expr?"]
     _child_nodes_ = ["_rcvr_expr"]
 

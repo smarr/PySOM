@@ -9,7 +9,6 @@ from som.vmobjects.method_ast import AstMethod
 
 
 class AbstractToByDoNode(AbstractToDoNode):
-
     _immutable_fields_ = ["_step_expr?"]
     _child_nodes_ = ["_step_expr"]
 

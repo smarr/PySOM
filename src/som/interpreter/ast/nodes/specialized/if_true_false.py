@@ -4,7 +4,6 @@ from som.vmobjects.block_ast import AstBlock
 
 
 class IfTrueIfFalseNode(ExpressionNode):
-
     _immutable_fields_ = ["_rcvr_expr?", "_true_expr?", "_false_expr?", "universe"]
     _child_nodes_ = ["_rcvr_expr", "_true_expr", "_false_expr"]
 
@@ -59,7 +58,6 @@ class IfTrueIfFalseNode(ExpressionNode):
 
 
 class IfNode(ExpressionNode):
-
     _immutable_fields_ = ["_rcvr_expr?", "_branch_expr?", "_condition", "universe"]
     _child_nodes_ = ["_rcvr_expr", "_branch_expr"]
 

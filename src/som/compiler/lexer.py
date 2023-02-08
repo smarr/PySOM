@@ -3,7 +3,6 @@ from som.compiler.symbol import Symbol
 
 
 class Lexer(object):
-
     _SEPARATOR = "----"
     _PRIMITIVE = "primitive"
 

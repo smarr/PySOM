@@ -4,7 +4,6 @@ from som.vmobjects.abstract_object import AbstractObject
 
 
 class ObjectWithoutFields(AbstractObject):
-
     _immutable_fields_ = ["_object_layout?"]
 
     def __init__(self, layout):  # pylint: disable=W

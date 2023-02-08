@@ -13,7 +13,6 @@ from som.interpreter.bc.bytecodes import Bytecodes
 
 
 class _Variable(object):
-
     _immutable_fields_ = ["idx", "access_idx", "source"]
 
     def __init__(self, name, idx, source):

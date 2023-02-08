@@ -11,7 +11,6 @@ _EMPTY_LIST = []
 
 
 class Object(ObjectWithoutFields):
-
     _immutable_fields_ = ["fields?", "prim_fields?"]
 
     # Static field indices and number of object fields

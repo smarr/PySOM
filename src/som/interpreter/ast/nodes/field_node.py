@@ -32,7 +32,6 @@ class FieldReadNode(_AbstractFieldNode):
 
 
 class FieldWriteNode(_AbstractFieldNode):
-
     _immutable_fields_ = ["_value_exp?"]
     _child_nodes_ = ["_value_exp"]
 

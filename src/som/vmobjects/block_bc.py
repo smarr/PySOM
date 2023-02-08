@@ -11,7 +11,6 @@ from som.vmobjects.primitive import (
 
 
 class BcBlock(AbstractObject):
-
     _immutable_fields_ = ["_method", "_outer"]
 
     def __init__(self, method, inner):
