@@ -44,9 +44,12 @@ class ToDoInlined(ExpressionNode):
 
     def execute(self, frame):
         start = self._from_expr.execute(frame)
-        assert isinstance(start, Integer)
-
         end = self._to_expr.execute(frame)
+
+        if isinstance(start, Double):
+            return self._execute_double(frame, start, end)
+
+        assert isinstance(start, Integer)
 
         if isinstance(end, Integer):
             end_int = end.get_embedded_integer()
@@ -65,5 +68,26 @@ class ToDoInlined(ExpressionNode):
             if we_are_jitted():
                 self._idx_write.write_value(frame, nilObject)
             i += 1
+
+        return start
+
+    def _execute_double(self, frame, start, end):
+        if isinstance(end, Integer):
+            end_d = float(end.get_embedded_integer())
+        else:
+            assert isinstance(end, Double)
+            end_d = end.get_embedded_double()
+
+        if we_are_jitted():
+            self._idx_write.write_value(frame, nilObject)
+
+        i = start.get_embedded_double()
+        while i <= end_d:
+            driver.jit_merge_point(self=self)
+            self._idx_write.write_value(frame, Double(i))
+            self._do_expr.execute(frame)
+            if we_are_jitted():
+                self._idx_write.write_value(frame, nilObject)
+            i += 1.0
 
         return start
