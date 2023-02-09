@@ -510,6 +510,8 @@ class MethodGenerationContext(MethodGenerationContextBase):
             global_name = self._literals[0]
             assert isinstance(global_name, Symbol)
 
+            source_section = self.lexical_scope.arguments[0].source
+
             if global_name is sym_true:
                 return LiteralReturn(self.signature, trueObject, source_section)
             if global_name is sym_false:
