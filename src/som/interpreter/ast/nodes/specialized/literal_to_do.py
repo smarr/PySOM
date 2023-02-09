@@ -16,7 +16,14 @@ def get_printable_location(self):
     )
 
 
-driver = JitDriver(
+driver_int = JitDriver(
+    greens=["self"],
+    reds="auto",
+    is_recursive=True,
+    get_printable_location=get_printable_location,
+)
+
+driver_double = JitDriver(
     greens=["self"],
     reds="auto",
     is_recursive=True,
@@ -62,7 +69,7 @@ class ToDoInlined(ExpressionNode):
 
         i = start.get_embedded_integer()
         while i <= end_int:
-            driver.jit_merge_point(self=self)
+            driver_int.jit_merge_point(self=self)
             self._idx_write.write_value(frame, Integer(i))
             self._do_expr.execute(frame)
             if we_are_jitted():
@@ -83,7 +90,7 @@ class ToDoInlined(ExpressionNode):
 
         i = start.get_embedded_double()
         while i <= end_d:
-            driver.jit_merge_point(self=self)
+            driver_double.jit_merge_point(self=self)
             self._idx_write.write_value(frame, Double(i))
             self._do_expr.execute(frame)
             if we_are_jitted():
