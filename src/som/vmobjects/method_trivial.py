@@ -77,7 +77,7 @@ class LiteralReturn(AbstractTrivialMethod):
 
             if merge_scope:
                 self.merge_scope_into(mgenc)
-            return LiteralNode(self._value)
+            return LiteralNode(self._value, self.source_section)
 
     else:
 

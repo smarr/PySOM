@@ -4,7 +4,7 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 class LiteralNode(ExpressionNode):
     _immutable_fields_ = ["_value"]
 
-    def __init__(self, value, source_section=None):
+    def __init__(self, value, source_section):
         ExpressionNode.__init__(self, source_section)
         self._value = value
 

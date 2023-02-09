@@ -73,7 +73,7 @@ class Parser(ParserBase):
         if not expressions:
             from som.vm.globals import nilObject
 
-            return LiteralNode(nilObject)
+            return LiteralNode(nilObject, self._get_source_section(coordinate))
         if len(expressions) == 1:
             return expressions[0]
 
@@ -419,8 +419,7 @@ class Parser(ParserBase):
         coord = self._lexer.get_source_coordinate()
         val = self._get_object_for_current_literal()
 
-        lit = LiteralNode(val)
-        self._assign_source(lit, coord)
+        lit = LiteralNode(val, self._get_source_section(coord))
         return lit
 
     def _get_object_for_current_literal(self):
