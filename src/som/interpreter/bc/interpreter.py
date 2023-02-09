@@ -16,7 +16,9 @@ from som.interpreter.send import lookup_and_send_2, lookup_and_send_3
 from som.vm.globals import nilObject, trueObject, falseObject
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import BcBlock
-from som.vmobjects.integer import int_0, int_1
+from som.vmobjects.integer import int_0, int_1, Integer
+from som.vmobjects.double import Double
+
 
 from rlib import jit
 from rlib.jit import promote, elidable_promote, we_are_jitted
@@ -476,8 +478,6 @@ def interpret(method, frame, max_stack_size):
 
         elif bytecode == Bytecodes.inc:
             val = stack[stack_ptr]
-            from som.vmobjects.integer import Integer
-            from som.vmobjects.double import Double
             from som.vmobjects.biginteger import BigInteger
 
             if isinstance(val, Integer):
@@ -492,8 +492,6 @@ def interpret(method, frame, max_stack_size):
 
         elif bytecode == Bytecodes.dec:
             val = stack[stack_ptr]
-            from som.vmobjects.integer import Integer
-            from som.vmobjects.double import Double
             from som.vmobjects.biginteger import BigInteger
 
             if isinstance(val, Integer):
@@ -563,7 +561,8 @@ def interpret(method, frame, max_stack_size):
         elif bytecode == Bytecodes.jump_if_greater:
             top = stack[stack_ptr]
             top_2 = stack[stack_ptr - 1]
-            if top.get_embedded_integer() > top_2.get_embedded_integer():
+            if ((isinstance(top, Integer) and isinstance(top_2, Integer) and top.get_embedded_integer() > top_2.get_embedded_integer())
+                 or (isinstance(top, Double) and isinstance(top_2, Double) and top.get_embedded_double() > top_2.get_embedded_double())):
                 stack[stack_ptr] = None
                 stack[stack_ptr - 1] = None
                 stack_ptr -= 2
