@@ -561,8 +561,15 @@ def interpret(method, frame, max_stack_size):
         elif bytecode == Bytecodes.jump_if_greater:
             top = stack[stack_ptr]
             top_2 = stack[stack_ptr - 1]
-            if ((isinstance(top, Integer) and isinstance(top_2, Integer) and top.get_embedded_integer() > top_2.get_embedded_integer())
-                 or (isinstance(top, Double) and isinstance(top_2, Double) and top.get_embedded_double() > top_2.get_embedded_double())):
+            if (
+                isinstance(top, Integer)
+                and isinstance(top_2, Integer)
+                and top.get_embedded_integer() > top_2.get_embedded_integer()
+            ) or (
+                isinstance(top, Double)
+                and isinstance(top_2, Double)
+                and top.get_embedded_double() > top_2.get_embedded_double()
+            ):
                 stack[stack_ptr] = None
                 stack[stack_ptr - 1] = None
                 stack_ptr -= 2
