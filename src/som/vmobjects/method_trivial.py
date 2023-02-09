@@ -72,9 +72,11 @@ class LiteralReturn(AbstractTrivialMethod):
 
     if is_ast_interpreter():
 
-        def inline(self, _mgenc, merge_scope=True):  # pylint: disable=unused-argument
+        def inline(self, mgenc, merge_scope=True):  # pylint: disable=unused-argument
             from som.interpreter.ast.nodes.literal_node import LiteralNode
 
+            if merge_scope:
+                self.merge_scope_into(mgenc)
             return LiteralNode(self._value)
 
     else:
