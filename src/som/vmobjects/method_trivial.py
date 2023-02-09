@@ -4,6 +4,7 @@ from som.compiler.bc.bytecode_generator import (
     emit_push_global,
     emit_push_field_with_index,
 )
+from som.compiler.ast.variable import Argument
 from som.interp_type import is_ast_interpreter
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.bc.frame import stack_pop_old_arguments_and_push_result
@@ -40,11 +41,12 @@ class AbstractTrivialMethod(AbstractMethod):
 
 
 class LiteralReturn(AbstractTrivialMethod):
-    _immutable_fields_ = ["_value"]
+    _immutable_fields_ = ["_value", "source_section"]
 
-    def __init__(self, signature, value):
+    def __init__(self, signature, value, source_section):
         AbstractTrivialMethod.__init__(self, signature, None)
         self._value = value
+        self.source_section = source_section
 
     def set_holder(self, value):
         self._holder = value
@@ -79,6 +81,14 @@ class LiteralReturn(AbstractTrivialMethod):
 
         def inline(self, mgenc, merge_scope=True):  # pylint: disable=unused-argument
             emit_push_constant(mgenc, self._value)
+
+    def merge_scope_into(self, mgenc):
+        mgenc.inline_as_locals([Argument("$inlinedI", 1, self.source_section)])
+
+    def get_argument(self, idx, ctx_level):
+        if idx == 1 and ctx_level == 0:
+            return Argument("$inlinedI", idx, self.source_section)
+        raise Exception("This should not happen")
 
 
 class GlobalRead(AbstractTrivialMethod):

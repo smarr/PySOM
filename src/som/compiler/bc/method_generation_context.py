@@ -482,16 +482,18 @@ class MethodGenerationContext(MethodGenerationContextBase):
         ):
             return None
 
+        source_section = self.lexical_scope.arguments[0].source
+
         if len(self._literals) == 1:
-            return LiteralReturn(self.signature, self._literals[0])
+            return LiteralReturn(self.signature, self._literals[0], source_section)
         if self._bytecode[0] == Bytecodes.push_0:
-            return LiteralReturn(self.signature, int_0)
+            return LiteralReturn(self.signature, int_0, source_section)
         if self._bytecode[0] == Bytecodes.push_1:
-            return LiteralReturn(self.signature, int_1)
+            return LiteralReturn(self.signature, int_1, source_section)
         if self._bytecode[0] == Bytecodes.push_nil:
             from som.vm.globals import nilObject
 
-            return LiteralReturn(self.signature, nilObject)
+            return LiteralReturn(self.signature, nilObject, source_section)
         raise NotImplementedError(
             "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
         )
@@ -509,13 +511,13 @@ class MethodGenerationContext(MethodGenerationContextBase):
             assert isinstance(global_name, Symbol)
 
             if global_name is sym_true:
-                return LiteralReturn(self.signature, trueObject)
+                return LiteralReturn(self.signature, trueObject, source_section)
             if global_name is sym_false:
-                return LiteralReturn(self.signature, falseObject)
+                return LiteralReturn(self.signature, falseObject, source_section)
             if global_name is sym_nil:
                 from som.vm.globals import nilObject
 
-                return LiteralReturn(self.signature, nilObject)
+                return LiteralReturn(self.signature, nilObject, source_section)
 
             return GlobalRead(
                 self.signature,

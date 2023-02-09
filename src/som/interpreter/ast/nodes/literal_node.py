@@ -14,4 +14,4 @@ class LiteralNode(ExpressionNode):
     def create_trivial_method(self, signature):
         from som.vmobjects.method_trivial import LiteralReturn
 
-        return LiteralReturn(signature, self._value)
+        return LiteralReturn(signature, self._value, self.source_section)
