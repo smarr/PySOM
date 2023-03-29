@@ -205,21 +205,21 @@ class Parser(ParserBase):
 
         source = self._get_source_section(coord)
 
-        if not is_super_send:
-            sel = selector.get_embedded_string()
-            if sel == "&&":
-                inlined = self._try_inlining_and(receiver, arg_expr, source, mgenc)
-                if inlined is not None:
-                    return inlined
-            elif sel == "||":
-                inlined = self._try_inlining_or(receiver, arg_expr, source, mgenc)
-                if inlined is not None:
-                    return inlined
-
         if is_super_send:
             return BinarySuper(
                 selector, receiver, arg_expr, mgenc.holder.get_super_class(), source
             )
+
+        sel = selector.get_embedded_string()
+        if sel == "&&":
+            inlined = self._try_inlining_and(receiver, arg_expr, source, mgenc)
+            if inlined is not None:
+                return inlined
+        elif sel == "||":
+            inlined = self._try_inlining_or(receiver, arg_expr, source, mgenc)
+            if inlined is not None:
+                return inlined
+
         if selector.get_embedded_string() == "+" and isinstance(arg_expr, LiteralNode):
             lit_val = arg_expr.execute(None)
             from som.vmobjects.integer import Integer
