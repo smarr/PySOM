@@ -1,4 +1,6 @@
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
+from som.interpreter.ast.nodes.supernodes.square_node import NonLocalVariableSquareNode, LocalFrameVarSquareNode, \
+    LocalInnerVarSquareNode
 from som.interpreter.ast.nodes.variable_node import (
     UninitializedReadNode,
     UninitializedWriteNode,
@@ -66,6 +68,14 @@ class _Variable(object):
         if self.is_accessed_out_of_context():
             return LocalInnerVarWriteNode(self.access_idx, value_expr, source_section)
         return LocalFrameVarWriteNode(self.access_idx, value_expr, source_section)
+
+    def get_square_node(self, context_level, source_section):
+        assert self.access_idx >= 0
+        if context_level > 0:
+            return NonLocalVariableSquareNode(context_level, self.access_idx, source_section)
+        if self.is_accessed_out_of_context():
+            return LocalInnerVarSquareNode(self.access_idx, source_section)
+        return LocalFrameVarSquareNode(self.access_idx, source_section)
 
     def get_push_bytecode(self, ctx_level):
         if self.is_accessed_out_of_context():
@@ -143,6 +153,7 @@ class Argument(_Variable):
                 )
             return LocalFrameVarReadNode(FRAME_AND_INNER_RCVR_IDX, source_section)
         return _Variable.get_initialized_read_node(self, context_level, source_section)
+
 
     def copy_for_inlining(self, idx):
         if self._name == "$blockSelf":

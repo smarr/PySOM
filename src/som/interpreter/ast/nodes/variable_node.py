@@ -19,6 +19,11 @@ class UninitializedReadNode(ExpressionNode):
         self.var = var
         self._context_level = context_level
 
+    def is_for_same_var(self, other):
+        if not isinstance(other, UninitializedReadNode):
+            return False
+        return self.var is other.var and self._context_level == other._context_level
+
     def execute(self, frame):
         return self._specialize().execute(frame)
 
@@ -193,6 +198,10 @@ class LocalInnerVarWriteNode(_LocalVariableWriteNode):
 
 
 class LocalFrameVarReadNode(_LocalVariableNode):
+
+    def is_for_same_var(self, other):
+        return self._frame_idx == other._frame_idx
+
     def execute(self, frame):
         return read_frame(frame, self._frame_idx)
 

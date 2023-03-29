@@ -26,6 +26,8 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
     IfElseInlinedNode,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
+from som.interpreter.ast.nodes.supernodes.square_node import UninitializedVarSquareNode
+from som.interpreter.ast.nodes.variable_node import UninitializedReadNode
 from som.vm.symbols import symbol_for
 
 from som.vmobjects.array import Array
@@ -211,6 +213,11 @@ class Parser(ParserBase):
             )
 
         sel = selector.get_embedded_string()
+        if sel == "*":
+            if isinstance(receiver, UninitializedReadNode) and isinstance(arg_expr, UninitializedReadNode):
+                if receiver.is_for_same_var(arg_expr):
+                    return UninitializedVarSquareNode(receiver, source)
+
         if sel == "&&":
             inlined = self._try_inlining_and(receiver, arg_expr, source, mgenc)
             if inlined is not None:
