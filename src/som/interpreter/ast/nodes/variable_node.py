@@ -127,6 +127,10 @@ class _NonLocalVariableNode(ContextualNode):
 
 
 class NonLocalVariableReadNode(_NonLocalVariableNode):
+
+    def get_frame_idx(self):
+        return self._frame_idx
+
     def execute(self, frame):
         block = self.determine_block(frame)
         assert isinstance(block, AstBlock)
@@ -207,6 +211,9 @@ class LocalFrameVarReadNode(_LocalVariableNode):
 
     def is_self(self):
         return self._frame_idx == FRAME_AND_INNER_RCVR_IDX
+
+    def get_frame_idx(self):
+        return self._frame_idx
 
 
 class LocalFrameVarWriteNode(_LocalVariableWriteNode):

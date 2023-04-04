@@ -4,6 +4,7 @@ from som.compiler.parser import ParserBase
 from som.compiler.symbol import Symbol
 
 from som.interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
+from som.interpreter.ast.nodes.field_node import FieldReadNode
 from som.interpreter.ast.nodes.literal_node import LiteralNode
 from som.interpreter.ast.nodes.message.super_node import (
     UnarySuper,
@@ -26,9 +27,12 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
     IfElseInlinedNode,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
+from som.interpreter.ast.nodes.supernodes.field_string_equal_node import LocalFieldStringEqualsNode, \
+    NonLocalFieldStringEqualsNode
 from som.interpreter.ast.nodes.supernodes.square_node import UninitializedVarSquareNode
 from som.interpreter.ast.nodes.supernodes.string_equals_node import StringEqualsNode
-from som.interpreter.ast.nodes.variable_node import UninitializedReadNode
+from som.interpreter.ast.nodes.variable_node import UninitializedReadNode, LocalFrameVarReadNode, \
+    NonLocalVariableReadNode
 from som.vm.symbols import symbol_for
 
 from som.vmobjects.array import Array
@@ -222,6 +226,17 @@ class Parser(ParserBase):
             if isinstance(arg_expr, LiteralNode):
                 value = arg_expr.execute(None)
                 if isinstance(value, String):
+                    if isinstance(receiver, FieldReadNode):
+                        self_exp = receiver.get_self()
+                        if isinstance(self_exp, LocalFrameVarReadNode):
+                            return LocalFieldStringEqualsNode(
+                                receiver.field_idx, self_exp.get_frame_idx(),
+                                value.get_embedded_string(), self.universe, source)
+                        elif isinstance(self_exp, NonLocalVariableReadNode):
+                            return NonLocalFieldStringEqualsNode(
+                                receiver.field_idx,
+                                self_exp.get_frame_idx(), self_exp.get_context_level(),
+                                value.get_embedded_string(), self.universe, source)
                     return StringEqualsNode(receiver, value, self.universe, source)
 
         if sel == "&&":

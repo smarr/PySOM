@@ -25,7 +25,13 @@ class NonLocalVariableSquareNode(NonLocalVariableReadNode):
                 raise NotImplementedError("not yet implemented")
 
     def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
-        pass
+        assert (
+                self._context_level > removed_ctx_level
+        ), "TODO: do I need to think about this more?"
+        self._context_level -= 1
+        assert (
+                self._context_level > 0
+        ), "This should remain true, because a block enclosing this one got inlined somewhere"
 
 
 class LocalFrameVarSquareNode(LocalFrameVarReadNode):

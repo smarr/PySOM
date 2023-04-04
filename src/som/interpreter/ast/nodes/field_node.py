@@ -30,6 +30,9 @@ class FieldReadNode(_AbstractFieldNode):
             ctx_level = 0
         return FieldRead(signature, self.field_idx, ctx_level)
 
+    def get_self(self):
+        return self._self_exp
+
 
 class FieldWriteNode(_AbstractFieldNode):
     _immutable_fields_ = ["_value_exp?"]
