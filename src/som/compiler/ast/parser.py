@@ -240,6 +240,7 @@ class Parser(ParserBase):
                                 receiver.field_idx,
                                 self_exp.get_frame_idx(),
                                 value.get_embedded_string(),
+                                True,
                                 self.universe,
                                 source,
                             )
@@ -249,10 +250,48 @@ class Parser(ParserBase):
                                 self_exp.get_frame_idx(),
                                 self_exp.get_context_level(),
                                 value.get_embedded_string(),
+                                True,
                                 self.universe,
                                 source,
                             )
-                    return StringEqualsNode(receiver, value, self.universe, source)
+                    return StringEqualsNode(
+                        receiver,
+                        value.get_embedded_string(),
+                        True,
+                        self.universe,
+                        source,
+                    )
+            if isinstance(receiver, LiteralNode):
+                value = receiver.execute(None)
+                if isinstance(value, String):
+                    if isinstance(arg_expr, FieldReadNode):
+                        self_exp = arg_expr.get_self()
+                        if isinstance(self_exp, LocalFrameVarReadNode):
+                            return LocalFieldStringEqualsNode(
+                                arg_expr.field_idx,
+                                self_exp.get_frame_idx(),
+                                value.get_embedded_string(),
+                                False,
+                                self.universe,
+                                source,
+                            )
+                        if isinstance(self_exp, NonLocalVariableReadNode):
+                            return NonLocalFieldStringEqualsNode(
+                                arg_expr.field_idx,
+                                self_exp.get_frame_idx(),
+                                self_exp.get_context_level(),
+                                value.get_embedded_string(),
+                                False,
+                                self.universe,
+                                source,
+                            )
+                    return StringEqualsNode(
+                        arg_expr,
+                        value.get_embedded_string(),
+                        False,
+                        self.universe,
+                        source,
+                    )
 
         if sel == "&&":
             inlined = self._try_inlining_and(receiver, arg_expr, source, mgenc)

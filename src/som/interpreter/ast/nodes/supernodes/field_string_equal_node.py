@@ -16,12 +16,15 @@ from som.vmobjects.string import String
 class LocalFieldStringEqualsNode(ExpressionNode):
     _immutable_fields_ = ["_field_idx", "_frame_idx", "_str", "_universe"]
 
-    def __init__(self, field_idx, frame_idx, str_obj, universe, source_section):
+    def __init__(
+        self, field_idx, frame_idx, str_obj, str_is_arg, universe, source_section
+    ):
         ExpressionNode.__init__(self, source_section)
         self._field_idx = field_idx
         self._frame_idx = frame_idx
         self._str = str_obj
         self._universe = universe
+        self._str_is_arg = str_is_arg
 
     def execute(self, frame):
         self_obj = read_frame(frame, self._frame_idx)
@@ -39,15 +42,18 @@ class LocalFieldStringEqualsNode(ExpressionNode):
 
     def _make_generic_send(self, receiver):
         str_obj = String(self._str)
+        literal = LiteralNode(str_obj, self.source_section)
+        read = FieldReadNode(
+            LocalFrameVarReadNode(self._frame_idx, self.source_section),
+            self._field_idx,
+            self.source_section,
+        )
+
         node = BinarySend(
             symbol_for("="),
             self._universe,
-            FieldReadNode(
-                LocalFrameVarReadNode(self._frame_idx, self.source_section),
-                self._field_idx,
-                self.source_section,
-            ),
-            LiteralNode(str_obj, self.source_section),
+            read if self._str_is_arg else literal,
+            literal if self._str_is_arg else read,
             self.source_section,
         )
         self.replace(node)
@@ -62,12 +68,20 @@ class LocalFieldStringEqualsNode(ExpressionNode):
 
 class NonLocalFieldStringEqualsNode(ContextualNode):
     def __init__(
-        self, field_idx, frame_idx, ctx_level, str_obj, universe, source_section
+        self,
+        field_idx,
+        frame_idx,
+        ctx_level,
+        str_obj,
+        str_is_arg,
+        universe,
+        source_section,
     ):
         ContextualNode.__init__(self, ctx_level, source_section)
         self._field_idx = field_idx
         self._frame_idx = frame_idx
         self._str = str_obj
+        self._str_is_arg = str_is_arg
         self._universe = universe
 
     def execute(self, frame):
@@ -91,6 +105,7 @@ class NonLocalFieldStringEqualsNode(ContextualNode):
                 self._field_idx,
                 self._frame_idx,
                 self._str,
+                self._str_is_arg,
                 self._universe,
                 self.source_section,
             )
@@ -107,17 +122,20 @@ class NonLocalFieldStringEqualsNode(ContextualNode):
 
     def _make_generic_send(self, receiver):
         str_obj = String(self._str)
+        literal = LiteralNode(str_obj, self.source_section)
+        read = FieldReadNode(
+            NonLocalVariableReadNode(
+                self._context_level, self._frame_idx, self.source_section
+            ),
+            self._field_idx,
+            self.source_section,
+        )
+
         node = BinarySend(
             symbol_for("="),
             self._universe,
-            FieldReadNode(
-                NonLocalVariableReadNode(
-                    self._context_level, self._frame_idx, self.source_section
-                ),
-                self._field_idx,
-                self.source_section,
-            ),
-            LiteralNode(str_obj, self.source_section),
+            read if self._str_is_arg else literal,
+            literal if self._str_is_arg else read,
             self.source_section,
         )
         self.replace(node)
