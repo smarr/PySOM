@@ -27,12 +27,17 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
     IfElseInlinedNode,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
-from som.interpreter.ast.nodes.supernodes.field_string_equal_node import LocalFieldStringEqualsNode, \
-    NonLocalFieldStringEqualsNode
+from som.interpreter.ast.nodes.supernodes.field_string_equal_node import (
+    LocalFieldStringEqualsNode,
+    NonLocalFieldStringEqualsNode,
+)
 from som.interpreter.ast.nodes.supernodes.square_node import UninitializedVarSquareNode
 from som.interpreter.ast.nodes.supernodes.string_equals_node import StringEqualsNode
-from som.interpreter.ast.nodes.variable_node import UninitializedReadNode, LocalFrameVarReadNode, \
-    NonLocalVariableReadNode
+from som.interpreter.ast.nodes.variable_node import (
+    UninitializedReadNode,
+    LocalFrameVarReadNode,
+    NonLocalVariableReadNode,
+)
 from som.vm.symbols import symbol_for
 
 from som.vmobjects.array import Array
@@ -219,7 +224,9 @@ class Parser(ParserBase):
 
         sel = selector.get_embedded_string()
         if sel == "*":
-            if isinstance(receiver, UninitializedReadNode) and isinstance(arg_expr, UninitializedReadNode):
+            if isinstance(receiver, UninitializedReadNode) and isinstance(
+                arg_expr, UninitializedReadNode
+            ):
                 if receiver.is_for_same_var(arg_expr):
                     return UninitializedVarSquareNode(receiver, source)
         if sel == "=":
@@ -230,13 +237,21 @@ class Parser(ParserBase):
                         self_exp = receiver.get_self()
                         if isinstance(self_exp, LocalFrameVarReadNode):
                             return LocalFieldStringEqualsNode(
-                                receiver.field_idx, self_exp.get_frame_idx(),
-                                value.get_embedded_string(), self.universe, source)
-                        elif isinstance(self_exp, NonLocalVariableReadNode):
+                                receiver.field_idx,
+                                self_exp.get_frame_idx(),
+                                value.get_embedded_string(),
+                                self.universe,
+                                source,
+                            )
+                        if isinstance(self_exp, NonLocalVariableReadNode):
                             return NonLocalFieldStringEqualsNode(
                                 receiver.field_idx,
-                                self_exp.get_frame_idx(), self_exp.get_context_level(),
-                                value.get_embedded_string(), self.universe, source)
+                                self_exp.get_frame_idx(),
+                                self_exp.get_context_level(),
+                                value.get_embedded_string(),
+                                self.universe,
+                                source,
+                            )
                     return StringEqualsNode(receiver, value, self.universe, source)
 
         if sel == "&&":

@@ -27,10 +27,12 @@ class StringEqualsNode(ExpressionNode):
 
     def _make_generic_send(self, receiver):
         str_obj = String(self._str)
-        node = BinarySend(symbol_for("="),
-                          self._universe,
-                          self._rcvr_expr,
-                          LiteralNode(str_obj, self.source_section),
-                          self.source_section)
+        node = BinarySend(
+            symbol_for("="),
+            self._universe,
+            self._rcvr_expr,
+            LiteralNode(str_obj, self.source_section),
+            self.source_section,
+        )
         self.replace(node)
         return node.exec_evaluated_2(receiver, str_obj)

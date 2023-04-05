@@ -1,6 +1,10 @@
 from som.interpreter.ast.frame import read_frame, FRAME_AND_INNER_RCVR_IDX, read_inner
-from som.interpreter.ast.nodes.variable_node import LocalFrameVarReadNode, NonLocalVariableReadNode, \
-    LocalInnerVarReadNode, UninitializedReadNode
+from som.interpreter.ast.nodes.variable_node import (
+    LocalFrameVarReadNode,
+    NonLocalVariableReadNode,
+    LocalInnerVarReadNode,
+    UninitializedReadNode,
+)
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
 from som.vmobjects.block_ast import AstBlock
 
@@ -21,16 +25,15 @@ class NonLocalVariableSquareNode(NonLocalVariableReadNode):
                 # self.replace(
                 #     LocalFrameVarReadNode(self._frame_idx, self.source_section)
                 # )
-            else:
-                raise NotImplementedError("not yet implemented")
+            raise NotImplementedError("not yet implemented")
 
     def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
         assert (
-                self._context_level > removed_ctx_level
+            self._context_level > removed_ctx_level
         ), "TODO: do I need to think about this more?"
         self._context_level -= 1
         assert (
-                self._context_level > 0
+            self._context_level > 0
         ), "This should remain true, because a block enclosing this one got inlined somewhere"
 
 
@@ -61,5 +64,5 @@ class UninitializedVarSquareNode(ExpressionNode):
         node = self._var_read_node
         assert isinstance(node, UninitializedReadNode)
         return self.replace(
-            node.var.get_square_node(
-                node._context_level, self.source_section))
+            node.var.get_square_node(node._context_level, self.source_section)
+        )

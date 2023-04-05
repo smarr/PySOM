@@ -4,7 +4,10 @@ from som.interpreter.ast.nodes.expression_node import ExpressionNode
 from som.interpreter.ast.nodes.field_node import FieldReadNode
 from som.interpreter.ast.nodes.literal_node import LiteralNode
 from som.interpreter.ast.nodes.message.generic_node import BinarySend
-from som.interpreter.ast.nodes.variable_node import LocalFrameVarReadNode, NonLocalVariableReadNode
+from som.interpreter.ast.nodes.variable_node import (
+    LocalFrameVarReadNode,
+    NonLocalVariableReadNode,
+)
 from som.vm.globals import trueObject, falseObject, nilObject
 from som.vm.symbols import symbol_for
 from som.vmobjects.string import String
@@ -36,28 +39,31 @@ class LocalFieldStringEqualsNode(ExpressionNode):
 
     def _make_generic_send(self, receiver):
         str_obj = String(self._str)
-        node = BinarySend(symbol_for("="),
-                          self._universe,
-                          FieldReadNode(
-                              LocalFrameVarReadNode(self._frame_idx, self.source_section),
-                              self._field_idx,
-                              self.source_section),
-                          LiteralNode(str_obj, self.source_section),
-                          self.source_section)
+        node = BinarySend(
+            symbol_for("="),
+            self._universe,
+            FieldReadNode(
+                LocalFrameVarReadNode(self._frame_idx, self.source_section),
+                self._field_idx,
+                self.source_section,
+            ),
+            LiteralNode(str_obj, self.source_section),
+            self.source_section,
+        )
         self.replace(node)
         return node.exec_evaluated_2(receiver, str_obj)
 
     def handle_inlining(self, mgenc):
         assert False
 
-    def handle_outer_inlined(
-        self, removed_ctx_level, mgenc_with_inlined
-    ):
+    def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
         assert False
 
 
 class NonLocalFieldStringEqualsNode(ContextualNode):
-    def __init__(self, field_idx, frame_idx, ctx_level, str_obj, universe, source_section):
+    def __init__(
+        self, field_idx, frame_idx, ctx_level, str_obj, universe, source_section
+    ):
         ContextualNode.__init__(self, ctx_level, source_section)
         self._field_idx = field_idx
         self._frame_idx = frame_idx
@@ -82,29 +88,37 @@ class NonLocalFieldStringEqualsNode(ContextualNode):
         self._context_level -= 1
         if self._context_level == 0:
             node = LocalFieldStringEqualsNode(
-                self._field_idx, self._frame_idx, self._str, self._universe, self.source_section)
+                self._field_idx,
+                self._frame_idx,
+                self._str,
+                self._universe,
+                self.source_section,
+            )
             self.replace(node)
 
-    def handle_outer_inlined(
-        self, removed_ctx_level, mgenc_with_inlined
-    ):
+    def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
         assert (
-                self._context_level > removed_ctx_level
+            self._context_level > removed_ctx_level
         ), "TODO: do I need to think about this more?"
         self._context_level -= 1
         assert (
-                self._context_level > 0
+            self._context_level > 0
         ), "This should remain true, because a block enclosing this one got inlined somewhere"
 
     def _make_generic_send(self, receiver):
         str_obj = String(self._str)
-        node = BinarySend(symbol_for("="),
-                          self._universe,
-                          FieldReadNode(
-                              NonLocalVariableReadNode(self._context_level, self._frame_idx, self.source_section),
-                              self._field_idx,
-                              self.source_section),
-                          LiteralNode(str_obj, self.source_section),
-                          self.source_section)
+        node = BinarySend(
+            symbol_for("="),
+            self._universe,
+            FieldReadNode(
+                NonLocalVariableReadNode(
+                    self._context_level, self._frame_idx, self.source_section
+                ),
+                self._field_idx,
+                self.source_section,
+            ),
+            LiteralNode(str_obj, self.source_section),
+            self.source_section,
+        )
         self.replace(node)
         return node.exec_evaluated_2(receiver, str_obj)

@@ -127,7 +127,6 @@ class _NonLocalVariableNode(ContextualNode):
 
 
 class NonLocalVariableReadNode(_NonLocalVariableNode):
-
     def get_frame_idx(self):
         return self._frame_idx
 
@@ -202,7 +201,6 @@ class LocalInnerVarWriteNode(_LocalVariableWriteNode):
 
 
 class LocalFrameVarReadNode(_LocalVariableNode):
-
     def is_for_same_var(self, other):
         return self._frame_idx == other._frame_idx
 
