@@ -64,5 +64,8 @@ class UninitializedVarSquareNode(ExpressionNode):
         node = self._var_read_node
         assert isinstance(node, UninitializedReadNode)
         return self.replace(
-            node.var.get_square_node(node._context_level, self.source_section)
+            node.var.get_square_node(
+                node._context_level,  # pylint: disable=protected-access
+                self.source_section,
+            )
         )
