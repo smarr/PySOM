@@ -456,11 +456,11 @@ def interpret(method, frame, max_stack_size):
             from som.vmobjects.biginteger import BigInteger
 
             if isinstance(val, Integer):
-                result = val.prim_inc()
+                result = val.prim_inc(1)
             elif isinstance(val, Double):
-                result = val.prim_inc()
+                result = val.prim_inc(1.0)
             elif isinstance(val, BigInteger):
-                result = val.prim_inc()
+                result = val.prim_inc(1)
             else:
                 return _not_yet_implemented()
             stack[stack_ptr] = result
@@ -486,7 +486,7 @@ def interpret(method, frame, max_stack_size):
             ctx_level = method.get_bytecode(current_bc_idx + 2)
             self_obj = get_self(frame, ctx_level)
 
-            self_obj.inc_field(field_idx)
+            self_obj.inc_field(field_idx, 1)
 
         elif bytecode == Bytecodes.inc_field_push:
             field_idx = method.get_bytecode(current_bc_idx + 1)
@@ -494,7 +494,7 @@ def interpret(method, frame, max_stack_size):
             self_obj = get_self(frame, ctx_level)
 
             stack_ptr += 1
-            stack[stack_ptr] = self_obj.inc_field(field_idx)
+            stack[stack_ptr] = self_obj.inc_field(field_idx, 1)
 
         elif bytecode == Bytecodes.jump:
             next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)

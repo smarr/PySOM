@@ -41,8 +41,8 @@ class Double(AbstractObject):
         r = self._get_float(right)
         return Double(self._embedded_double * r)
 
-    def prim_inc(self):
-        return Double(self._embedded_double + 1.0)
+    def prim_inc(self, inc_val):
+        return Double(self._embedded_double + inc_val)
 
     def prim_dec(self):
         return Double(self._embedded_double - 1.0)

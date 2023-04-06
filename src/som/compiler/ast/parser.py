@@ -302,12 +302,16 @@ class Parser(ParserBase):
             if inlined is not None:
                 return inlined
 
-        if selector.get_embedded_string() == "+" and isinstance(arg_expr, LiteralNode):
+        if isinstance(arg_expr, LiteralNode):
             lit_val = arg_expr.execute(None)
             from som.vmobjects.integer import Integer
 
-            if isinstance(lit_val, Integer) and lit_val.get_embedded_integer() == 1:
-                return IntIncrementNode(receiver, source)
+            if isinstance(lit_val, Integer):
+                val = lit_val.get_embedded_integer()
+                if sel == "+":
+                    return IntIncrementNode(receiver, val, False, self.universe, source)
+                if sel == "-":
+                    return IntIncrementNode(receiver, -val, True, self.universe, source)
 
         return UninitializedMessageNode(
             selector, self.universe, receiver, [arg_expr], source

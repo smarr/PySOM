@@ -8,7 +8,7 @@ from som.vmobjects.method_trivial import FieldRead, FieldWrite
 MAX_FIELD_ACCESS_CHAIN_LENGTH = 6
 
 
-class _AbstractFieldNode(ExpressionNode):
+class AbstractFieldNode(ExpressionNode):
     _immutable_fields_ = ["_self_exp?", "field_idx"]
     _child_nodes_ = ["_self_exp"]
 
@@ -18,7 +18,7 @@ class _AbstractFieldNode(ExpressionNode):
         self.field_idx = field_idx
 
 
-class FieldReadNode(_AbstractFieldNode):
+class FieldReadNode(AbstractFieldNode):
     def execute(self, frame):
         self_obj = self._self_exp.execute(frame)
         return self_obj.get_field(self.field_idx)
@@ -34,12 +34,12 @@ class FieldReadNode(_AbstractFieldNode):
         return self._self_exp
 
 
-class FieldWriteNode(_AbstractFieldNode):
+class FieldWriteNode(AbstractFieldNode):
     _immutable_fields_ = ["_value_exp?"]
     _child_nodes_ = ["_value_exp"]
 
     def __init__(self, self_exp, value_exp, field_idx, source_section):
-        _AbstractFieldNode.__init__(self, self_exp, field_idx, source_section)
+        AbstractFieldNode.__init__(self, self_exp, field_idx, source_section)
         self._value_exp = self.adopt_child(value_exp)
 
     def execute(self, frame):
@@ -67,17 +67,11 @@ class FieldWriteNode(_AbstractFieldNode):
         return True
 
 
-class FieldIncrementNode(_AbstractFieldNode):
-    def execute(self, frame):
-        self_obj = self._self_exp.execute(frame)
-        return self_obj.inc_field(self.field_idx)
-
-
 def create_read_node(self_exp, index, source_section=None):
     return FieldReadNode(self_exp, index, source_section)
 
 
 def create_write_node(self_exp, value_exp, index, source_section=None):
     if isinstance(value_exp, IntIncrementNode) and value_exp.does_access_field(index):
-        return FieldIncrementNode(self_exp, index, source_section)
+        return value_exp.create_field_increment_node(self_exp, index, source_section)
     return FieldWriteNode(self_exp, value_exp, index, source_section)

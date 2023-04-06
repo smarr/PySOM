@@ -109,8 +109,8 @@ class BigInteger(AbstractObject):
 
         return Integer(self._embedded_biginteger.digit(0))
 
-    def prim_inc(self):
-        return BigInteger(bigint_from_int(1).add(self._embedded_biginteger))
+    def prim_inc(self, val):
+        return BigInteger(bigint_from_int(val).add(self._embedded_biginteger))
 
     def prim_dec(self):
         return BigInteger(bigint_from_int(1).sub(self._embedded_biginteger))

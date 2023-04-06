@@ -114,15 +114,15 @@ class Integer(AbstractObject):
         val = as_32_bit_signed_value(self._embedded_integer)
         return Integer(val)
 
-    def prim_inc(self):
+    def prim_inc(self, inc_val):
         from som.vmobjects.biginteger import BigInteger
 
         l = self._embedded_integer
         try:
-            result = ovfcheck(l + 1)
+            result = ovfcheck(l + inc_val)
             return Integer(result)
         except OverflowError:
-            return BigInteger(bigint_from_int(l).add(bigint_from_int(1)))
+            return BigInteger(bigint_from_int(l).add(bigint_from_int(inc_val)))
 
     def prim_dec(self):
         from som.vmobjects.biginteger import BigInteger

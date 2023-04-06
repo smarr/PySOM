@@ -173,9 +173,9 @@ class Object(ObjectWithoutFields):
         location = self.get_location(field_idx)
         return location.read_fn(location, self)
 
-    def inc_field(self, field_idx):
+    def inc_field(self, field_idx, inc_value):
         location = self.get_location(field_idx)
-        return location.inc_fn(location, self)
+        return location.inc_fn(location, self, inc_value)
 
     def set_field(self, field_idx, value):
         # Set the field with the given index to the given value

@@ -14,7 +14,13 @@ from som.vmobjects.string import String
 
 
 class LocalFieldStringEqualsNode(ExpressionNode):
-    _immutable_fields_ = ["_field_idx", "_frame_idx", "_str", "_universe"]
+    _immutable_fields_ = [
+        "_field_idx",
+        "_frame_idx",
+        "_str",
+        "_str_is_arg",
+        "_universe",
+    ]
 
     def __init__(
         self, field_idx, frame_idx, str_obj, str_is_arg, universe, source_section
@@ -23,8 +29,8 @@ class LocalFieldStringEqualsNode(ExpressionNode):
         self._field_idx = field_idx
         self._frame_idx = frame_idx
         self._str = str_obj
-        self._universe = universe
         self._str_is_arg = str_is_arg
+        self._universe = universe
 
     def execute(self, frame):
         self_obj = read_frame(frame, self._frame_idx)
@@ -67,6 +73,14 @@ class LocalFieldStringEqualsNode(ExpressionNode):
 
 
 class NonLocalFieldStringEqualsNode(ContextualNode):
+    _immutable_fields_ = [
+        "_field_idx",
+        "_frame_idx",
+        "_str",
+        "_str_is_arg",
+        "_universe",
+    ]
+
     def __init__(
         self,
         field_idx,

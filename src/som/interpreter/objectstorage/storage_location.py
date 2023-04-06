@@ -154,7 +154,7 @@ def _unwritten_read(_node, _obj):
     return nilObject
 
 
-def _unwritten_inc(_node, _obj):
+def _unwritten_inc(_node, _obj, _value):
     raise UninitializedStorageLocationException()
 
 
@@ -171,10 +171,10 @@ def _make_object_direct_read(field_idx):
 
 
 def _make_object_direct_inc(field_idx):
-    def inc_location(_node, obj):
+    def inc_location(_node, obj, value):
         field_name = "_field" + str(field_idx)
         val = getattr(obj, field_name)
-        new_val = val.prim_inc()
+        new_val = val.prim_inc(value)
         setattr(obj, field_name, new_val)
         return new_val
 
@@ -196,9 +196,9 @@ def _object_array_read(node, obj):
     return obj.fields[node.access_idx]
 
 
-def _object_array_inc(node, obj):
+def _object_array_inc(node, obj, inc_value):
     val = obj.fields[node.access_idx]
-    new_val = val.prim_inc()
+    new_val = val.prim_inc(inc_value)
     obj.fields[node.access_idx] = new_val
     return new_val
 
@@ -229,11 +229,11 @@ def _make_double_direct_read(field_idx):
 
 
 def _make_double_direct_inc(field_idx):
-    def inc_location(node, obj):
+    def inc_location(node, obj, value):
         if obj.is_primitive_set(node.mask):
             field_name = "prim_field" + str(field_idx)
             double_val = longlong2float(getattr(obj, field_name))
-            double_val += 1.0
+            double_val += value
             setattr(obj, field_name, float2longlong(double_val))
             return Double(double_val)
         raise NotImplementedError()
@@ -266,19 +266,19 @@ def _make_long_direct_read(field_idx):
 
 
 def _make_long_direct_inc(field_idx):
-    def read_location(node, obj):
+    def inc_location(node, obj, inc_value):
         if obj.is_primitive_set(node.mask):
             field_name = "prim_field" + str(field_idx)
             val = getattr(obj, field_name)
             try:
-                result = ovfcheck(val + 1)
+                result = ovfcheck(val + inc_value)
                 setattr(obj, field_name, result)
                 return Integer(result)
             except OverflowError:
                 raise NotImplementedError()
         raise NotImplementedError()
 
-    return read_location
+    return inc_location
 
 
 def _make_long_direct_write(field_idx):
@@ -298,11 +298,11 @@ def _long_array_read(node, obj):
     return nilObject
 
 
-def _long_array_inc(node, obj):
+def _long_array_inc(node, obj, inc_value):
     if obj.is_primitive_set(node.mask):
         val = obj.prim_fields[node.access_idx]
         try:
-            result = ovfcheck(val + 1)
+            result = ovfcheck(val + inc_value)
             obj.prim_fields[node.access_idx] = result
             return Integer(result)
         except OverflowError:
@@ -325,10 +325,10 @@ def _double_array_read(node, obj):
     return nilObject
 
 
-def _double_array_inc(node, obj):
+def _double_array_inc(node, obj, inc_value):
     if obj.is_primitive_set(node.mask):
         val = longlong2float(obj.prim_fields[node.access_idx])
-        val += 1.0
+        val += inc_value
         obj.prim_fields[node.access_idx] = float2longlong(val)
         return Double(val)
     raise NotImplementedError()

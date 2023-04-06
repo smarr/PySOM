@@ -9,7 +9,7 @@ from som.compiler.class_generation_context import ClassGenerationContext
 from som.interp_type import is_bytecode_interpreter
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
-from som.interpreter.ast.nodes.field_node import FieldReadNode, FieldIncrementNode
+from som.interpreter.ast.nodes.field_node import FieldReadNode
 from som.interpreter.ast.nodes.global_read_node import _UninitializedGlobalReadNode
 from som.interpreter.ast.nodes.literal_node import LiteralNode
 from som.interpreter.ast.nodes.return_non_local_node import ReturnLocalNode
@@ -24,6 +24,7 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
     IfElseInlinedNode,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
+from som.interpreter.ast.nodes.supernodes.field_inc_node import FieldIncrementNode
 from som.interpreter.ast.nodes.variable_node import (
     UninitializedReadNode,
     LocalFrameVarReadNode,
