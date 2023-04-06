@@ -28,3 +28,10 @@ class AbstractMessageNode(ExpressionNode):
         else:
             args = [arg_exp.execute(frame) for arg_exp in self._arg_exprs]
         return rcvr, args
+
+    def __str__(self):
+        return "%s(%s, %s)" % (
+            self.__class__.__name__,
+            self.source_section,
+            self._selector,
+        )

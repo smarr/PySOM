@@ -98,6 +98,9 @@ class CachedDispatchNode(_AbstractDispatchNode):
     def dispatch_n_bc(self, stack, stack_ptr, _rcvr):
         return self._cached_method.invoke_n(stack, stack_ptr)
 
+    def __repr__(self):
+        return "CachedDispatchNode(%s)" % self._cached_method
+
 
 class CachedDnuNode(_AbstractDispatchNode):
     _immutable_fields_ = ["_selector", "_cached_method"]

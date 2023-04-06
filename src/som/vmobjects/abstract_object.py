@@ -18,3 +18,6 @@ class AbstractObject(object):
         from som.vm.current import current_universe
 
         return "a " + self.get_class(current_universe).get_name().get_embedded_string()
+
+    def __repr__(self):
+        return self.__str__()
