@@ -153,6 +153,23 @@ class BcAbstractMethod(AbstractMethod):
     def set_inline_cache(self, bytecode_index, dispatch_node):
         self._inline_cache[bytecode_index] = dispatch_node
 
+    def drop_old_inline_cache_entries(self, bytecode_index):
+        # Keep in sync with _AbstractGenericMessageNode._get_cache_size_and_drop_old_entries
+        prev = None
+        cache = self._inline_cache[bytecode_index]
+
+        while cache is not None:
+            if not cache.expected_layout.is_latest:
+                # drop old layout from cache
+                if prev is None:
+                    self._inline_cache[bytecode_index] = cache.next_entry
+                else:
+                    prev.next_entry = cache.next_entry
+            else:
+                prev = cache
+
+            cache = cache.next_entry
+
     def patch_variable_access(self, bytecode_index):
         bc = self.get_bytecode(bytecode_index)
         idx = self.get_bytecode(bytecode_index + 1)

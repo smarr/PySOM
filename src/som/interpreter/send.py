@@ -24,23 +24,3 @@ def get_inline_cache_size(cache):
         size += 1
         cache = cache.next_entry
     return size
-
-
-def get_clean_inline_cache_and_size(cache):
-    prev = None
-    new_cache = cache
-    size = 0
-
-    while cache is not None:
-        if not cache.expected_layout.is_latest:
-            if prev is None:
-                new_cache = cache.next_entry
-            else:
-                prev.next_entry = cache.next_entry
-        else:
-            prev = cache
-            size += 1
-
-        cache = cache.next_entry
-
-    return new_cache, size

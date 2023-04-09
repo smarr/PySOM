@@ -8,7 +8,6 @@ from som.interpreter.ast.nodes.dispatch import (
     GenericDispatchNode,
 )
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
-from som.interpreter.send import get_clean_inline_cache_and_size
 
 
 class _AbstractGenericMessageNode(ExpressionNode):
@@ -37,6 +36,25 @@ class _AbstractGenericMessageNode(ExpressionNode):
 
         return None
 
+    def _get_cache_size_and_drop_old_entries(self):
+        # Keep in sync with: BcAbstractMethod.drop_old_inline_cache_entries
+        size = 0
+        prev = None
+        cache = self._dispatch
+        while cache is not None:
+            if not cache.expected_layout.is_latest:
+                # drop old layout from cache
+                if prev is None:
+                    self._dispatch = cache.next_entry
+                else:
+                    prev.next_entry = cache.next_entry
+            else:
+                size += 1
+                prev = cache
+
+            cache = cache.next_entry
+        return size
+
     def _specialize(self, layout, obj):
         if not layout.is_latest:
             obj.update_layout_to_match_class()
@@ -45,7 +63,7 @@ class _AbstractGenericMessageNode(ExpressionNode):
             if cache is not None:
                 return cache
 
-        self._dispatch, cache_size = get_clean_inline_cache_and_size(self._dispatch)
+        cache_size = self._get_cache_size_and_drop_old_entries()
 
         if cache_size < INLINE_CACHE_SIZE:
             method = layout.lookup_invokable(self._selector)

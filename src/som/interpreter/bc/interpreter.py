@@ -21,7 +21,6 @@ from som.interpreter.send import (
     lookup_and_send_2,
     lookup_and_send_3,
     get_inline_cache_size,
-    get_clean_inline_cache_and_size,
 )
 from som.vm.globals import nilObject, trueObject, falseObject
 from som.vmobjects.array import Array
@@ -727,11 +726,7 @@ def _lookup(layout, selector, method, bytecode_index, universe):
 def _update_object_and_invalidate_old_caches(obj, method, bytecode_index, universe):
     obj.update_layout_to_match_class()
     obj.get_object_layout(universe)
-
-    old_cache = method.get_inline_cache(bytecode_index)
-    method.set_inline_cache(
-        bytecode_index, get_clean_inline_cache_and_size(old_cache)[0]
-    )
+    method.drop_old_inline_cache_entries(bytecode_index)
 
 
 def send_does_not_understand(receiver, selector, stack, stack_ptr):
