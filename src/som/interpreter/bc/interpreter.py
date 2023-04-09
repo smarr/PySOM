@@ -365,7 +365,7 @@ def interpret(method, frame, max_stack_size):
                 layout, signature, method, current_bc_idx, current_universe
             )
 
-            if isinstance(layout, GenericDispatchNode) and not layout.is_latest:
+            if not layout.is_latest:
                 _update_object_and_invalidate_old_caches(
                     receiver, method, current_bc_idx, current_universe
                 )
@@ -381,7 +381,7 @@ def interpret(method, frame, max_stack_size):
                 layout, signature, method, current_bc_idx, current_universe
             )
 
-            if isinstance(layout, GenericDispatchNode) and not layout.is_latest:
+            if not layout.is_latest:
                 _update_object_and_invalidate_old_caches(
                     receiver, method, current_bc_idx, current_universe
                 )
@@ -402,7 +402,7 @@ def interpret(method, frame, max_stack_size):
                 layout, signature, method, current_bc_idx, current_universe
             )
 
-            if isinstance(layout, GenericDispatchNode) and not layout.is_latest:
+            if not layout.is_latest:
                 _update_object_and_invalidate_old_caches(
                     receiver, method, current_bc_idx, current_universe
                 )
@@ -427,7 +427,7 @@ def interpret(method, frame, max_stack_size):
                 layout, signature, method, current_bc_idx, current_universe
             )
 
-            if isinstance(layout, GenericDispatchNode) and not layout.is_latest:
+            if not layout.is_latest:
                 _update_object_and_invalidate_old_caches(
                     receiver, method, current_bc_idx, current_universe
                 )
