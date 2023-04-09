@@ -42,13 +42,10 @@ def _do_super_send(bytecode_index, method, stack, stack_ptr):
     receiver = stack[stack_ptr - (num_args - 1)]
 
     if invokable:
-        first = method.get_inline_cache(bytecode_index)
         method.set_inline_cache(
-            bytecode_index,
-            CachedDispatchNode(
-                receiver_class.get_layout_for_instances(), invokable, first
-            ),
+            bytecode_index, CachedDispatchNode(None, invokable, None)
         )
+
         if num_args == 1:
             bc = Bytecodes.q_super_send_1
         elif num_args == 2:
