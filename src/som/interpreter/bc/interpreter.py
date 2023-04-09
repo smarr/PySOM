@@ -20,7 +20,6 @@ from som.interpreter.control_flow import ReturnException
 from som.interpreter.send import (
     lookup_and_send_2,
     lookup_and_send_3,
-    get_inline_cache_size,
 )
 from som.vm.globals import nilObject, trueObject, falseObject
 from som.vmobjects.array import Array
@@ -357,13 +356,10 @@ def interpret(method, frame, max_stack_size):
             self_obj.set_field(1, value)
 
         elif bytecode == Bytecodes.send_1:
-            signature = method.get_constant(current_bc_idx)
             receiver = stack[stack_ptr]
 
             layout = receiver.get_object_layout(current_universe)
-            dispatch_node = _lookup(
-                layout, signature, method, current_bc_idx, current_universe
-            )
+            dispatch_node = _lookup(layout, method, current_bc_idx, current_universe)
 
             if not layout.is_latest:
                 _update_object_and_invalidate_old_caches(
@@ -373,13 +369,10 @@ def interpret(method, frame, max_stack_size):
             stack[stack_ptr] = dispatch_node.dispatch_1(receiver)
 
         elif bytecode == Bytecodes.send_2:
-            signature = method.get_constant(current_bc_idx)
             receiver = stack[stack_ptr - 1]
 
             layout = receiver.get_object_layout(current_universe)
-            dispatch_node = _lookup(
-                layout, signature, method, current_bc_idx, current_universe
-            )
+            dispatch_node = _lookup(layout, method, current_bc_idx, current_universe)
 
             if not layout.is_latest:
                 _update_object_and_invalidate_old_caches(
@@ -394,13 +387,10 @@ def interpret(method, frame, max_stack_size):
             stack[stack_ptr] = dispatch_node.dispatch_2(receiver, arg)
 
         elif bytecode == Bytecodes.send_3:
-            signature = method.get_constant(current_bc_idx)
             receiver = stack[stack_ptr - 2]
 
             layout = receiver.get_object_layout(current_universe)
-            dispatch_node = _lookup(
-                layout, signature, method, current_bc_idx, current_universe
-            )
+            dispatch_node = _lookup(layout, method, current_bc_idx, current_universe)
 
             if not layout.is_latest:
                 _update_object_and_invalidate_old_caches(
@@ -423,9 +413,7 @@ def interpret(method, frame, max_stack_size):
             ]
 
             layout = receiver.get_object_layout(current_universe)
-            dispatch_node = _lookup(
-                layout, signature, method, current_bc_idx, current_universe
-            )
+            dispatch_node = _lookup(layout, method, current_bc_idx, current_universe)
 
             if not layout.is_latest:
                 _update_object_and_invalidate_old_caches(
@@ -703,14 +691,26 @@ def get_self(frame, ctx_level):
 
 
 @elidable_promote("all")
-def _lookup(layout, selector, method, bytecode_index, universe):
+def _lookup(layout, method, bytecode_index, universe):
     cache = first = method.get_inline_cache(bytecode_index)
     while cache is not None:
         if cache.expected_layout is layout:
             return cache
         cache = cache.next_entry
 
-    cache_size = get_inline_cache_size(first)
+    # this is the generic dispatch node
+    if first and first.expected_layout is None:
+        return first
+
+    # get size of cache
+    cache_size = 0
+    while cache is not None:
+        cache = cache.next_entry
+        cache_size += 1
+
+    # read the selector only now when we will actually need it
+    selector = method.get_constant(bytecode_index)
+
     if INLINE_CACHE_SIZE >= cache_size:
         invoke = layout.lookup_invokable(selector)
         if invoke is not None:
@@ -720,7 +720,9 @@ def _lookup(layout, selector, method, bytecode_index, universe):
             method.set_inline_cache(bytecode_index, new_dispatch_node)
             return new_dispatch_node
 
-    return GenericDispatchNode(selector, universe)
+    generic = GenericDispatchNode(selector, universe)
+    method.set_inline_cache(bytecode_index, generic)
+    return generic
 
 
 def _update_object_and_invalidate_old_caches(obj, method, bytecode_index, universe):
