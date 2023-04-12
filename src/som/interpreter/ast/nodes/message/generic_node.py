@@ -37,6 +37,7 @@ class _AbstractGenericMessageNode(ExpressionNode):
         return None
 
     def _get_cache_size_and_drop_old_entries(self):
+        # Keep in sync with: BcAbstractMethod.drop_old_inline_cache_entries
         size = 0
         prev = None
         cache = self._dispatch
@@ -63,6 +64,7 @@ class _AbstractGenericMessageNode(ExpressionNode):
                 return cache
 
         cache_size = self._get_cache_size_and_drop_old_entries()
+
         if cache_size < INLINE_CACHE_SIZE:
             method = layout.lookup_invokable(self._selector)
 

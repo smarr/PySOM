@@ -67,6 +67,14 @@ class GenericDispatchNode(_AbstractDispatchNode):
             return method.invoke_args(rcvr, args)
         return self._send_dnu(rcvr, args)
 
+    def dispatch_n_bc(self, stack, stack_ptr, rcvr):
+        method = rcvr.get_object_layout(self.universe).lookup_invokable(self._selector)
+        if method is not None:
+            return method.invoke_n(stack, stack_ptr)
+        from som.interpreter.bc.interpreter import send_does_not_understand
+
+        return send_does_not_understand(rcvr, self._selector, stack, stack_ptr)
+
 
 class CachedDispatchNode(_AbstractDispatchNode):
     _immutable_fields_ = ["_cached_method"]
@@ -86,6 +94,9 @@ class CachedDispatchNode(_AbstractDispatchNode):
 
     def dispatch_args(self, rcvr, args):
         return self._cached_method.invoke_args(rcvr, args)
+
+    def dispatch_n_bc(self, stack, stack_ptr, _rcvr):
+        return self._cached_method.invoke_n(stack, stack_ptr)
 
 
 class CachedDnuNode(_AbstractDispatchNode):
