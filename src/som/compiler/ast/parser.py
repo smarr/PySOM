@@ -27,6 +27,12 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
     IfElseInlinedNode,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
+from som.interpreter.ast.nodes.supernodes.compare_int_literal_node import (
+    LocalFrameIntGreaterThanNode,
+    GreaterThanIntNode,
+    LocalFrameIntLessThanNode,
+    LessThanIntNode,
+)
 from som.interpreter.ast.nodes.supernodes.field_string_equal_node import (
     LocalFieldStringEqualsNode,
     NonLocalFieldStringEqualsNode,
@@ -293,15 +299,6 @@ class Parser(ParserBase):
                         source,
                     )
 
-        if sel == "&&":
-            inlined = self._try_inlining_and(receiver, arg_expr, source, mgenc)
-            if inlined is not None:
-                return inlined
-        elif sel == "||":
-            inlined = self._try_inlining_or(receiver, arg_expr, source, mgenc)
-            if inlined is not None:
-                return inlined
-
         if isinstance(arg_expr, LiteralNode):
             lit_val = arg_expr.execute(None)
             from som.vmobjects.integer import Integer
@@ -312,6 +309,27 @@ class Parser(ParserBase):
                     return IntIncrementNode(receiver, val, False, self.universe, source)
                 if sel == "-":
                     return IntIncrementNode(receiver, -val, True, self.universe, source)
+                if sel == ">":
+                    if isinstance(receiver, LocalFrameVarReadNode):
+                        return LocalFrameIntGreaterThanNode(
+                            val, receiver.get_frame_idx(), source
+                        )
+                    return GreaterThanIntNode(receiver, val, source)
+                if sel == "<":
+                    if isinstance(receiver, LocalFrameVarReadNode):
+                        return LocalFrameIntLessThanNode(
+                            val, receiver.get_frame_idx(), source
+                        )
+                    return LessThanIntNode(receiver, val, source)
+
+        if sel == "&&":
+            inlined = self._try_inlining_and(receiver, arg_expr, source, mgenc)
+            if inlined is not None:
+                return inlined
+        elif sel == "||":
+            inlined = self._try_inlining_or(receiver, arg_expr, source, mgenc)
+            if inlined is not None:
+                return inlined
 
         return UninitializedMessageNode(
             selector, self.universe, receiver, [arg_expr], source
