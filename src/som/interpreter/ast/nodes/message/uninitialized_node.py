@@ -53,7 +53,11 @@ class UninitializedMessageNode(AbstractMessageNode):
                     )
         num_args = len(args) + 1
 
-        is_arg_send = isinstance(self._rcvr_expr, LocalFrameVarReadNode)
+        # need to check the exact type, because we have unsupported subclass supernodes
+        is_arg_send = (
+            type(self._rcvr_expr)  # pylint: disable=unidiomatic-typecheck
+            is LocalFrameVarReadNode
+        )
 
         if num_args == 1:
             if is_arg_send:
