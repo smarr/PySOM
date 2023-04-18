@@ -11,6 +11,9 @@ class LiteralNode(ExpressionNode):
     def execute(self, _frame):
         return self._value
 
+    def is_block_node(self):
+        return False
+
     def create_trivial_method(self, signature):
         from som.vmobjects.method_trivial import LiteralReturn
 

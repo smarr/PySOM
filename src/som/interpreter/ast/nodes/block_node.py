@@ -13,6 +13,9 @@ class BlockNode(LiteralNode):
     def execute(self, _frame):
         return AstBlock(self._value, None)
 
+    def is_block_node(self):
+        return True
+
     def create_trivial_method(self, signature):
         return None
 

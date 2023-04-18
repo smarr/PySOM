@@ -236,7 +236,7 @@ class Parser(ParserBase):
                 if receiver.is_for_same_var(arg_expr):
                     return UninitializedVarSquareNode(receiver, source)
         if sel == "=":
-            if isinstance(arg_expr, LiteralNode):
+            if isinstance(arg_expr, LiteralNode) and not arg_expr.is_block_node():
                 value = arg_expr.execute(None)
                 if isinstance(value, String):
                     if isinstance(receiver, FieldReadNode):
@@ -267,7 +267,7 @@ class Parser(ParserBase):
                         self.universe,
                         source,
                     )
-            if isinstance(receiver, LiteralNode):
+            if isinstance(receiver, LiteralNode) and not receiver.is_block_node():
                 value = receiver.execute(None)
                 if isinstance(value, String):
                     if isinstance(arg_expr, FieldReadNode):
@@ -299,7 +299,7 @@ class Parser(ParserBase):
                         source,
                     )
 
-        if isinstance(arg_expr, LiteralNode):
+        if isinstance(arg_expr, LiteralNode) and not arg_expr.is_block_node():
             lit_val = arg_expr.execute(None)
             from som.vmobjects.integer import Integer
 
