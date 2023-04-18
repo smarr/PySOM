@@ -22,6 +22,12 @@ from som.interpreter.ast.nodes.specialized.to_do_node import (
     IntToIntDoNode,
     IntToDoubleDoNode,
 )
+from som.interpreter.ast.nodes.supernodes.arg_send_node import (
+    BinaryArgSend,
+    UnaryArgSend,
+    TernaryArgSend,
+)
+from som.interpreter.ast.nodes.variable_node import LocalFrameVarReadNode
 
 
 class UninitializedMessageNode(AbstractMessageNode):
@@ -46,27 +52,57 @@ class UninitializedMessageNode(AbstractMessageNode):
                         self._selector, rcvr, args, self
                     )
         num_args = len(args) + 1
+
+        is_arg_send = isinstance(self._rcvr_expr, LocalFrameVarReadNode)
+
         if num_args == 1:
-            node = UnarySend(
-                self._selector, self.universe, self._rcvr_expr, self.source_section
-            )
+            if is_arg_send:
+                node = UnaryArgSend(
+                    self._selector,
+                    self.universe,
+                    self._rcvr_expr.get_frame_idx(),
+                    self.source_section,
+                )
+            else:
+                node = UnarySend(
+                    self._selector, self.universe, self._rcvr_expr, self.source_section
+                )
         elif num_args == 2:
-            node = BinarySend(
-                self._selector,
-                self.universe,
-                self._rcvr_expr,
-                self._arg_exprs[0],
-                self.source_section,
-            )
+            if is_arg_send:
+                node = BinaryArgSend(
+                    self._selector,
+                    self.universe,
+                    self._rcvr_expr.get_frame_idx(),
+                    self._arg_exprs[0],
+                    self.source_section,
+                )
+            else:
+                node = BinarySend(
+                    self._selector,
+                    self.universe,
+                    self._rcvr_expr,
+                    self._arg_exprs[0],
+                    self.source_section,
+                )
         elif num_args == 3:
-            node = TernarySend(
-                self._selector,
-                self.universe,
-                self._rcvr_expr,
-                self._arg_exprs[0],
-                self._arg_exprs[1],
-                self.source_section,
-            )
+            if is_arg_send:
+                node = TernaryArgSend(
+                    self._selector,
+                    self.universe,
+                    self._rcvr_expr.get_frame_idx(),
+                    self._arg_exprs[0],
+                    self._arg_exprs[1],
+                    self.source_section,
+                )
+            else:
+                node = TernarySend(
+                    self._selector,
+                    self.universe,
+                    self._rcvr_expr,
+                    self._arg_exprs[0],
+                    self._arg_exprs[1],
+                    self.source_section,
+                )
         else:
             node = NArySend(
                 self._selector,
