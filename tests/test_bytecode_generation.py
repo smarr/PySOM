@@ -1,9 +1,9 @@
 # pylint: disable=redefined-outer-name
 from collections import deque
 import pytest
+from tests.conftest import add_field
 from rlib.string_stream import StringStream
 
-from som.compiler.bc.disassembler import dump_method
 from som.compiler.bc.method_generation_context import MethodGenerationContext
 from som.compiler.bc.parser import Parser
 from som.compiler.class_generation_context import ClassGenerationContext
@@ -15,14 +15,6 @@ from som.vm.symbols import symbol_for
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
     is_ast_interpreter(), reason="Tests are specific to bytecode interpreter"
 )
-
-
-def add_field(cgenc, name):
-    cgenc.add_instance_field(symbol_for(name))
-
-
-def dump(mgenc):
-    dump_method(mgenc, b"")
 
 
 @pytest.fixture

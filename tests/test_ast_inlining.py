@@ -1,11 +1,8 @@
 # pylint: disable=redefined-outer-name,protected-access
 import pytest
+from tests.conftest import parse_method, add_field
 
-from rlib.string_stream import StringStream
-from som.compiler.ast.method_generation_context import MethodGenerationContext
-from som.compiler.ast.parser import Parser
 from som.compiler.ast.variable import Argument
-from som.compiler.class_generation_context import ClassGenerationContext
 from som.interp_type import is_bytecode_interpreter
 from som.interpreter.ast.frame import FRAME_AND_INNER_RCVR_IDX
 from som.interpreter.ast.nodes.block_node import BlockNode, BlockNodeWithContext
@@ -30,36 +27,11 @@ from som.interpreter.ast.nodes.variable_node import (
     LocalFrameVarReadNode,
     UninitializedWriteNode,
 )
-from som.vm.current import current_universe
 from som.vm.globals import trueObject, falseObject
-from som.vm.symbols import symbol_for
 
 pytestmark = pytest.mark.skipif(  # pylint: disable=invalid-name
     is_bytecode_interpreter(), reason="Tests are specific to AST interpreter"
 )
-
-
-def add_field(cgenc, name):
-    cgenc.add_instance_field(symbol_for(name))
-
-
-@pytest.fixture
-def cgenc():
-    gen_c = ClassGenerationContext(current_universe)
-    gen_c.name = symbol_for("Test")
-    return gen_c
-
-
-@pytest.fixture
-def mgenc(cgenc):
-    mgenc = MethodGenerationContext(current_universe, cgenc, None)
-    mgenc.add_argument("self", None, None)
-    return mgenc
-
-
-def parse_method(mgenc, source):
-    parser = Parser(StringStream(source.strip()), "test", current_universe)
-    return parser.method(mgenc)
 
 
 @pytest.mark.parametrize(
