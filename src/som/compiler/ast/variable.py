@@ -3,6 +3,9 @@ from som.interpreter.ast.nodes.supernodes.square_node import (
     NonLocalVariableSquareNode,
     LocalFrameVarSquareNode,
     LocalInnerVarSquareNode,
+    LocalFrameReadSquareWriteNode,
+    UninitializedVarSquareNode,
+    NonLocalReadSquareWriteNode,
 )
 from som.interpreter.ast.nodes.variable_node import (
     UninitializedReadNode,
@@ -63,13 +66,32 @@ class _Variable(object):
         return LocalFrameVarReadNode(self.access_idx, source_section)
 
     def get_initialized_write_node(self, context_level, value_expr, source_section):
-        assert self.access_idx >= 0
+        assert self.access_idx >= 0, (
+            "access_idx was expected to be >= 0, but was %s" % self.access_idx
+        )
         if context_level > 0:
+            if isinstance(value_expr, UninitializedVarSquareNode):
+                return NonLocalReadSquareWriteNode(
+                    value_expr.get_access_idx(),
+                    value_expr.get_context_level(),
+                    self.access_idx,
+                    context_level,
+                    source_section,
+                )
             return NonLocalVariableWriteNode(
                 context_level, self.access_idx, value_expr, source_section
             )
         if self.is_accessed_out_of_context():
             return LocalInnerVarWriteNode(self.access_idx, value_expr, source_section)
+
+        if (
+            isinstance(value_expr, UninitializedVarSquareNode)
+            and value_expr.is_frame_access()
+        ):
+            return LocalFrameReadSquareWriteNode(
+                value_expr.get_access_idx(), self.access_idx, source_section
+            )
+
         return LocalFrameVarWriteNode(self.access_idx, value_expr, source_section)
 
     def get_square_node(self, context_level, source_section):
