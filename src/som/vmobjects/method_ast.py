@@ -61,7 +61,7 @@ jitdriver_args = jit.JitDriver(
 class _Invokable(Node):
     """
     Only needed to work around RPython type system.
-    Otherwise the parent field would point to a non-Node type (AstMethod)
+    Otherwise, the parent field would point to a non-Node type (AstMethod)
     """
 
     _immutable_fields_ = ["expr_or_sequence?"]
