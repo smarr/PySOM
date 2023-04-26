@@ -1,5 +1,7 @@
 # pylint: disable=redefined-outer-name
 
+from os.path import dirname, realpath
+
 import pytest
 from rlib.string_stream import StringStream
 
@@ -16,6 +18,11 @@ else:
     from som.compiler.bc.method_generation_context import MethodGenerationContext
     from som.compiler.bc.parser import Parser
     from som.compiler.bc.disassembler import dump_method
+
+
+def initialize_universe_for_testing():
+    smalltalk_folder = realpath(dirname(__file__) + "/../core-lib/Smalltalk/")
+    current_universe.initialize_for_testing(smalltalk_folder)
 
 
 @pytest.fixture

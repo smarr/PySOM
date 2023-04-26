@@ -124,6 +124,10 @@ class Universe(object):
 
         return invokable.invoke_1(clazz)
 
+    def initialize_for_testing(self, class_path):
+        self.handle_arguments(["-cp", class_path])
+        self._initialize_object_system()
+
     def interpret(self, arguments):
         # Check for command line switches
         arguments = self.handle_arguments(arguments)
