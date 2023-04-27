@@ -28,10 +28,9 @@ from som.interpreter.ast.nodes.specialized.literal_if import (
 )
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
 from som.interpreter.ast.nodes.supernodes.compare_int_literal_node import (
-    LocalFrameIntGreaterThanNode,
     GreaterThanIntNode,
-    LocalFrameIntLessThanNode,
     LessThanIntNode,
+    UninitializedLocalLessOrGreaterThanNode,
 )
 from som.interpreter.ast.nodes.supernodes.field_string_equal_node import (
     LocalFieldStringEqualsNode,
@@ -310,15 +309,21 @@ class Parser(ParserBase):
                 if sel == "-":
                     return IntIncrementNode(receiver, -val, True, self.universe, source)
                 if sel == ">":
-                    if isinstance(receiver, LocalFrameVarReadNode):
-                        return LocalFrameIntGreaterThanNode(
-                            val, receiver.get_frame_idx(), source
+                    if (
+                        isinstance(receiver, UninitializedReadNode)
+                        and receiver.get_context_level() == 0
+                    ):
+                        return UninitializedLocalLessOrGreaterThanNode(
+                            True, receiver.var, val, source
                         )
                     return GreaterThanIntNode(receiver, val, source)
                 if sel == "<":
-                    if isinstance(receiver, LocalFrameVarReadNode):
-                        return LocalFrameIntLessThanNode(
-                            val, receiver.get_frame_idx(), source
+                    if (
+                        isinstance(receiver, UninitializedReadNode)
+                        and receiver.get_context_level() == 0
+                    ):
+                        return UninitializedLocalLessOrGreaterThanNode(
+                            False, receiver.var, val, source
                         )
                     return LessThanIntNode(receiver, val, source)
 

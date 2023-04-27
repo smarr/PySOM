@@ -1,38 +1,88 @@
-from som.interpreter.ast.frame import read_frame
+from som.interpreter.ast.frame import read_frame, read_inner
 from som.interpreter.ast.nodes.expression_node import ExpressionNode
 from som.interpreter.ast.nodes.literal_node import LiteralNode
 from som.interpreter.ast.nodes.message.generic_node import BinarySend
-from som.interpreter.ast.nodes.variable_node import LocalFrameVarReadNode
+from som.interpreter.ast.nodes.variable_node import (
+    LocalFrameVarReadNode,
+    LocalInnerVarReadNode,
+)
 from som.vm.globals import falseObject, trueObject
 from som.vm.symbols import symbol_for
 from som.vmobjects.integer import Integer
 
 
-class LocalFrameIntGreaterThanNode(LocalFrameVarReadNode):
-    _immutable_fields_ = ["_value"]
+class UninitializedLocalLessOrGreaterThanNode(ExpressionNode):
+    _immutable_fields_ = ["_var", "_value"]
 
-    def __init__(self, val, frame_idx, source_section):
-        LocalFrameVarReadNode.__init__(self, frame_idx, source_section)
-        self._value = val
+    def __init__(self, is_greater_than, var, value, source_section):
+        ExpressionNode.__init__(self, source_section)
+        self._var = var
+        self._is_greater_than = is_greater_than
+        self._value = value
 
     def execute(self, frame):
-        arg_val = read_frame(frame, self._frame_idx)
-        if isinstance(arg_val, Integer):
-            if arg_val.get_embedded_integer() > self._value:
-                return trueObject
-            return falseObject
+        return self._specialize().execute(frame)
 
-        return self._make_generic_send(arg_val)
+    def _specialize(self):
+        assert self._var.access_idx >= 0
+        if self._is_greater_than:
+            if self._var.is_accessed_out_of_context():
+                node = LocalInnerIntGreaterThanNode(
+                    self._value, self._var.access_idx, self.source_section
+                )
+            else:
+                node = LocalFrameIntGreaterThanNode(
+                    self._value, self._var.access_idx, self.source_section
+                )
+        else:
+            node = LocalFrameIntLessThanNode(
+                self._value, self._var.access_idx, self.source_section
+            )
+
+        return self.replace(node)
+
+    def handle_inlining(self, mgenc):
+        raise NotImplementedError("TODO: implement me")
+
+    def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
+        raise NotImplementedError("TODO: implement me")
+
+    def __str__(self):
+        operator = ">" if self._is_greater_than else "<"
+        return (
+            "UninitializedLocalLessOrGreaterThanNode("
+            + str(self._var)
+            + ", "
+            + operator
+            + " "
+            + str(self._value)
+            + ")"
+        )
+
+
+class _LocalIntNode(ExpressionNode):
+    _immutable_fields_ = ["_access_idx", "_value"]
+
+    def __init__(self, value, access_idx, source_section):
+        ExpressionNode.__init__(self, source_section)
+        self._access_idx = access_idx
+        self._value = value
+
+    def _make_read_node(self):
+        raise NotImplementedError("Should be overwritten by subclass")
+
+    def _get_operator(self):
+        raise NotImplementedError("Should be overwritten by subclass")
 
     def _make_generic_send(self, receiver):
         from som.vm.current import current_universe
 
         int_val = Integer(self._value)
         literal = LiteralNode(int_val, self.source_section)
-        read = LocalFrameVarReadNode(self._frame_idx, self.source_section)
+        read = self._make_read_node()
 
         node = BinarySend(
-            symbol_for(">"),
+            symbol_for(self._get_operator()),
             current_universe,
             read,
             literal,
@@ -41,6 +91,40 @@ class LocalFrameIntGreaterThanNode(LocalFrameVarReadNode):
 
         self.replace(node)
         return node.exec_evaluated_2(receiver, int_val)
+
+
+class LocalFrameIntGreaterThanNode(_LocalIntNode):
+    def execute(self, frame):
+        arg_val = read_frame(frame, self._access_idx)
+        if isinstance(arg_val, Integer):
+            if arg_val.get_embedded_integer() > self._value:
+                return trueObject
+            return falseObject
+
+        return self._make_generic_send(arg_val)
+
+    def _make_read_node(self):
+        return LocalFrameVarReadNode(self._access_idx, self.source_section)
+
+    def _get_operator(self):
+        return ">"
+
+
+class LocalInnerIntGreaterThanNode(_LocalIntNode):
+    def execute(self, frame):
+        arg_val = read_inner(frame, self._access_idx)
+        if isinstance(arg_val, Integer):
+            if arg_val.get_embedded_integer() > self._value:
+                return trueObject
+            return falseObject
+
+        return self._make_generic_send(arg_val)
+
+    def _make_read_node(self):
+        return LocalInnerVarReadNode(self._access_idx, self.source_section)
+
+    def _get_operator(self):
+        return ">"
 
 
 class GreaterThanIntNode(ExpressionNode):
@@ -79,15 +163,9 @@ class GreaterThanIntNode(ExpressionNode):
         return node.exec_evaluated_2(receiver, int_val)
 
 
-class LocalFrameIntLessThanNode(LocalFrameVarReadNode):
-    _immutable_fields_ = ["_value"]
-
-    def __init__(self, val, frame_idx, source_section):
-        LocalFrameVarReadNode.__init__(self, frame_idx, source_section)
-        self._value = val
-
+class LocalFrameIntLessThanNode(_LocalIntNode):
     def execute(self, frame):
-        arg_val = read_frame(frame, self._frame_idx)
+        arg_val = read_frame(frame, self._access_idx)
         if isinstance(arg_val, Integer):
             if arg_val.get_embedded_integer() < self._value:
                 return trueObject
@@ -95,23 +173,28 @@ class LocalFrameIntLessThanNode(LocalFrameVarReadNode):
 
         return self._make_generic_send(arg_val)
 
-    def _make_generic_send(self, receiver):
-        from som.vm.current import current_universe
+    def _make_read_node(self):
+        return LocalFrameVarReadNode(self._access_idx, self.source_section)
 
-        int_val = Integer(self._value)
-        literal = LiteralNode(int_val, self.source_section)
-        read = LocalFrameVarReadNode(self._frame_idx, self.source_section)
+    def _get_operator(self):
+        return "<"
 
-        node = BinarySend(
-            symbol_for("<"),
-            current_universe,
-            read,
-            literal,
-            self.source_section,
-        )
 
-        self.replace(node)
-        return node.exec_evaluated_2(receiver, int_val)
+class LocalInnerIntLessThanNode(_LocalIntNode):
+    def execute(self, frame):
+        arg_val = read_inner(frame, self._access_idx)
+        if isinstance(arg_val, Integer):
+            if arg_val.get_embedded_integer() < self._value:
+                return trueObject
+            return falseObject
+
+        return self._make_generic_send(arg_val)
+
+    def _make_read_node(self):
+        return LocalInnerVarReadNode(self._access_idx, self.source_section)
+
+    def _get_operator(self):
+        return "<"
 
 
 class LessThanIntNode(ExpressionNode):

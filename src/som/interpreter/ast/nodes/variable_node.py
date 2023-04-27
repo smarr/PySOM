@@ -28,6 +28,9 @@ class UninitializedReadNode(ExpressionNode):
             == other._context_level  # pylint: disable=protected-access
         )
 
+    def get_context_level(self):
+        return self._context_level
+
     def execute(self, frame):
         return self._specialize().execute(frame)
 
