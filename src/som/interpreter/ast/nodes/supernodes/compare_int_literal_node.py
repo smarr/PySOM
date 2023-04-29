@@ -35,14 +35,25 @@ class UninitializedLocalLessOrGreaterThanNode(ExpressionNode):
                     self._value, self._var.access_idx, self.source_section
                 )
         else:
-            node = LocalFrameIntLessThanNode(
-                self._value, self._var.access_idx, self.source_section
-            )
+            if self._var.is_accessed_out_of_context():
+                node = LocalInnerIntLessThanNode(
+                    self._value, self._var.access_idx, self.source_section
+                )
+            else:
+                node = LocalFrameIntLessThanNode(
+                    self._value, self._var.access_idx, self.source_section
+                )
 
         return self.replace(node)
 
     def handle_inlining(self, mgenc):
-        raise NotImplementedError("TODO: implement me")
+        from som.compiler.ast.variable import Local
+
+        # we got inlined
+        assert isinstance(
+            self._var, Local
+        ), "We are not currently inlining any blocks with arguments"
+        self._var = mgenc.get_inlined_local(self._var, 0)
 
     def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
         raise NotImplementedError("TODO: implement me")
