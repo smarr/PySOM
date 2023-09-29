@@ -46,9 +46,11 @@ def bgenc(cgenc, mgenc):
     return bgenc
 
 
-def method_to_bytecodes(mgenc, source):
+def method_to_bytecodes(mgenc, source, dump_bytecodes=False):
     parser = Parser(StringStream(source.strip()), "test", current_universe)
     parser.method(mgenc)
+    if dump_bytecodes:
+        dump(mgenc)
     return mgenc.get_bytecodes()
 
 
