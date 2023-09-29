@@ -488,7 +488,7 @@ def error_print(msg):
     os.write(2, encode_to_bytes(msg or ""))
 
 
-def error_println(msg=b""):
+def error_println(msg=""):
     os.write(2, encode_to_bytes(msg + "\n"))
 
 
