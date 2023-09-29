@@ -17,8 +17,8 @@ jobs:
             id:   bc
             interp: BC
             python-version: pypy2.7
-          - name: Basics Python 2.7
-            python-version: 2.7
+          - name: Basics PyPy 2.7
+            python-version: pypy2.7
             id: basic
           - name: Basics Python 3.11
             python-version: 3.11
