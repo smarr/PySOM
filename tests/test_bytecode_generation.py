@@ -22,7 +22,7 @@ def add_field(cgenc, name):
 
 
 def dump(mgenc):
-    dump_method(mgenc, b"")
+    dump_method(mgenc, "")
 
 
 @pytest.fixture
