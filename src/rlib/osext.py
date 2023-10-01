@@ -23,7 +23,7 @@ def path_split(path):
 
 
 def _read_raw(answer):
-    buf = os.read(1, 32)
+    buf = os.read(0, 32)
     if len(buf) == 0:
         return answer, False
     if buf[-1] == b"\n"[0]:
