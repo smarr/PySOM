@@ -1,5 +1,7 @@
 import os
 
+from rlib.string_stream import decode_str
+
 
 def path_split(path):
     """
@@ -25,8 +27,8 @@ def _read_raw(answer):
     if len(buf) == 0:
         return answer, False
     if buf[-1] == b"\n"[0]:
-        return answer + buf[:-1].decode('utf8'), False
-    return answer + buf.decode('utf8'), True
+        return answer + decode_str(buf[:-1]), False
+    return answer + decode_str(buf), True
 
 
 def raw_input(msg=b""):
