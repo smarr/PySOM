@@ -1,3 +1,4 @@
+from rlib.exit import Exit
 from rlib.objectmodel import we_are_translated
 from rlib.osext import raw_input
 from som.compiler.parse_error import ParseError
@@ -47,6 +48,8 @@ class Shell(object):
                     it = shell_method.invoke_2(shell_object, it)
             except ParseError as ex:
                 error_println(str(ex))
+            except Exit as ex:
+                raise ex
             except Exception as ex:  # pylint: disable=broad-except
                 if not we_are_translated():  # this cannot be done in rpython
                     import traceback
