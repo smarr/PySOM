@@ -56,6 +56,8 @@ jobs:
           SOM_INTERP=BC  pytest
           SOM_INTERP=AST ./som.sh -cp Smalltalk TestSuite/TestHarness.som
           SOM_INTERP=BC  ./som.sh -cp Smalltalk TestSuite/TestHarness.som
+          echo "[system exit: 0] value" | SOM_INTERP=AST ./som.sh -cp Smalltalk
+          echo "[system exit: 0] value" | SOM_INTERP=BC  ./som.sh -cp Smalltalk
 
       - name: Full Tests
         if: matrix.id != 'basic'
