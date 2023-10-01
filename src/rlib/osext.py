@@ -1,5 +1,7 @@
 import os
 
+from rlib.string_stream import decode_str
+
 
 def path_split(path):
     """
@@ -21,15 +23,15 @@ def path_split(path):
 
 
 def _read_raw(answer):
-    buf = os.read(1, 32)
+    buf = os.read(0, 32)
     if len(buf) == 0:
         return answer, False
-    if buf[-1] == "\n":
-        return answer + buf[:-1], False
-    return answer + buf, True
+    if buf[-1] == b"\n"[0]:
+        return answer + decode_str(buf[:-1]), False
+    return answer + decode_str(buf), True
 
 
-def raw_input(msg=""):
+def raw_input(msg=b""):
     os.write(1, msg)
     answer, cont = _read_raw("")
     while cont:

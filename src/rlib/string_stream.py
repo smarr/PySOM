@@ -4,6 +4,9 @@ try:
     def encode_to_bytes(str_value):
         return str_value
 
+    def decode_str(str_value):
+        return str_value
+
 except ImportError:
     "NOT_RPYTHON"
 
@@ -20,9 +23,15 @@ except ImportError:
         def encode_to_bytes(str_value):
             return str_value.encode("utf-8")
 
+        def decode_str(str_value):
+            return str_value.decode("utf-8")
+
     else:
 
         def encode_to_bytes(str_value):
+            return str_value
+
+        def decode_str(str_value):
             return str_value
 
 
