@@ -24,12 +24,12 @@ def _read_raw(answer):
     buf = os.read(1, 32)
     if len(buf) == 0:
         return answer, False
-    if buf[-1] == "\n":
-        return answer + buf[:-1], False
-    return answer + buf, True
+    if buf[-1] == b"\n"[0]:
+        return answer + buf[:-1].decode('utf8'), False
+    return answer + buf.decode('utf8'), True
 
 
-def raw_input(msg=""):
+def raw_input(msg=b""):
     os.write(1, msg)
     answer, cont = _read_raw("")
     while cont:
