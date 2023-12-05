@@ -46,9 +46,9 @@ from som.vm.globals import nilObject, trueObject, falseObject
 #   Inner
 #
 #  +-----------------+
-#  | OnStack         |
+#  | OnStack         |  boolean indicating whether the frame is still on the stack
 #  +-----------------+
-#  | Receiver        |
+#  | Receiver        |  the same as the receiver in the frame, not to be changed
 #  +-----------------+
 #  | ArgForInner 1   |
 #  | ...             |

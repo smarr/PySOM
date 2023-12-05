@@ -32,6 +32,22 @@ from som.interpreter.ast.frame import (
 #  | ...       |
 #  | Local n   |
 #  +-----------+
+#
+#   Inner
+#
+#  +-----------------+
+#  | OnStack         |  boolean indicating whether the frame is still on the stack
+#  +-----------------+
+#  | Receiver        |  the same as the receiver in the frame, not to be changed
+#  +-----------------+
+#  | ArgForInner 1   |
+#  | ...             |
+#  | ArgForInner n   |
+#  +-----------------+
+#  | LocalForInner 1 |
+#  | ...             |
+#  | LocalForInner n |
+#  +-----------------+
 
 
 def create_frame(
