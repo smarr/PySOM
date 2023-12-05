@@ -84,28 +84,7 @@ def dump_bytecode(m, b, indent=""):
             + ", context: "
             + str(m.get_bytecode(b + 2))
         )
-    elif (
-        bytecode == Bytecodes.push_frame_0
-        or bytecode == Bytecodes.push_frame_1
-        or bytecode == Bytecodes.push_frame_2
-        or bytecode == Bytecodes.pop_frame_0
-        or bytecode == Bytecodes.pop_frame_1
-        or bytecode == Bytecodes.pop_frame_2
-        or bytecode == Bytecodes.push_inner_0
-        or bytecode == Bytecodes.push_inner_1
-        or bytecode == Bytecodes.push_inner_2
-        or bytecode == Bytecodes.pop_inner_0
-        or bytecode == Bytecodes.pop_inner_1
-        or bytecode == Bytecodes.pop_inner_2
-    ):
-        # don't need any other arguments
-        error_println("")
-    elif (
-        bytecode == Bytecodes.push_field
-        or bytecode == Bytecodes.pop_field
-        or bytecode == Bytecodes.inc_field_push
-        or bytecode == Bytecodes.inc_field
-    ):
+    elif bytecode == Bytecodes.push_field or bytecode == Bytecodes.pop_field:
         if m.get_holder():
             field_name = str(
                 m.get_holder().get_instance_field_name(m.get_bytecode(b + 1))
@@ -151,15 +130,8 @@ def dump_bytecode(m, b, indent=""):
             + str(m.get_constant(b))
         )
     elif bytecode in (
-        Bytecodes.send_1,
-        Bytecodes.send_2,
-        Bytecodes.send_3,
         Bytecodes.send_n,
         Bytecodes.super_send,
-        Bytecodes.q_super_send_1,
-        Bytecodes.q_super_send_2,
-        Bytecodes.q_super_send_3,
-        Bytecodes.q_super_send_n,
     ):
         error_println(
             "(index: "

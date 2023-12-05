@@ -1,9 +1,4 @@
 from rlib.debug import make_sure_not_resized
-from som.compiler.bc.bytecode_generator import (
-    emit_inc_field_push,
-    emit_return_field,
-)
-
 from som.compiler.method_generation_context import MethodGenerationContextBase
 from som.interpreter.bc.bytecodes import (
     bytecode_length,
@@ -11,17 +6,13 @@ from som.interpreter.bc.bytecodes import (
     POP_X_BYTECODES,
     PUSH_CONST_BYTECODES,
     PUSH_FIELD_BYTECODES,
-    POP_FIELD_BYTECODES,
-    RETURN_FIELD_BYTECODES,
 )
 from som.vm.globals import trueObject, falseObject
 from som.vm.symbols import sym_nil, sym_false, sym_true
-from som.vmobjects.integer import int_0, int_1
 from som.vmobjects.method_trivial import (
     LiteralReturn,
     GlobalRead,
     FieldRead,
-    FieldWrite,
 )
 from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import (
@@ -95,16 +86,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
             push_candidate = self._last_bytecode_is_one_of(1, PUSH_FIELD_BYTECODES)
             if push_candidate != Bytecodes.invalid:
                 return self._assemble_field_getter(return_candidate, push_candidate)
-
-        # because we check for return_self here, we don't consider block methods
-        return_candidate = self._last_bytecode_is(0, Bytecodes.return_self)
-        if return_candidate != Bytecodes.invalid:
-            assert not self.is_block_method
-            return self._assemble_field_setter(return_candidate)
-
-        return_candidate = self._last_bytecode_is_one_of(0, RETURN_FIELD_BYTECODES)
-        if return_candidate != Bytecodes.invalid:
-            return self._assemble_field_getter_from_return(return_candidate)
 
         return None
 
@@ -191,17 +172,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
             self._last_4_bytecodes[0] = self._last_4_bytecodes[1]
             self._last_4_bytecodes[1] = self._last_4_bytecodes[2]
             self._last_4_bytecodes[2] = Bytecodes.dup
-
-        if self._last_4_bytecodes[3] == Bytecodes.inc_field:
-            # we optimized the sequence to an INC_FIELD, which doesn't modify the stack
-            # but since we need the value to return it from the block, we need to push it.
-            self._last_4_bytecodes[3] = Bytecodes.inc_field_push
-
-            bc_offset = len(self._bytecode) - 3
-            assert bytecode_length(Bytecodes.inc_field_push) == 3
-            assert bytecode_length(Bytecodes.inc_field) == 3
-            assert self._bytecode[bc_offset] == Bytecodes.inc_field
-            self._bytecode[bc_offset] = Bytecodes.inc_field_push
 
     def add_literal_if_absent(self, lit):
         if lit in self._literals:
@@ -326,9 +296,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._last_4_bytecodes[3] = Bytecodes.invalid
 
     def optimize_dup_pop_pop_sequence(self):
-        if self._last_bytecode_is(0, Bytecodes.inc_field_push) != Bytecodes.invalid:
-            return self.optimize_inc_field_push()
-
         pop_candidate = self._last_bytecode_is_one_of(0, POP_X_BYTECODES)
         if pop_candidate == Bytecodes.invalid:
             return False
@@ -347,80 +314,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         return True
 
-    def optimize_inc_field_push(self):
-        assert bytecode_length(Bytecodes.inc_field_push) == 3
-
-        bc_idx = len(self._bytecode) - 3
-        assert self._bytecode[bc_idx] == Bytecodes.inc_field_push
-
-        self._bytecode[bc_idx] = Bytecodes.inc_field
-        self._last_4_bytecodes[3] = Bytecodes.inc_field
-
-        return True
-
-    def optimize_inc_field(self, field_idx, ctx_level):
-        """
-        Try using a INC_FIELD bytecode instead of the following sequence.
-
-          PUSH_FIELD
-          INC
-          DUP
-          POP_FIELD
-
-        return true, if it optimized it.
-        """
-        if self._last_bytecode_is(0, Bytecodes.dup) == Bytecodes.invalid:
-            return False
-
-        if self._last_bytecode_is(1, Bytecodes.inc) == Bytecodes.invalid:
-            return False
-
-        push_candidate = self._last_bytecode_is_one_of(2, PUSH_FIELD_BYTECODES)
-        if push_candidate == Bytecodes.invalid:
-            return False
-
-        assert bytecode_length(Bytecodes.dup) == 1
-        assert bytecode_length(Bytecodes.inc) == 1
-        bc_offset = 1 + 1 + bytecode_length(push_candidate)
-
-        candidate_idx, candidate_ctx = self._get_index_and_ctx_of_last(
-            push_candidate, bc_offset
-        )
-        if candidate_idx == field_idx and candidate_ctx == ctx_level:
-            self._remove_last_bytecodes(3)
-            self._reset_last_bytecode_buffer()
-            emit_inc_field_push(self, field_idx, ctx_level)
-            return True
-        return False
-
-    def optimize_return_field(self):
-        bytecode = self._last_4_bytecodes[3]
-        if bytecode == Bytecodes.push_field_0:
-            idx = 0
-        elif bytecode == Bytecodes.push_field_1:
-            idx = 1
-        elif bytecode == Bytecodes.push_field:
-            bc_offset = len(self._bytecode)
-            ctx = self._bytecode[bc_offset - 1]
-            if ctx > 0:
-                return False
-            idx = self._bytecode[bc_offset - 2]
-            if idx > 2:
-                return False
-        else:
-            return False
-
-        self._remove_last_bytecodes(1)
-        self._reset_last_bytecode_buffer()
-        emit_return_field(self, idx)
-        return True
-
     def _get_index_and_ctx_of_last(self, bytecode, bc_offset):
-        if bytecode == Bytecodes.push_field_0:
-            return 0, 0
-        if bytecode == Bytecodes.push_field_1:
-            return 1, 0
-
         offset = len(self._bytecode) - bc_offset
         assert self._bytecode[offset] == bytecode
         return self._bytecode[offset + 1], self._bytecode[offset + 2]
@@ -433,14 +327,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         if len(self._literals) == 1:
             return LiteralReturn(self.signature, self._literals[0])
-        if self._bytecode[0] == Bytecodes.push_0:
-            return LiteralReturn(self.signature, int_0)
-        if self._bytecode[0] == Bytecodes.push_1:
-            return LiteralReturn(self.signature, int_1)
-        if self._bytecode[0] == Bytecodes.push_nil:
-            from som.vm.globals import nilObject
-
-            return LiteralReturn(self.signature, nilObject)
         raise NotImplementedError(
             "Not sure what's going on. Perhaps some new bytecode or unexpected literal?"
         )
@@ -483,61 +369,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
         ):
             return None
 
-        if push_candidate == Bytecodes.push_field_0:
-            idx = 0
-            ctx = 0
-        elif push_candidate == Bytecodes.push_field_1:
-            idx = 1
-            ctx = 0
-        else:
-            idx = self._bytecode[-3]
-            ctx = self._bytecode[-2]
+        idx = self._bytecode[-3]
+        ctx = self._bytecode[-2]
 
         return FieldRead(self.signature, idx, ctx)
-
-    def _assemble_field_getter_from_return(self, return_candidate):
-        if len(self._bytecode) != bytecode_length(return_candidate):
-            return None
-
-        if return_candidate == Bytecodes.return_field_0:
-            return FieldRead(self.signature, 0, 0)
-        if return_candidate == Bytecodes.return_field_1:
-            return FieldRead(self.signature, 1, 0)
-        assert return_candidate == Bytecodes.return_field_2
-        return FieldRead(self.signature, 2, 0)
-
-    def _assemble_field_setter(self, return_candidate):
-        pop_candidate = self._last_bytecode_is_one_of(1, POP_FIELD_BYTECODES)
-        if pop_candidate == Bytecodes.invalid:
-            return None
-
-        push_candidate = self._last_bytecode_is(2, Bytecodes.push_argument)
-        if push_candidate == Bytecodes.invalid:
-            return None
-
-        pop_len = bytecode_length(pop_candidate)
-        assert bytecode_length(Bytecodes.return_self) == 1
-        assert bytecode_length(return_candidate) == 1
-        return_len = 1
-
-        if len(self._bytecode) != (
-            return_len + pop_len + bytecode_length(push_candidate)
-        ):
-            return None
-
-        if pop_candidate == Bytecodes.pop_field_0:
-            field_idx = 0
-        elif pop_candidate == Bytecodes.pop_field_1:
-            field_idx = 1
-        else:
-            assert pop_candidate == Bytecodes.pop_field
-            field_idx = self._bytecode[-3]
-
-            # context is 0, because we are in a normal method with return_self
-            assert self._bytecode[-2] == 0
-
-        arg_idx = self._bytecode[-(pop_len + return_len + 2)]
-        return FieldWrite(self.signature, field_idx, arg_idx)
 
 
 class FindVarResult(object):

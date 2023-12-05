@@ -67,44 +67,14 @@ class _Variable(object):
             return LocalInnerVarWriteNode(self.access_idx, value_expr, source_section)
         return LocalFrameVarWriteNode(self.access_idx, value_expr, source_section)
 
-    def get_push_bytecode(self, ctx_level):
+    def get_push_bytecode(self, ctx_level):  # pylint: disable=unused-argument
         if self.is_accessed_out_of_context():
-            if ctx_level == 0:
-                if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 0:
-                    return Bytecodes.push_inner_0
-                if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 1:
-                    return Bytecodes.push_inner_1
-                if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 2:
-                    return Bytecodes.push_inner_2
             return Bytecodes.push_inner
-
-        if ctx_level == 0:
-            if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 0:
-                return Bytecodes.push_frame_0
-            if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 1:
-                return Bytecodes.push_frame_1
-            if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 2:
-                return Bytecodes.push_frame_2
         return Bytecodes.push_frame
 
-    def get_pop_bytecode(self, ctx_level):
+    def get_pop_bytecode(self, ctx_level):  # pylint: disable=unused-argument
         if self.is_accessed_out_of_context():
-            if ctx_level == 0:
-                if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 0:
-                    return Bytecodes.pop_inner_0
-                if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 1:
-                    return Bytecodes.pop_inner_1
-                if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 2:
-                    return Bytecodes.pop_inner_2
             return Bytecodes.pop_inner
-
-        if ctx_level == 0:
-            if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 0:
-                return Bytecodes.pop_frame_0
-            if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 1:
-                return Bytecodes.pop_frame_1
-            if self.access_idx == FRAME_AND_INNER_RCVR_IDX + 2:
-                return Bytecodes.pop_frame_2
         return Bytecodes.pop_frame
 
     def get_qualified_name(self):

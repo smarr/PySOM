@@ -1,13 +1,10 @@
 from som.compiler.bc.bytecode_generator import (
-    emit_inc,
-    emit_dec,
     emit_dup,
     emit_pop,
     emit_send,
     emit_pop_field,
     emit_pop_local,
     emit_return_local,
-    emit_return_self,
     emit_super_send,
     emit_push_field,
     emit_push_global,
@@ -28,8 +25,6 @@ from som.vm.symbols import (
     sym_new_msg,
     sym_at_put_msg,
     symbol_for,
-    sym_minus,
-    sym_plus,
 )
 from som.vmobjects.integer import Integer
 from som.vmobjects.string import String
@@ -49,7 +44,9 @@ class Parser(ParserBase):
         if not mgenc.is_finished():
             # with RETURN_SELF, we don't need the extra stack space
             # self._bc_gen.emitPOP(mgenc)
-            emit_return_self(mgenc)
+            emit_pop(mgenc)
+            emit_push_argument(mgenc, 0, 0)
+            emit_return_local(mgenc)
             mgenc.set_finished()
 
         self._expect(Symbol.EndTerm)
@@ -76,7 +73,8 @@ class Parser(ParserBase):
             # it does not matter whether a period has been seen, as the end of
             # the method has been found (EndTerm) - so it is safe to emit a
             # "return self"
-            emit_return_self(mgenc)
+            emit_push_argument(mgenc, 0, 0)
+            emit_return_local(mgenc)
             mgenc.set_finished()
         else:
             self._expression(mgenc)
@@ -85,22 +83,6 @@ class Parser(ParserBase):
                 self._block_body(mgenc, True)
 
     def _result(self, mgenc):
-        # try to parse a `^ self` to emit RETURN_SELF
-        if (
-            not mgenc.is_block_method
-            and self._sym == Symbol.Identifier
-            and self._text == "self"
-        ):
-            self._peek_for_next_symbol_from_lexer_if_necessary()
-            if self._next_sym == Symbol.Period or self._next_sym == Symbol.EndTerm:
-                self._expect(Symbol.Identifier)
-
-                emit_return_self(mgenc)
-                mgenc.set_finished()
-
-                self._accept(Symbol.Period)
-                return
-
         self._expression(mgenc)
         self._accept(Symbol.Period)
 
@@ -210,27 +192,11 @@ class Parser(ParserBase):
         else:
             emit_send(mgenc, msg)
 
-    def _try_inc_or_dec_bytecodes(self, msg, is_super_send, mgenc):
-        is_inc_or_dec = msg is sym_plus or msg is sym_minus
-        if is_inc_or_dec and not is_super_send:
-            if self._sym == Symbol.Integer and self._text == "1":
-                self._expect(Symbol.Integer)
-                if msg is sym_plus:
-                    emit_inc(mgenc)
-                else:
-                    emit_dec(mgenc)
-                return True
-        return False
-
     def _binary_message(self, mgenc):
         is_super_send = self._super_send
         self._super_send = False
 
         msg = self._binary_selector()
-
-        if self._try_inc_or_dec_bytecodes(msg, is_super_send, mgenc):
-            return
-
         self._binary_operand(mgenc)
 
         if is_super_send:

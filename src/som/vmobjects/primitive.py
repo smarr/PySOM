@@ -87,6 +87,11 @@ class UnaryPrimitive(_AbstractPrimitive):
         prim_fn = self._prim_fn
         return prim_fn(rcvr)
 
+    def invoke_n(self, stack, stack_ptr):
+        prim_fn = self._prim_fn
+        stack[stack_ptr] = prim_fn(stack[stack_ptr])
+        return stack_ptr
+
     def get_number_of_signature_arguments(self):
         return 1
 
@@ -102,6 +107,14 @@ class BinaryPrimitive(_AbstractPrimitive):
         prim_fn = self._prim_fn
         return prim_fn(rcvr, arg)
 
+    def invoke_n(self, stack, stack_ptr):
+        prim_fn = self._prim_fn
+        arg = stack[stack_ptr]
+        stack_ptr -= 1
+        rcvr = stack[stack_ptr]
+        stack[stack_ptr] = prim_fn(rcvr, arg)
+        return stack_ptr
+
     def get_number_of_signature_arguments(self):
         return 2
 
@@ -116,6 +129,16 @@ class TernaryPrimitive(_AbstractPrimitive):
     def invoke_3(self, rcvr, arg1, arg2):
         prim_fn = self._prim_fn
         return prim_fn(rcvr, arg1, arg2)
+
+    def invoke_n(self, stack, stack_ptr):
+        prim_fn = self._prim_fn
+        arg2 = stack[stack_ptr]
+        stack_ptr -= 1
+        arg = stack[stack_ptr]
+        stack_ptr -= 1
+        rcvr = stack[stack_ptr]
+        stack[stack_ptr] = prim_fn(rcvr, arg, arg2)
+        return stack_ptr
 
     def get_number_of_signature_arguments(self):
         return 3

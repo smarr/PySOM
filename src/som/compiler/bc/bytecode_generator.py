@@ -1,18 +1,4 @@
 from som.interpreter.bc.bytecodes import Bytecodes as BC
-from som.vm.globals import nilObject, trueObject, falseObject
-from som.vm.symbols import sym_nil, sym_true, sym_false
-
-
-def emit_inc(mgenc):
-    emit1(mgenc, BC.inc, 0)
-
-
-def emit_dec(mgenc):
-    emit1(mgenc, BC.dec, 0)
-
-
-def emit_inc_field_push(mgenc, field_idx, ctx_level):
-    emit3(mgenc, BC.inc_field_push, field_idx, ctx_level, 1)
 
 
 def emit_pop(mgenc):
@@ -24,33 +10,12 @@ def emit_push_argument(mgenc, idx, ctx):
     emit3(mgenc, BC.push_argument, idx, ctx, 1)
 
 
-def emit_return_self(mgenc):
-    mgenc.optimize_dup_pop_pop_sequence()
-    emit1(mgenc, BC.return_self, 0)
-
-
 def emit_return_local(mgenc):
-    if not mgenc.optimize_return_field():
-        emit1(mgenc, BC.return_local, 0)
+    emit1(mgenc, BC.return_local, 0)
 
 
 def emit_return_non_local(mgenc):
     emit2(mgenc, BC.return_non_local, mgenc.get_max_context_level(), 0)
-
-
-def emit_return_field(mgenc, field_idx):
-    if field_idx == 0:
-        emit1(mgenc, BC.return_field_0, 0)
-        return
-    if field_idx == 1:
-        emit1(mgenc, BC.return_field_1, 0)
-        return
-    if field_idx == 2:
-        emit1(mgenc, BC.return_field_2, 0)
-        return
-    raise NotImplementedError(
-        "Don't support fields with index > 2, but got " + str(field_idx)
-    )
 
 
 def emit_dup(mgenc):
@@ -73,29 +38,13 @@ def emit_push_field(mgenc, field_name):
     emit_push_field_with_index(mgenc, field_idx, ctx_level)
 
 
-def emit_push_field_with_index(mgenc, field_idx, ctx_level):
-    if ctx_level == 0:
-        if field_idx == 0:
-            emit1(mgenc, BC.push_field_0, 1)
-            return
-        if field_idx == 1:
-            emit1(mgenc, BC.push_field_1, 1)
-            return
-
+def emit_push_field_with_index(
+    mgenc, field_idx, ctx_level  # pylint: disable=unused-argument
+):
     emit3(mgenc, BC.push_field, field_idx, mgenc.get_max_context_level(), 1)
 
 
 def emit_push_global(mgenc, glob):
-    if glob is sym_nil:
-        emit_push_constant(mgenc, nilObject)
-        return
-    if glob is sym_true:
-        emit_push_constant(mgenc, trueObject)
-        return
-    if glob is sym_false:
-        emit_push_constant(mgenc, falseObject)
-        return
-
     idx = mgenc.add_literal_if_absent(glob)
     # the block needs to be able to send #unknownGlobal: to self
     if not mgenc.is_global_known(glob):
@@ -115,20 +64,10 @@ def emit_pop_field(mgenc, field_name):
     ctx_level = mgenc.get_max_context_level()
     field_idx = mgenc.get_field_index(field_name)
 
-    if mgenc.optimize_inc_field(field_idx, ctx_level):
-        return
-
     emit_pop_field_with_index(mgenc, field_idx, ctx_level)
 
 
 def emit_pop_field_with_index(mgenc, field_idx, ctx_level):
-    if ctx_level == 0:
-        if field_idx == 0:
-            emit1(mgenc, BC.pop_field_0, -1)
-            return
-        if field_idx == 1:
-            emit1(mgenc, BC.pop_field_1, -1)
-            return
     emit3(mgenc, BC.pop_field, field_idx, ctx_level, -1)
 
 
@@ -143,42 +82,11 @@ def emit_send(mgenc, msg):
     num_args = msg.get_number_of_signature_arguments()
     stack_effect = -num_args + 1  # +1 for the result
 
-    if num_args == 1:
-        emit2(mgenc, BC.send_1, idx, stack_effect)
-    elif num_args == 2:
-        emit2(mgenc, BC.send_2, idx, stack_effect)
-    elif num_args == 3:
-        emit2(mgenc, BC.send_3, idx, stack_effect)
-    else:
-        emit2(mgenc, BC.send_n, idx, stack_effect)
+    emit2(mgenc, BC.send_n, idx, stack_effect)
 
 
 def emit_push_constant(mgenc, lit):
-    from som.vmobjects.integer import Integer
-
-    if isinstance(lit, Integer):
-        if lit.get_embedded_integer() == 0:
-            emit1(mgenc, BC.push_0, 1)
-            return
-        if lit.get_embedded_integer() == 1:
-            emit1(mgenc, BC.push_1, 1)
-            return
-
-    if lit is nilObject:
-        emit1(mgenc, BC.push_nil, 1)
-        return
-
     idx = mgenc.add_literal_if_absent(lit)
-    if idx == 0:
-        emit1(mgenc, BC.push_constant_0, 1)
-        return
-    if idx == 1:
-        emit1(mgenc, BC.push_constant_1, 1)
-        return
-    if idx == 2:
-        emit1(mgenc, BC.push_constant_2, 1)
-        return
-
     emit2(mgenc, BC.push_constant, idx, 1)
 
 

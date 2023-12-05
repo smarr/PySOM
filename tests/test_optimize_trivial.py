@@ -13,7 +13,6 @@ from som.vmobjects.method_trivial import (
     LiteralReturn,
     GlobalRead,
     FieldRead,
-    FieldWrite,
 )
 
 if is_ast_interpreter():
@@ -135,31 +134,6 @@ def test_non_trivial_getter_n(cgenc, mgenc):
     body = parse_method(mgenc, "test = ( 0. ^ field )")
     m = mgenc.assemble(body)
     assert isinstance(m, AstMethod) or isinstance(m, BcMethod)
-
-
-@pytest.mark.parametrize(
-    "source", ["field := val", "field := val.", "field := val. ^ self"]
-)
-def test_field_setter_0(cgenc, mgenc, source):
-    add_field(cgenc, "field")
-    body_or_none = parse_method(mgenc, "test: val = ( " + source + " )")
-    m = mgenc.assemble(body_or_none)
-    assert isinstance(m, FieldWrite)
-
-
-@pytest.mark.parametrize(
-    "source", ["field := value", "field := value.", "field := value. ^ self"]
-)
-def test_field_setter_n(cgenc, mgenc, source):
-    add_field(cgenc, "a")
-    add_field(cgenc, "b")
-    add_field(cgenc, "c")
-    add_field(cgenc, "d")
-    add_field(cgenc, "e")
-    add_field(cgenc, "field")
-    body_or_none = parse_method(mgenc, "test: value = ( " + source + " )")
-    m = mgenc.assemble(body_or_none)
-    assert isinstance(m, FieldWrite)
 
 
 def test_non_trivial_field_setter_0(cgenc, mgenc):
