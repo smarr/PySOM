@@ -17,15 +17,6 @@ from som.interpreter.ast.nodes.message.uninitialized_node import (
 from som.interpreter.ast.nodes.return_non_local_node import ReturnNonLocalNode
 from som.interpreter.ast.nodes.sequence_node import SequenceNode
 from som.interpreter.ast.nodes.specialized.int_inc_node import IntIncrementNode
-from som.interpreter.ast.nodes.specialized.literal_and_or import (
-    AndInlinedNode,
-    OrInlinedNode,
-)
-from som.interpreter.ast.nodes.specialized.literal_if import (
-    IfInlinedNode,
-    IfElseInlinedNode,
-)
-from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
 from som.vm.symbols import symbol_for
 
 from som.vmobjects.array import Array
@@ -205,17 +196,6 @@ class Parser(ParserBase):
 
         source = self._get_source_section(coord)
 
-        if not is_super_send:
-            sel = selector.get_embedded_string()
-            if sel == "&&":
-                inlined = self._try_inlining_and(receiver, arg_expr, source, mgenc)
-                if inlined is not None:
-                    return inlined
-            elif sel == "||":
-                inlined = self._try_inlining_or(receiver, arg_expr, source, mgenc)
-                if inlined is not None:
-                    return inlined
-
         if is_super_send:
             return BinarySuper(
                 selector, receiver, arg_expr, mgenc.holder.get_super_class(), source
@@ -239,58 +219,6 @@ class Parser(ParserBase):
 
         return operand
 
-    @staticmethod
-    def _try_inlining_if(if_true, receiver, arguments, source, mgenc):
-        arg = arguments[0]
-        if not isinstance(arg, BlockNode):
-            return None
-
-        method = arg.get_method()
-        body_expr = method.inline(mgenc)
-        return IfInlinedNode(receiver, body_expr, if_true, source)
-
-    @staticmethod
-    def _try_inlining_if_else(if_true, receiver, arguments, source, mgenc):
-        arg1 = arguments[0]
-        if not isinstance(arg1, BlockNode):
-            return None
-
-        arg2 = arguments[1]
-        if not isinstance(arg2, BlockNode):
-            return None
-
-        true_expr = arg1.get_method().inline(mgenc)
-        false_expr = arg2.get_method().inline(mgenc)
-        return IfElseInlinedNode(receiver, true_expr, false_expr, if_true, source)
-
-    @staticmethod
-    def _try_inlining_while(while_true, receiver, arguments, source, mgenc):
-        if not isinstance(receiver, BlockNode):
-            return None
-
-        if not isinstance(arguments[0], BlockNode):
-            return None
-
-        cond_expr = receiver.get_method().inline(mgenc)
-        body_expr = arguments[0].get_method().inline(mgenc)
-        return WhileInlinedNode(cond_expr, body_expr, while_true, source)
-
-    @staticmethod
-    def _try_inlining_and(receiver, arg_expr, source, mgenc):
-        if not isinstance(arg_expr, BlockNode):
-            return None
-
-        arg_body = arg_expr.get_method().inline(mgenc)
-        return AndInlinedNode(receiver, arg_body, source)
-
-    @staticmethod
-    def _try_inlining_or(receiver, arg_expr, source, mgenc):
-        if not isinstance(arg_expr, BlockNode):
-            return None
-
-        arg_body = arg_expr.get_method().inline(mgenc)
-        return OrInlinedNode(receiver, arg_body, source)
-
     def _keyword_message(self, mgenc, receiver):
         is_super_send = self._super_send
 
@@ -303,61 +231,6 @@ class Parser(ParserBase):
             arguments.append(self._formula(mgenc))
 
         keyword = "".join(keyword_parts)
-        source = self._get_source_section(coord)
-
-        num_args = len(arguments)
-
-        if not is_super_send:
-            if num_args == 1:
-                if keyword == "ifTrue:":
-                    inlined = self._try_inlining_if(
-                        True, receiver, arguments, source, mgenc
-                    )
-                    if inlined is not None:
-                        return inlined
-                elif keyword == "ifFalse:":
-                    inlined = self._try_inlining_if(
-                        False, receiver, arguments, source, mgenc
-                    )
-                    if inlined is not None:
-                        return inlined
-                elif keyword == "whileTrue:":
-                    inlined = self._try_inlining_while(
-                        True, receiver, arguments, source, mgenc
-                    )
-                    if inlined is not None:
-                        return inlined
-                elif keyword == "whileFalse:":
-                    inlined = self._try_inlining_while(
-                        False, receiver, arguments, source, mgenc
-                    )
-                    if inlined is not None:
-                        return inlined
-                elif keyword == "and:":
-                    inlined = self._try_inlining_and(
-                        receiver, arguments[0], source, mgenc
-                    )
-                    if inlined is not None:
-                        return inlined
-                elif keyword == "or:":
-                    inlined = self._try_inlining_or(
-                        receiver, arguments[0], source, mgenc
-                    )
-                    if inlined is not None:
-                        return inlined
-            elif num_args == 2:
-                if keyword == "ifTrue:ifFalse:":
-                    inlined = self._try_inlining_if_else(
-                        True, receiver, arguments, source, mgenc
-                    )
-                    if inlined is not None:
-                        return inlined
-                elif keyword == "ifFalse:ifTrue:":
-                    inlined = self._try_inlining_if_else(
-                        False, receiver, arguments, source, mgenc
-                    )
-                    if inlined is not None:
-                        return inlined
 
         selector = symbol_for(keyword)
 

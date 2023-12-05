@@ -48,22 +48,6 @@ class ReturnNonLocalNode(ContextualNode):
         self_block = read_frame(frame, FRAME_AND_INNER_RCVR_IDX)
         return lookup_and_send_2(outer_self, self_block, "escapedBlock:")
 
-    def handle_inlining(self, mgenc):
-        self._context_level -= 1
-        if self._context_level == 0:
-            self.replace(
-                ReturnLocalNode(self._expr, self.universe, self.source_section)
-            )
-        assert self._context_level >= 0
-
-    def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
-        self._context_level -= 1
-        if self._context_level == 0:
-            self.replace(
-                ReturnLocalNode(self._expr, self.universe, self.source_section)
-            )
-        assert self._context_level >= 0
-
 
 class CatchNonLocalReturnNode(ExpressionNode):
     _immutable_fields_ = ["_method_body?"]

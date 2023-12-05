@@ -164,15 +164,3 @@ class AstMethod(AbstractMethod):
             node._size_inner,
         )
         return node.invokable.expr_or_sequence.execute(frame)
-
-    def inline(self, mgenc):
-        mgenc.merge_into_scope(self._lexical_scope)
-        self.invokable.expr_or_sequence.adapt_after_inlining(mgenc)
-        return self.invokable.expr_or_sequence
-
-    def adapt_after_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
-        self.invokable.expr_or_sequence.adapt_after_outer_inlined(
-            removed_ctx_level, mgenc_with_inlined
-        )
-        if removed_ctx_level == 1:
-            self._lexical_scope.drop_inlined_scope()

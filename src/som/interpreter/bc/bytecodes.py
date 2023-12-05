@@ -71,20 +71,7 @@ class Bytecodes(object):
     inc_field = dec + 1
     inc_field_push = inc_field + 1
 
-    jump = inc_field_push + 1
-    jump_on_true_top_nil = jump + 1
-    jump_on_false_top_nil = jump_on_true_top_nil + 1
-    jump_on_true_pop = jump_on_false_top_nil + 1
-    jump_on_false_pop = jump_on_true_pop + 1
-    jump_backward = jump_on_false_pop + 1
-    jump2 = jump_backward + 1
-    jump2_on_true_top_nil = jump2 + 1
-    jump2_on_false_top_nil = jump2_on_true_top_nil + 1
-    jump2_on_true_pop = jump2_on_false_top_nil + 1
-    jump2_on_false_pop = jump2_on_true_pop + 1
-    jump2_backward = jump2_on_false_pop + 1
-
-    q_super_send_1 = jump2_backward + 1
+    q_super_send_1 = inc_field_push + 1
     q_super_send_2 = q_super_send_1 + 1
     q_super_send_3 = q_super_send_2 + 1
     q_super_send_n = q_super_send_3 + 1
@@ -143,24 +130,6 @@ RETURN_FIELD_BYTECODES = [
     Bytecodes.return_field_1,
     Bytecodes.return_field_2,
 ]
-
-JUMP_BYTECODES = [
-    Bytecodes.jump,
-    Bytecodes.jump_on_true_top_nil,
-    Bytecodes.jump_on_true_pop,
-    Bytecodes.jump_on_false_pop,
-    Bytecodes.jump_on_false_top_nil,
-    Bytecodes.jump_backward,
-    Bytecodes.jump2,
-    Bytecodes.jump2_on_true_top_nil,
-    Bytecodes.jump2_on_true_pop,
-    Bytecodes.jump2_on_false_pop,
-    Bytecodes.jump2_on_false_top_nil,
-    Bytecodes.jump2_backward,
-]
-
-FIRST_DOUBLE_BYTE_JUMP_BYTECODE = Bytecodes.jump2
-NUM_SINGLE_BYTE_JUMP_BYTECODES = int(len(JUMP_BYTECODES) / 2)
 
 RUN_TIME_ONLY_BYTECODES = [
     Bytecodes.push_frame,
@@ -246,18 +215,6 @@ _BYTECODE_LENGTH = [
     1,  # dec
     3,  # inc_field
     3,  # inc_field_push
-    3,  # jump
-    3,  # jump_on_true_top_nil
-    3,  # jump_on_false_top_nil
-    3,  # jump_on_true_pop
-    3,  # jump_on_false_pop
-    3,  # jump_backward
-    3,  # jump2
-    3,  # jump2_on_true_top_nil
-    3,  # jump2_on_false_top_nil
-    3,  # jump2_on_true_pop
-    3,  # jump2_on_false_pop
-    3,  # jump2_backward
     2,  # q_super_send_1
     2,  # q_super_send_2
     2,  # q_super_send_3

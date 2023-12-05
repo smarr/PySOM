@@ -5,10 +5,6 @@ from rtruffle.source_section import SourceCoordinate, SourceSection
 from som.interpreter.ast.nodes.specialized.down_to_do_node import (
     get_printable_location as pl_dtd,
 )
-from som.interpreter.ast.nodes.specialized.literal_while import (
-    get_printable_location_while as pl_while,
-    WhileInlinedNode,
-)
 from som.interpreter.ast.nodes.specialized.to_by_do_node import (
     get_printable_location as pl_tbd,
 )
@@ -39,11 +35,6 @@ def source_section():
 
 def test_pl_dtd(method):
     assert pl_dtd(method) == "#to:do: Test>>test"
-
-
-def test_while(source_section):
-    node = WhileInlinedNode(None, None, None, source_section)
-    assert pl_while(node) == "while test.som:1:1"
 
 
 def test_tbd(method):

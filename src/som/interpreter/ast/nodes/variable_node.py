@@ -27,35 +27,6 @@ class UninitializedReadNode(ExpressionNode):
             self.var.get_initialized_read_node(self._context_level, self.source_section)
         )
 
-    def handle_inlining(self, mgenc):
-        if self._context_level == 0:
-            from som.compiler.ast.variable import Local
-
-            # we got inlined
-            assert isinstance(
-                self.var, Local
-            ), "We are not currently inlining any blocks with arguments"
-            self.var = mgenc.get_inlined_local(self.var, 0)
-        else:
-            self._context_level -= 1
-
-    def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
-        if self._context_level > removed_ctx_level:
-            self._context_level -= 1
-        elif self._context_level == removed_ctx_level:
-            from som.compiler.ast.variable import Local
-
-            # locals have been inlined into the outer context already
-            # so, we need to look up the right one and fix up the index
-            # at this point, the lexical scope has not been changed
-            # so, we should still be able to find the right one
-            assert isinstance(
-                self.var, Local
-            ), "We are not currently inlining any blocks with arguments"
-            self.var = mgenc_with_inlined.get_inlined_local(
-                self.var, self._context_level
-            )
-
     def __str__(self):
         return "UninitReadNode(" + str(self.var) + ")"
 
@@ -80,36 +51,6 @@ class UninitializedWriteNode(ExpressionNode):
             )
         )
 
-    def handle_inlining(self, mgenc):
-        if self._context_level == 0:
-            from som.compiler.ast.variable import Local
-
-            # we got inlined
-
-            assert isinstance(
-                self._var, Local
-            ), "We are not currently inlining any blocks with arguments"
-            self._var = mgenc.get_inlined_local(self._var, 0)
-        else:
-            self._context_level -= 1
-
-    def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
-        if self._context_level > removed_ctx_level:
-            self._context_level -= 1
-        elif self._context_level == removed_ctx_level:
-            from som.compiler.ast.variable import Local
-
-            # locals have been inlined into the outer context already
-            # so, we need to look up the right one and fix up the index
-            # at this point, the lexical scope has not been changed
-            # so, we should still be able to find the right one
-            assert isinstance(
-                self._var, Local
-            ), "We are not currently inlining any blocks with arguments"
-            self._var = mgenc_with_inlined.get_inlined_local(
-                self._var, self._context_level
-            )
-
 
 class _NonLocalVariableNode(ContextualNode):
     _immutable_fields_ = ["_frame_idx"]
@@ -126,26 +67,6 @@ class NonLocalVariableReadNode(_NonLocalVariableNode):
         block = self.determine_block(frame)
         assert isinstance(block, AstBlock)
         return block.get_from_outer(self._frame_idx)
-
-    def handle_inlining(self, mgenc):
-        self._context_level -= 1
-        if self._context_level == 0:
-            if self._frame_idx == FRAME_AND_INNER_RCVR_IDX:
-                # this is the self access
-                self.replace(
-                    LocalFrameVarReadNode(self._frame_idx, self.source_section)
-                )
-            else:
-                raise NotImplementedError("not yet implemented")
-
-    def handle_outer_inlined(self, removed_ctx_level, mgenc_with_inlined):
-        assert (
-            self._context_level > removed_ctx_level
-        ), "This is should really just be self reads"
-        self._context_level -= 1
-        assert (
-            self._context_level > 0
-        ), "This should remain true, because a block enclosing this one got inlined somewhere"
 
 
 class NonLocalVariableWriteNode(_NonLocalVariableNode):

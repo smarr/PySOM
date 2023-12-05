@@ -1,16 +1,10 @@
 from rlib.debug import make_sure_not_resized
 from som.compiler.bc.bytecode_generator import (
-    emit_jump_on_bool_with_dummy_offset,
-    emit_jump_with_dummy_offset,
-    emit_pop,
-    emit_push_constant,
-    emit_jump_backward_with_offset,
     emit_inc_field_push,
     emit_return_field,
 )
 
 from som.compiler.method_generation_context import MethodGenerationContextBase
-from som.compiler.parse_error import ParseError
 from som.interpreter.bc.bytecodes import (
     bytecode_length,
     Bytecodes,
@@ -18,12 +12,6 @@ from som.interpreter.bc.bytecodes import (
     PUSH_CONST_BYTECODES,
     PUSH_FIELD_BYTECODES,
     POP_FIELD_BYTECODES,
-    PUSH_BLOCK_BYTECODES,
-    bytecode_as_str,
-    is_one_of,
-    JUMP_BYTECODES,
-    NUM_SINGLE_BYTE_JUMP_BYTECODES,
-    FIRST_DOUBLE_BYTE_JUMP_BYTECODE,
     RETURN_FIELD_BYTECODES,
 )
 from som.vm.globals import trueObject, falseObject
@@ -39,7 +27,6 @@ from som.vmobjects.primitive import empty_primitive
 from som.vmobjects.method_bc import (
     BcMethodNLR,
     BcMethod,
-    BackJump,
 )
 
 _NUM_LAST_BYTECODES = 4
@@ -59,8 +46,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._local_list = []
 
         self._last_4_bytecodes = [Bytecodes.invalid] * _NUM_LAST_BYTECODES
-        self._is_currently_inlining_a_block = False
-        self.inlined_loops = []
 
         self.max_stack_depth = 0
         self._current_stack_depth = 0
@@ -95,12 +80,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
         local = MethodGenerationContextBase.add_local(self, local_name, source, parser)
         self._local_list.append(local)
         return local
-
-    def inline_locals(self, local_vars):
-        fresh_copies = MethodGenerationContextBase.inline_locals(self, local_vars)
-        if fresh_copies:
-            self._local_list.extend(fresh_copies)
-        return fresh_copies
 
     def assemble_trivial_method(self):
         return_candidate = self._last_bytecode_is(0, Bytecodes.return_local)
@@ -166,7 +145,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
             size_frame,
             size_inner,
             self.lexical_scope,
-            self.inlined_loops[:],
         )
 
         # copy bytecodes into method
@@ -187,17 +165,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
         if context > 0:
             return self.outer_genc.get_local(index, context - 1)
         return self._local_list[index]
-
-    def get_inlined_local_idx(self, var, ctx_level):
-        for i in range(len(self._local_list) - 1, -1, -1):
-            if self._local_list[i].source is var.source:
-                self._local_list[i].mark_accessed(ctx_level)
-                return i
-        raise Exception(
-            "Unexpected issue trying to find an inlined variable. "
-            + str(var)
-            + " could not be found."
-        )
 
     def is_finished(self):
         return self._finished
@@ -359,12 +326,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._last_4_bytecodes[3] = Bytecodes.invalid
 
     def optimize_dup_pop_pop_sequence(self):
-        # when we are inlining blocks, this already happened
-        # and any new opportunities to apply these optimizations are consequently
-        # at jump targets for blocks, and we can't remove those
-        if self._is_currently_inlining_a_block:
-            return False
-
         if self._last_bytecode_is(0, Bytecodes.inc_field_push) != Bytecodes.invalid:
             return self.optimize_inc_field_push()
 
@@ -408,9 +369,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         return true, if it optimized it.
         """
-        if self._is_currently_inlining_a_block:
-            return False
-
         if self._last_bytecode_is(0, Bytecodes.dup) == Bytecodes.invalid:
             return False
 
@@ -436,9 +394,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
         return False
 
     def optimize_return_field(self):
-        if self._is_currently_inlining_a_block:
-            return False
-
         bytecode = self._last_4_bytecodes[3]
         if bytecode == Bytecodes.push_field_0:
             idx = 0
@@ -583,241 +538,6 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         arg_idx = self._bytecode[-(pop_len + return_len + 2)]
         return FieldWrite(self.signature, field_idx, arg_idx)
-
-    def inline_if_true_or_if_false(self, parser, is_if_true):
-        # HACK: We do assume that the receiver on the stack is a boolean,
-        # HACK: similar to the IfTrueIfFalseNode.
-        # HACK: We don't support anything but booleans at the moment.
-        push_block_candidate = self._last_bytecode_is_one_of(0, PUSH_BLOCK_BYTECODES)
-        if push_block_candidate == Bytecodes.invalid:
-            return False
-
-        assert bytecode_length(push_block_candidate) == 2
-        block_literal_idx = self._bytecode[-1]
-
-        self._remove_last_bytecodes(1)  # remove push_block*
-
-        jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
-            self, is_if_true, False
-        )
-
-        # TODO: remove the block from the literal list
-        to_be_inlined = self._literals[block_literal_idx]
-
-        self._is_currently_inlining_a_block = True
-        to_be_inlined.inline(self)
-
-        self.patch_jump_offset_to_point_to_next_instruction(
-            jump_offset_idx_to_skip_true_branch, parser
-        )
-
-        # with the jumping, it's best to prevent any subsequent optimizations here
-        # otherwise we may not have the correct jump target
-        self._reset_last_bytecode_buffer()
-
-        return True
-
-    def _has_two_literal_block_arguments(self):
-        if self._last_bytecode_is_one_of(0, PUSH_BLOCK_BYTECODES) == Bytecodes.invalid:
-            return False
-
-        return (
-            self._last_bytecode_is_one_of(1, PUSH_BLOCK_BYTECODES) != Bytecodes.invalid
-        )
-
-    def inline_if_true_false(self, parser, is_if_true):
-        # HACK: We do assume that the receiver on the stack is a boolean,
-        # HACK: similar to the IfTrueIfFalseNode.
-        # HACK: We don't support anything but booleans at the moment.
-
-        if not self._has_two_literal_block_arguments():
-            return False
-
-        assert (
-            bytecode_length(Bytecodes.push_block) == 2
-            and bytecode_length(Bytecodes.push_block_no_ctx) == 2
-        )
-
-        (
-            to_be_inlined_1,
-            to_be_inlined_2,
-        ) = self._extract_block_methods_and_remove_bytecodes()
-
-        jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
-            self, is_if_true, True
-        )
-
-        self._is_currently_inlining_a_block = True
-        to_be_inlined_1.inline(self)
-
-        jump_offset_idx_to_skip_false_branch = emit_jump_with_dummy_offset(self)
-
-        self.patch_jump_offset_to_point_to_next_instruction(
-            jump_offset_idx_to_skip_true_branch, parser
-        )
-
-        # prevent optimizations between blocks to avoid issues with jump targets
-        self._reset_last_bytecode_buffer()
-
-        to_be_inlined_2.inline(self)
-        self._is_currently_inlining_a_block = False
-
-        self.patch_jump_offset_to_point_to_next_instruction(
-            jump_offset_idx_to_skip_false_branch, parser
-        )
-
-        # prevent optimizations messing with the final jump target
-        self._reset_last_bytecode_buffer()
-
-        return True
-
-    def _extract_block_methods_and_remove_bytecodes(self):
-        block_1_lit_idx = self._bytecode[-3]
-        block_2_lit_idx = self._bytecode[-1]
-
-        # grab the blocks' methods for inlining
-        to_be_inlined_1 = self._literals[block_1_lit_idx]
-        to_be_inlined_2 = self._literals[block_2_lit_idx]
-
-        self._remove_last_bytecodes(2)
-
-        return to_be_inlined_1, to_be_inlined_2
-
-    def inline_while(self, parser, is_while_true):
-        if not self._has_two_literal_block_arguments():
-            return False
-
-        assert (
-            bytecode_length(Bytecodes.push_block) == 2
-            and bytecode_length(Bytecodes.push_block_no_ctx) == 2
-        )
-
-        cond_method, body_method = self._extract_block_methods_and_remove_bytecodes()
-
-        loop_begin_idx = self.offset_of_next_instruction()
-
-        self._is_currently_inlining_a_block = True
-        cond_method.inline(self)
-
-        jump_offset_idx_to_skip_loop_body = emit_jump_on_bool_with_dummy_offset(
-            self, is_while_true, True
-        )
-
-        body_method.inline(self)
-
-        self._complete_jumps_and_emit_returning_nil(
-            parser, loop_begin_idx, jump_offset_idx_to_skip_loop_body
-        )
-
-        self._is_currently_inlining_a_block = False
-
-        return True
-
-    def inline_andor(self, parser, is_or):
-        # HACK: We do assume that the receiver on the stack is a boolean,
-        # HACK: similar to the IfTrueIfFalseNode.
-        # HACK: We don't support anything but booleans at the moment.
-        push_block_candidate = self._last_bytecode_is_one_of(0, PUSH_BLOCK_BYTECODES)
-        if push_block_candidate == Bytecodes.invalid:
-            return False
-
-        assert bytecode_length(push_block_candidate) == 2
-        block_literal_idx = self._bytecode[-1]
-
-        self._remove_last_bytecodes(1)  # remove push_block*
-
-        jump_offset_idx_to_skip_branch = emit_jump_on_bool_with_dummy_offset(
-            self, not is_or, True
-        )
-
-        to_be_inlined = self._literals[block_literal_idx]
-
-        self._is_currently_inlining_a_block = True
-        to_be_inlined.inline(self)
-        self._is_currently_inlining_a_block = False
-
-        jump_offset_idx_to_skip_push_true = emit_jump_with_dummy_offset(self)
-
-        self.patch_jump_offset_to_point_to_next_instruction(
-            jump_offset_idx_to_skip_branch, parser
-        )
-
-        emit_push_constant(self, trueObject if is_or else falseObject)
-
-        self.patch_jump_offset_to_point_to_next_instruction(
-            jump_offset_idx_to_skip_push_true, parser
-        )
-
-        self._reset_last_bytecode_buffer()
-
-        return True
-
-    def _complete_jumps_and_emit_returning_nil(
-        self, parser, loop_begin_idx, jump_offset_idx_to_skip_loop_body
-    ):
-        from som.vm.globals import nilObject
-
-        self._reset_last_bytecode_buffer()
-
-        emit_pop(self)
-
-        self.emit_backwards_jump_offset_to_target(loop_begin_idx, parser)
-
-        self.patch_jump_offset_to_point_to_next_instruction(
-            jump_offset_idx_to_skip_loop_body, parser
-        )
-        emit_push_constant(self, nilObject)
-        self._reset_last_bytecode_buffer()
-
-    def emit_backwards_jump_offset_to_target(self, loop_begin_idx, parser):
-        address_of_jump = self.offset_of_next_instruction()
-        # we are going to jump backward and want a positive value
-        # thus we subtract target_address from address_of_jump
-        jump_offset = address_of_jump - loop_begin_idx
-
-        self._check_jump_offset(parser, jump_offset, Bytecodes.jump_backward)
-        backward_jump_idx = self.offset_of_next_instruction()
-        emit_jump_backward_with_offset(self, jump_offset)
-
-        self.inlined_loops.append(BackJump(loop_begin_idx, backward_jump_idx))
-
-    def patch_jump_offset_to_point_to_next_instruction(self, idx_of_offset, parser):
-        instruction_start = idx_of_offset - 1
-        bytecode = self._bytecode[instruction_start]
-        assert is_one_of(bytecode, JUMP_BYTECODES)
-
-        jump_offset = self.offset_of_next_instruction() - instruction_start
-
-        self._check_jump_offset(parser, jump_offset, bytecode)
-
-        if jump_offset <= 0xFF:
-            self._bytecode[idx_of_offset] = jump_offset
-            self._bytecode[idx_of_offset + 1] = 0
-        else:
-            # need to use the jump2* version of the bytecode
-            if bytecode < FIRST_DOUBLE_BYTE_JUMP_BYTECODE:
-                # still need to bump this one up to
-                self._bytecode[instruction_start] += NUM_SINGLE_BYTE_JUMP_BYTECODES
-            assert is_one_of(self._bytecode[instruction_start], JUMP_BYTECODES)
-            self._bytecode[idx_of_offset] = jump_offset & 0xFF
-            self._bytecode[idx_of_offset + 1] = jump_offset >> 8
-
-    def offset_of_next_instruction(self):
-        return len(self._bytecode)
-
-    @staticmethod
-    def _check_jump_offset(parser, jump_offset, bytecode):
-        from som.compiler.symbol import Symbol
-
-        if not 0 <= jump_offset <= 0xFFFF:
-            raise ParseError(
-                "The jump_offset for the "
-                + bytecode_as_str(bytecode)
-                + " bytecode is out of range: "
-                + str(jump_offset),
-                Symbol.NONE,
-                parser,
-            )
 
 
 class FindVarResult(object):

@@ -186,41 +186,6 @@ def emit_push_constant_index(mgenc, lit_index):
     emit2(mgenc, BC.push_constant, lit_index, 1)
 
 
-def emit_jump_on_bool_with_dummy_offset(mgenc, is_if_true, needs_pop):
-    # Remember: true and false seem flipped here.
-    # This is because if the test passes, the block is inlined directly.
-    # But if the test fails, we need to jump.
-    # Thus, an  `#ifTrue:` needs to generated a jump_on_false.
-    if needs_pop:
-        bc = BC.jump_on_false_pop if is_if_true else BC.jump_on_true_pop
-        stack_effect = -1
-    else:
-        bc = BC.jump_on_false_top_nil if is_if_true else BC.jump_on_true_top_nil
-        stack_effect = 0
-
-    emit1(mgenc, bc, stack_effect)
-    idx = mgenc.add_bytecode_argument_and_get_index(0)
-    mgenc.add_bytecode_argument(0)
-    return idx
-
-
-def emit_jump_with_dummy_offset(mgenc):
-    emit1(mgenc, BC.jump, 0)
-    idx = mgenc.add_bytecode_argument_and_get_index(0)
-    mgenc.add_bytecode_argument(0)
-    return idx
-
-
-def emit_jump_backward_with_offset(mgenc, offset):
-    emit3(
-        mgenc,
-        BC.jump_backward if offset <= 0xFF else BC.jump2_backward,
-        offset & 0xFF,
-        offset >> 8,
-        0,
-    )
-
-
 def emit1(mgenc, code, stack_effect):
     mgenc.add_bytecode(code, stack_effect)
 

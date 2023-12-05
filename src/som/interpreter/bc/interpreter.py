@@ -21,7 +21,7 @@ from som.interpreter.send import (
     lookup_and_send_2,
     lookup_and_send_3,
 )
-from som.vm.globals import nilObject, trueObject, falseObject
+from som.vm.globals import nilObject
 from som.vmobjects.array import Array
 from som.vmobjects.block_bc import BcBlock
 from som.vmobjects.integer import int_0, int_1
@@ -495,127 +495,6 @@ def interpret(method, frame, max_stack_size):
 
             stack_ptr += 1
             stack[stack_ptr] = self_obj.inc_field(field_idx)
-
-        elif bytecode == Bytecodes.jump:
-            next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
-
-        elif bytecode == Bytecodes.jump_on_true_top_nil:
-            val = stack[stack_ptr]
-            if val is trueObject:
-                next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
-                stack[stack_ptr] = nilObject
-            else:
-                if we_are_jitted():
-                    stack[stack_ptr] = None
-                stack_ptr -= 1
-
-        elif bytecode == Bytecodes.jump_on_false_top_nil:
-            val = stack[stack_ptr]
-            if val is falseObject:
-                next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
-                stack[stack_ptr] = nilObject
-            else:
-                if we_are_jitted():
-                    stack[stack_ptr] = None
-                stack_ptr -= 1
-
-        elif bytecode == Bytecodes.jump_on_true_pop:
-            val = stack[stack_ptr]
-            if val is trueObject:
-                next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
-            if we_are_jitted():
-                stack[stack_ptr] = None
-            stack_ptr -= 1
-
-        elif bytecode == Bytecodes.jump_on_false_pop:
-            val = stack[stack_ptr]
-            if val is falseObject:
-                next_bc_idx = current_bc_idx + method.get_bytecode(current_bc_idx + 1)
-            if we_are_jitted():
-                stack[stack_ptr] = None
-            stack_ptr -= 1
-
-        elif bytecode == Bytecodes.jump_backward:
-            next_bc_idx = current_bc_idx - method.get_bytecode(current_bc_idx + 1)
-            jitdriver.can_enter_jit(
-                current_bc_idx=next_bc_idx,
-                stack_ptr=stack_ptr,
-                method=method,
-                frame=frame,
-                stack=stack,
-            )
-
-        elif bytecode == Bytecodes.jump2:
-            next_bc_idx = (
-                current_bc_idx
-                + method.get_bytecode(current_bc_idx + 1)
-                + (method.get_bytecode(current_bc_idx + 2) << 8)
-            )
-
-        elif bytecode == Bytecodes.jump2_on_true_top_nil:
-            val = stack[stack_ptr]
-            if val is trueObject:
-                next_bc_idx = (
-                    current_bc_idx
-                    + method.get_bytecode(current_bc_idx + 1)
-                    + (method.get_bytecode(current_bc_idx + 2) << 8)
-                )
-                stack[stack_ptr] = nilObject
-            else:
-                if we_are_jitted():
-                    stack[stack_ptr] = None
-                stack_ptr -= 1
-
-        elif bytecode == Bytecodes.jump2_on_false_top_nil:
-            val = stack[stack_ptr]
-            if val is falseObject:
-                next_bc_idx = (
-                    current_bc_idx
-                    + method.get_bytecode(current_bc_idx + 1)
-                    + (method.get_bytecode(current_bc_idx + 2) << 8)
-                )
-                stack[stack_ptr] = nilObject
-            else:
-                if we_are_jitted():
-                    stack[stack_ptr] = None
-                stack_ptr -= 1
-
-        elif bytecode == Bytecodes.jump2_on_true_pop:
-            val = stack[stack_ptr]
-            if val is trueObject:
-                next_bc_idx = (
-                    current_bc_idx
-                    + method.get_bytecode(current_bc_idx + 1)
-                    + (method.get_bytecode(current_bc_idx + 2) << 8)
-                )
-            if we_are_jitted():
-                stack[stack_ptr] = None
-            stack_ptr -= 1
-
-        elif bytecode == Bytecodes.jump2_on_false_pop:
-            val = stack[stack_ptr]
-            if val is falseObject:
-                next_bc_idx = (
-                    current_bc_idx
-                    + method.get_bytecode(current_bc_idx + 1)
-                    + (method.get_bytecode(current_bc_idx + 2) << 8)
-                )
-            if we_are_jitted():
-                stack[stack_ptr] = None
-            stack_ptr -= 1
-
-        elif bytecode == Bytecodes.jump2_backward:
-            next_bc_idx = current_bc_idx - (
-                method.get_bytecode(current_bc_idx + 1)
-                + (method.get_bytecode(current_bc_idx + 2) << 8)
-            )
-            jitdriver.can_enter_jit(
-                current_bc_idx=next_bc_idx,
-                stack_ptr=stack_ptr,
-                method=method,
-                frame=frame,
-                stack=stack,
-            )
 
         elif bytecode == Bytecodes.q_super_send_1:
             dispatch_node = method.get_inline_cache(current_bc_idx)
