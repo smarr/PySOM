@@ -1,5 +1,9 @@
 from rlib import jit
 
+LEN_NO_ARGS = 1
+LEN_ONE_ARG = 2
+LEN_TWO_ARGS = 3
+
 
 class Bytecodes(object):
     # Bytecodes used by the Simple Object Machine (SOM)
@@ -196,77 +200,77 @@ NOT_EXPECTED_IN_BLOCK_BYTECODES = [
 ]
 
 _BYTECODE_LENGTH = [
-    1,  # halt
-    1,  # dup
-    3,  # push_frame
-    3,  # push_frame_0
-    3,  # push_frame_1
-    3,  # push_frame_2
-    3,  # push_inner
-    3,  # push_inner_0
-    3,  # push_inner_1
-    3,  # push_inner_2
-    3,  # push_field
-    1,  # push_field_0
-    1,  # push_field_1
-    2,  # push_block
-    2,  # push_block_no_ctx
-    2,  # push_constant
-    1,  # push_constant_0
-    1,  # push_constant_1
-    1,  # push_constant_2
-    1,  # push_0
-    1,  # push_1
-    1,  # push_nil
-    2,  # push_global
-    1,  # pop
-    3,  # pop_frame
-    3,  # pop_frame_0
-    3,  # pop_frame_1
-    3,  # pop_frame_2
-    3,  # pop_inner
-    3,  # pop_inner_0
-    3,  # pop_inner_1
-    3,  # pop_inner_2
-    3,  # pop_field
-    1,  # pop_field_0
-    1,  # pop_field_1
-    2,  # send_1
-    2,  # send_2
-    2,  # send_3
-    2,  # send_n
-    2,  # super_send
-    1,  # return_local
-    2,  # return_non_local
-    1,  # return_self
-    1,  # return_field_0
-    1,  # return_field_1
-    1,  # return_field_2
-    1,  # inc
-    1,  # dec
-    3,  # inc_field
-    3,  # inc_field_push
-    3,  # jump
-    3,  # jump_on_true_top_nil
-    3,  # jump_on_false_top_nil
-    3,  # jump_on_true_pop
-    3,  # jump_on_false_pop
-    3,  # jump_backward
-    3,  # jump2
-    3,  # jump2_on_true_top_nil
-    3,  # jump2_on_false_top_nil
-    3,  # jump2_on_true_pop
-    3,  # jump2_on_false_pop
-    3,  # jump2_backward
-    2,  # q_super_send_1
-    2,  # q_super_send_2
-    2,  # q_super_send_3
-    2,  # q_super_send_n
+    LEN_NO_ARGS,  # halt
+    LEN_NO_ARGS,  # dup
+    LEN_TWO_ARGS,  # push_frame
+    LEN_TWO_ARGS,  # push_frame_0
+    LEN_TWO_ARGS,  # push_frame_1
+    LEN_TWO_ARGS,  # push_frame_2
+    LEN_TWO_ARGS,  # push_inner
+    LEN_TWO_ARGS,  # push_inner_0
+    LEN_TWO_ARGS,  # push_inner_1
+    LEN_TWO_ARGS,  # push_inner_2
+    LEN_TWO_ARGS,  # push_field
+    LEN_NO_ARGS,  # push_field_0
+    LEN_NO_ARGS,  # push_field_1
+    LEN_ONE_ARG,  # push_block
+    LEN_ONE_ARG,  # push_block_no_ctx
+    LEN_ONE_ARG,  # push_constant
+    LEN_NO_ARGS,  # push_constant_0
+    LEN_NO_ARGS,  # push_constant_1
+    LEN_NO_ARGS,  # push_constant_2
+    LEN_NO_ARGS,  # push_0
+    LEN_NO_ARGS,  # push_1
+    LEN_NO_ARGS,  # push_nil
+    LEN_ONE_ARG,  # push_global
+    LEN_NO_ARGS,  # pop
+    LEN_TWO_ARGS,  # pop_frame
+    LEN_TWO_ARGS,  # pop_frame_0
+    LEN_TWO_ARGS,  # pop_frame_1
+    LEN_TWO_ARGS,  # pop_frame_2
+    LEN_TWO_ARGS,  # pop_inner
+    LEN_TWO_ARGS,  # pop_inner_0
+    LEN_TWO_ARGS,  # pop_inner_1
+    LEN_TWO_ARGS,  # pop_inner_2
+    LEN_TWO_ARGS,  # pop_field
+    LEN_NO_ARGS,  # pop_field_0
+    LEN_NO_ARGS,  # pop_field_1
+    LEN_ONE_ARG,  # send_1
+    LEN_ONE_ARG,  # send_2
+    LEN_ONE_ARG,  # send_3
+    LEN_ONE_ARG,  # send_n
+    LEN_ONE_ARG,  # super_send
+    LEN_NO_ARGS,  # return_local
+    LEN_ONE_ARG,  # return_non_local
+    LEN_NO_ARGS,  # return_self
+    LEN_NO_ARGS,  # return_field_0
+    LEN_NO_ARGS,  # return_field_1
+    LEN_NO_ARGS,  # return_field_2
+    LEN_NO_ARGS,  # inc
+    LEN_NO_ARGS,  # dec
+    LEN_TWO_ARGS,  # inc_field
+    LEN_TWO_ARGS,  # inc_field_push
+    LEN_TWO_ARGS,  # jump
+    LEN_TWO_ARGS,  # jump_on_true_top_nil
+    LEN_TWO_ARGS,  # jump_on_false_top_nil
+    LEN_TWO_ARGS,  # jump_on_true_pop
+    LEN_TWO_ARGS,  # jump_on_false_pop
+    LEN_TWO_ARGS,  # jump_backward
+    LEN_TWO_ARGS,  # jump2
+    LEN_TWO_ARGS,  # jump2_on_true_top_nil
+    LEN_TWO_ARGS,  # jump2_on_false_top_nil
+    LEN_TWO_ARGS,  # jump2_on_true_pop
+    LEN_TWO_ARGS,  # jump2_on_false_pop
+    LEN_TWO_ARGS,  # jump2_backward
+    LEN_ONE_ARG,  # q_super_send_1
+    LEN_ONE_ARG,  # q_super_send_2
+    LEN_ONE_ARG,  # q_super_send_3
+    LEN_ONE_ARG,  # q_super_send_n
     # rewritten on first use
-    3,  # push_local
-    3,  # push_argument
-    3,  # pop_local
-    3,  # pop_argument
+    LEN_TWO_ARGS,  # push_local
+    LEN_TWO_ARGS,  # push_argument
+    LEN_TWO_ARGS,  # pop_local
+    LEN_TWO_ARGS,  # pop_argument
 ]
 
 
