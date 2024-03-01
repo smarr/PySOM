@@ -276,8 +276,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
     def add_bytecode(self, bytecode, stack_effect):
         self._current_stack_depth += stack_effect
-        if self._current_stack_depth > self.max_stack_depth:
-            self.max_stack_depth = self._current_stack_depth
+        self.max_stack_depth = max(self.max_stack_depth, self._current_stack_depth)
 
         self._bytecode.append(bytecode)
         self._last_4_bytecodes[0] = self._last_4_bytecodes[1]

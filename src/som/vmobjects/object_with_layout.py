@@ -64,12 +64,12 @@ class Object(ObjectWithoutFields):
 
     def _set_all_fields(self, field_values):
         assert not we_are_jitted()
-        self._field1 = (
-            self._field2
-        ) = self._field3 = self._field4 = self._field5 = nilObject
-        self.prim_field1 = (
-            self.prim_field2
-        ) = self.prim_field3 = self.prim_field4 = self.prim_field5 = 1234567890
+        self._field1 = self._field2 = self._field3 = self._field4 = self._field5 = (
+            nilObject
+        )
+        self.prim_field1 = self.prim_field2 = self.prim_field3 = self.prim_field4 = (
+            self.prim_field5
+        ) = 1234567890
 
         for i in range(0, self._object_layout.get_number_of_fields()):
             if field_values[i] is None:
