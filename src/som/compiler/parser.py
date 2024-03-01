@@ -299,7 +299,7 @@ class ParserBase(object):
 
             bigint = bigint_from_str(self._text)
             if negate_value:
-                bigint.sign = -1
+                bigint._set_sign(-1)  # pylint: disable=protected-access
             result = BigInteger(bigint)
         except ValueError:
             raise ParseError(
