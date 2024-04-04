@@ -39,6 +39,15 @@ def _substring(rcvr, start, end):
     return String(string[s:e])
 
 
+def _char_at(rcvr, idx):
+    i = idx.get_embedded_integer() - 1
+    string = rcvr.get_embedded_string()
+
+    if i < 0 or i >= len(string):
+        return String("Error - index out of bounds")
+    return String(string[i])
+
+
 def _hashcode(rcvr):
     return Integer(compute_hash(rcvr.get_embedded_string()))
 
@@ -81,6 +90,7 @@ def _is_digits(self):
 
 class StringPrimitivesBase(Primitives):
     def install_primitives(self):
+        self._install_instance_primitive(BinaryPrimitive("charAt:", _char_at))
         self._install_instance_primitive(BinaryPrimitive("concatenate:", _concat))
         self._install_instance_primitive(UnaryPrimitive("asSymbol", _as_symbol))
         self._install_instance_primitive(UnaryPrimitive("length", _length))
