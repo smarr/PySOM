@@ -187,6 +187,9 @@ RUN_TIME_ONLY_BYTECODES = [
     Bytecodes.q_super_send_n,
 ]
 
+# These Bytecodes imply a context level of 0
+# and thus, are not in blocks, because there the context level would
+# be at least 1.
 NOT_EXPECTED_IN_BLOCK_BYTECODES = [
     Bytecodes.halt,
     Bytecodes.push_field_0,
