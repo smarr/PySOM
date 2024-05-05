@@ -11,19 +11,48 @@ before_script:
   - git submodule update --init
   - ~/.asdf/bin/asdf install awfy pypysrc-2.7-v${PYPY_RELEASE}
   - ~/.asdf/bin/asdf install python pypy2.7-${PYPY_RELEASE}
-  - export PYPY_SRC_DIR=/data/home/gitlab-runner/.asdf/installs/awfy/pypysrc-2.7-v${PYPY_RELEASE}
-  - export PYPY_BIN_DIR=/data/home/gitlab-runner/.asdf/installs/python/pypy2.7-${PYPY_RELEASE}/bin
+  - export PYPY_SRC_DIR=$HOME/.asdf/installs/awfy/pypysrc-2.7-v${PYPY_RELEASE}
+  - export PYPY_BIN_DIR=$HOME/.asdf/installs/python/pypy2.7-${PYPY_RELEASE}/bin
+  - export PROJECT_FOLDER=$(pwd)
+  - export PYTHONPATH=${PYTHONPATH}:${PYPY_SRC_DIR}:src
+  - export RPYTHON=${PYPY_SRC_DIR}/rpython/bin/rpython
+
+build:aarch64-test-and-rebench:
+  stage: build-test
+  tags: [zullie1]
+  
+  script:
+    - export PATH=/opt/local/bin:/opt/local/sbin:/Users/gitlab-runner/Library/Python/3.12/bin:${PATH}:${PYPY_BIN_DIR}
+
+    # BC JIT Compiled Version
+    - SOM_INTERP=BC $RPYTHON --batch -Ojit src/main_rpython.py
+    - ./som-bc-jit  -cp Smalltalk TestSuite/TestHarness.som
+    - ./som-bc-jit  -cp Smalltalk:TestSuite Examples/Benchmarks/TestSuite/TestTestSuite.som
+
+    # AST JIT Compiled Version
+    - SOM_INTERP=AST $RPYTHON --batch -Ojit src/main_rpython.py
+    - ./som-ast-jit -cp Smalltalk TestSuite/TestHarness.som
+    - ./som-ast-jit -cp Smalltalk:TestSuite Examples/Benchmarks/TestSuite/TestTestSuite.som
+
+    # BC Interpreter
+    - SOM_INTERP=BC $RPYTHON --batch src/main_rpython.py
+    - ./som-bc-interp  -cp Smalltalk TestSuite/TestHarness.som
+    - ./som-bc-interp  -cp Smalltalk:TestSuite Examples/Benchmarks/TestSuite/TestTestSuite.som
+
+    # AST Interpreter
+    - SOM_INTERP=AST $RPYTHON --batch src/main_rpython.py
+    - ./som-ast-interp -cp Smalltalk TestSuite/TestHarness.som
+    - ./som-ast-interp -cp Smalltalk:TestSuite Examples/Benchmarks/TestSuite/TestTestSuite.som
+    
+    - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)  
+    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf
+    
 
 build-and-test-interpreters:
   stage: build-test
   tags: [yuria]
   script:
-    # Setup
-    - export PROJECT_FOLDER=$(pwd)
-    - export PYTHONPATH=$PYTHONPATH:$PYPY_SRC_DIR:src
-    - export RPYTHON=$PYPY_SRC_DIR/rpython/bin/rpython
     - export PATH=$PATH:$PYPY_BIN_DIR
-
     - export SOM_INTERP=BC
     - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)
 
@@ -63,10 +92,6 @@ build-and-test-jit-bc:
   stage: build-test
   tags: [yuria2]
   script:
-    # Setup
-    - export PROJECT_FOLDER=$(pwd)
-    - export PYTHONPATH=$PYTHONPATH:$PYPY_SRC_DIR:src
-    - export RPYTHON=$PYPY_SRC_DIR/rpython/bin/rpython
     - export PATH=$PATH:$PYPY_BIN_DIR
     - export SOM_INTERP=BC
     
@@ -89,10 +114,6 @@ build-and-test-jit-ast:
   stage: build-test
   tags: [yuria3]
   script:
-    # Setup
-    - export PROJECT_FOLDER=$(pwd)
-    - export PYTHONPATH=$PYTHONPATH:$PYPY_SRC_DIR:src
-    - export RPYTHON=$PYPY_SRC_DIR/rpython/bin/rpython
     - export PATH=$PATH:$PYPY_BIN_DIR
     - export SOM_INTERP=AST
     
