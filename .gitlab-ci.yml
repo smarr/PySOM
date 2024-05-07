@@ -5,11 +5,14 @@ stages:
 
 variables:
   PYTHONUNBUFFERED: "true"
-  PYPY_SRC_DIR: /data/home/gitlab-runner/.asdf/installs/awfy/pypysrc-2.7-v7.3.15
-  PYPY_BIN_DIR: /data/home/gitlab-runner/.asdf/installs/python/pypy2.7-7.3.15/bin
+  PYPY_RELEASE: "7.3.16"
 
 before_script:
   - git submodule update --init
+  - ~/.asdf/bin/asdf install awfy pypysrc-2.7-v${PYPY_RELEASE}
+  - ~/.asdf/bin/asdf install python pypy2.7-${PYPY_RELEASE}
+  - export PYPY_SRC_DIR=/data/home/gitlab-runner/.asdf/installs/awfy/pypysrc-2.7-v${PYPY_RELEASE}
+  - export PYPY_BIN_DIR=/data/home/gitlab-runner/.asdf/installs/python/pypy2.7-${PYPY_RELEASE}/bin
 
 build-and-test-interpreters:
   stage: build-test
