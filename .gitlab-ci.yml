@@ -20,7 +20,7 @@ before_script:
 build:aarch64-test-and-rebench:
   stage: build-test
   tags: [zullie1]
-  
+
   script:
     - export PATH=/opt/local/bin:/opt/local/sbin:/Users/gitlab-runner/Library/Python/3.12/bin:${PATH}:${PYPY_BIN_DIR}
 
@@ -43,10 +43,9 @@ build:aarch64-test-and-rebench:
     - SOM_INTERP=AST $RPYTHON --batch src/main_rpython.py
     - ./som-ast-interp -cp Smalltalk TestSuite/TestHarness.som
     - ./som-ast-interp -cp Smalltalk:TestSuite Examples/Benchmarks/TestSuite/TestTestSuite.som
-    
-    - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)  
+
+    - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)
     - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf
-    
 
 build-and-test-interpreters:
   stage: build-test
@@ -66,21 +65,20 @@ build-and-test-interpreters:
     - ./som-bc-interp -cp Smalltalk:TestSuite Examples/Benchmarks/TestSuite/TestTestSuite.som
 
     - export SOM_INTERP=AST
-    
+
     # Unit Tests
     - PYTHONPATH=src python3 -m pytest
     - ./som.sh -cp Smalltalk TestSuite/TestHarness.som
-    
+
     # Interpreter
     - $RPYTHON --batch src/main_rpython.py
     - ./som-ast-interp -cp Smalltalk TestSuite/TestHarness.som
     - ./som-ast-interp -cp Smalltalk:TestSuite Examples/Benchmarks/TestSuite/TestTestSuite.som
 
-
     # Package and Upload
     - lz4 som-ast-interp som-ast-interp.lz4
     - lz4 som-bc-interp  som-bc-interp.lz4
-    
+
     - |
       sftp tmp-artifacts << EOF
         -mkdir incoming/${CI_PIPELINE_ID}/
@@ -94,7 +92,7 @@ build-and-test-jit-bc:
   script:
     - export PATH=$PATH:$PYPY_BIN_DIR
     - export SOM_INTERP=BC
-    
+
     # JIT Compiled Version
     - $RPYTHON --batch -Ojit src/main_rpython.py
     - ./som-bc-jit -cp Smalltalk TestSuite/TestHarness.som
@@ -103,7 +101,7 @@ build-and-test-jit-bc:
 
     # Package and Upload
     - lz4 som-bc-jit som-bc-jit.lz4
-    
+
     - |
       sftp tmp-artifacts << EOF
         -mkdir incoming/${CI_PIPELINE_ID}/
@@ -116,7 +114,7 @@ build-and-test-jit-ast:
   script:
     - export PATH=$PATH:$PYPY_BIN_DIR
     - export SOM_INTERP=AST
-    
+
     # JIT Compiled Version
     - $RPYTHON --batch -Ojit src/main_rpython.py
     - ./som-ast-jit -cp Smalltalk TestSuite/TestHarness.som
@@ -125,7 +123,7 @@ build-and-test-jit-ast:
 
     # Package and Upload
     - lz4 som-ast-jit som-ast-jit.lz4
-    
+
     - |
       sftp tmp-artifacts << EOF
         -mkdir incoming/${CI_PIPELINE_ID}/
@@ -134,13 +132,15 @@ build-and-test-jit-ast:
 
 benchmark-y1:
   stage: benchmark
+  needs:
+    [build-and-test-interpreters, build-and-test-jit-bc, build-and-test-jit-ast]
   tags: [yuria]
   script:
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-jit.lz4
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-interp.lz4
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-jit.lz4
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-interp.lz4
-    
+
     - lz4 -d som-ast-jit.lz4    som-ast-jit
     - lz4 -d som-ast-interp.lz4 som-ast-interp
     - lz4 -d som-bc-jit.lz4     som-bc-jit
@@ -151,13 +151,15 @@ benchmark-y1:
 
 benchmark-y2:
   stage: benchmark
+  needs:
+    [build-and-test-interpreters, build-and-test-jit-bc, build-and-test-jit-ast]
   tags: [yuria2]
   script:
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-jit.lz4
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-interp.lz4
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-jit.lz4
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-interp.lz4
-    
+
     - lz4 -d som-ast-jit.lz4    som-ast-jit
     - lz4 -d som-ast-interp.lz4 som-ast-interp
     - lz4 -d som-bc-jit.lz4     som-bc-jit
@@ -168,13 +170,15 @@ benchmark-y2:
 
 benchmark-y3:
   stage: benchmark
+  needs:
+    [build-and-test-interpreters, build-and-test-jit-bc, build-and-test-jit-ast]
   tags: [yuria3]
   script:
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-jit.lz4
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-ast-interp.lz4
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-jit.lz4
     - sftp tmp-artifacts:incoming/${CI_PIPELINE_ID}/som-bc-interp.lz4
-    
+
     - lz4 -d som-ast-jit.lz4    som-ast-jit
     - lz4 -d som-ast-interp.lz4 som-ast-interp
     - lz4 -d som-bc-jit.lz4     som-bc-jit
@@ -185,6 +189,8 @@ benchmark-y3:
 
 report-completion:
   stage: benchmark-completion
+  needs:
+    [benchmark-y1, benchmark-y2, benchmark-y3, build:aarch64-test-and-rebench]
   tags: [yuria]
   script:
     - rebench --experiment="CI ID $CI_PIPELINE_ID" --report-completion rebench.conf
