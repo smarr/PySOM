@@ -23,6 +23,7 @@ build:aarch64-test-and-rebench:
 
   script:
     - export PATH=/opt/local/bin:/opt/local/sbin:/Users/gitlab-runner/Library/Python/3.12/bin:${PATH}:${PYPY_BIN_DIR}
+    - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)
 
     # BC JIT Compiled Version
     - SOM_INTERP=BC $RPYTHON --batch -Ojit src/main_rpython.py
@@ -44,7 +45,6 @@ build:aarch64-test-and-rebench:
     - ./som-ast-interp -cp Smalltalk TestSuite/TestHarness.som
     - ./som-ast-interp -cp Smalltalk:TestSuite Examples/Benchmarks/TestSuite/TestTestSuite.som
 
-    - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)
     - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf
 
 build-and-test-interpreters:
