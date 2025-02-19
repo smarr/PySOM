@@ -5,7 +5,7 @@ stages:
 
 variables:
   PYTHONUNBUFFERED: "true"
-  PYPY_RELEASE: "7.3.16"
+  PYPY_RELEASE: "7.3.18"
 
 before_script:
   - git submodule update --init
