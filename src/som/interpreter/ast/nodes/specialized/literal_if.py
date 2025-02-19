@@ -31,6 +31,46 @@ class IfInlinedNode(ExpressionNode):
         )
 
 
+class IfNilInlinedNode(ExpressionNode):
+    _immutable_fields_ = [
+        "_condition_expr?",
+        "_body_expr?",
+        "universe",
+    ]
+    _child_nodes_ = ["_condition_expr", "_body_expr"]
+
+    def __init__(self, condition_expr, body_expr, source_section):
+        ExpressionNode.__init__(self, source_section)
+        self._condition_expr = self.adopt_child(condition_expr)
+        self._body_expr = self.adopt_child(body_expr)
+
+    def execute(self, frame):
+        result = self._condition_expr.execute(frame)
+        if result is nilObject:
+            return self._body_expr.execute(frame)
+        return result
+
+
+class IfNotNilInlinedNode(ExpressionNode):
+    _immutable_fields_ = [
+        "_condition_expr?",
+        "_body_expr?",
+        "universe",
+    ]
+    _child_nodes_ = ["_condition_expr", "_body_expr"]
+
+    def __init__(self, condition_expr, body_expr, source_section):
+        ExpressionNode.__init__(self, source_section)
+        self._condition_expr = self.adopt_child(condition_expr)
+        self._body_expr = self.adopt_child(body_expr)
+
+    def execute(self, frame):
+        result = self._condition_expr.execute(frame)
+        if result is nilObject:
+            return result
+        return self._body_expr.execute(frame)
+
+
 class IfElseInlinedNode(ExpressionNode):
     _immutable_fields_ = [
         "_condition_expr?",
@@ -61,3 +101,25 @@ class IfElseInlinedNode(ExpressionNode):
             "Would need to generalize, but we haven't implemented that "
             + "for the bytecode interpreter either"
         )
+
+
+class IfNilNotNilInlinedNode(ExpressionNode):
+    _immutable_fields_ = [
+        "_condition_expr?",
+        "_nil_expr?",
+        "_not_nil_expr?",
+        "universe",
+    ]
+    _child_nodes_ = ["_condition_expr", "_nil_expr", "_not_nil_expr"]
+
+    def __init__(self, condition_expr, nil_expr, not_nil_expr, source_section):
+        ExpressionNode.__init__(self, source_section)
+        self._condition_expr = self.adopt_child(condition_expr)
+        self._nil_expr = self.adopt_child(nil_expr)
+        self._not_nil_expr = self.adopt_child(not_nil_expr)
+
+    def execute(self, frame):
+        result = self._condition_expr.execute(frame)
+        if result is nilObject:
+            return self._nil_expr.execute(frame)
+        return self._not_nil_expr.execute(frame)
