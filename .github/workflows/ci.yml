@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   test_som:
-    runs-on: ubuntu-20.04 # ubuntu-latest
+    runs-on: ubuntu-24.04 # ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -20,8 +20,8 @@ jobs:
           - name: Basics PyPy 2.7
             python-version: pypy2.7
             id: basic
-          - name: Basics Python 3.11
-            python-version: 3.11
+          - name: Basics Python 3.13
+            python-version: 3.13
             id: basic
 
     steps:
