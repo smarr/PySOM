@@ -1,12 +1,13 @@
 from rlib.debug import make_sure_not_resized
 from som.compiler.bc.bytecode_generator import (
-    emit_jump_on_bool_with_dummy_offset,
+    emit_jump_on_with_dummy_offset,
     emit_jump_with_dummy_offset,
     emit_pop,
     emit_push_constant,
     emit_jump_backward_with_offset,
     emit_inc_field_push,
     emit_return_field,
+    JumpCondition,
 )
 
 from som.compiler.method_generation_context import MethodGenerationContextBase
@@ -583,7 +584,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
         arg_idx = self._bytecode[-(pop_len + return_len + 2)]
         return FieldWrite(self.signature, field_idx, arg_idx)
 
-    def inline_if_true_or_if_false(self, parser, is_if_true):
+    def inline_then_branch(self, parser, condition):
         # HACK: We do assume that the receiver on the stack is a boolean,
         # HACK: similar to the IfTrueIfFalseNode.
         # HACK: We don't support anything but booleans at the moment.
@@ -596,8 +597,8 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         self._remove_last_bytecodes(1)  # remove push_block*
 
-        jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
-            self, is_if_true, False
+        jump_offset_idx_to_skip_true_branch = emit_jump_on_with_dummy_offset(
+            self, condition, False
         )
 
         # TODO: remove the block from the literal list
@@ -624,7 +625,7 @@ class MethodGenerationContext(MethodGenerationContextBase):
             self._last_bytecode_is_one_of(1, PUSH_BLOCK_BYTECODES) != Bytecodes.invalid
         )
 
-    def inline_if_true_false(self, parser, is_if_true):
+    def inline_then_else_branches(self, parser, condition):
         # HACK: We do assume that the receiver on the stack is a boolean,
         # HACK: similar to the IfTrueIfFalseNode.
         # HACK: We don't support anything but booleans at the moment.
@@ -642,8 +643,8 @@ class MethodGenerationContext(MethodGenerationContextBase):
             to_be_inlined_2,
         ) = self._extract_block_methods_and_remove_bytecodes()
 
-        jump_offset_idx_to_skip_true_branch = emit_jump_on_bool_with_dummy_offset(
-            self, is_if_true, True
+        jump_offset_idx_to_skip_true_branch = emit_jump_on_with_dummy_offset(
+            self, condition, True
         )
 
         self._is_currently_inlining_a_block = True
@@ -698,8 +699,10 @@ class MethodGenerationContext(MethodGenerationContextBase):
         self._is_currently_inlining_a_block = True
         cond_method.inline(self)
 
-        jump_offset_idx_to_skip_loop_body = emit_jump_on_bool_with_dummy_offset(
-            self, is_while_true, True
+        jump_offset_idx_to_skip_loop_body = emit_jump_on_with_dummy_offset(
+            self,
+            JumpCondition.on_false if is_while_true else JumpCondition.on_true,
+            True,
         )
 
         body_method.inline(self)
@@ -725,8 +728,8 @@ class MethodGenerationContext(MethodGenerationContextBase):
 
         self._remove_last_bytecodes(1)  # remove push_block*
 
-        jump_offset_idx_to_skip_branch = emit_jump_on_bool_with_dummy_offset(
-            self, not is_or, True
+        jump_offset_idx_to_skip_branch = emit_jump_on_with_dummy_offset(
+            self, JumpCondition.on_true if is_or else JumpCondition.on_false, True
         )
 
         to_be_inlined = self._literals[block_literal_idx]

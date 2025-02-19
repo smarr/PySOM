@@ -360,6 +360,8 @@ def test_if_true_with_something_and_literal_return(mgenc, literal, bytecode):
     [
         ("ifTrue:", Bytecodes.jump_on_false_top_nil),
         ("ifFalse:", Bytecodes.jump_on_true_top_nil),
+        ("ifNil:", Bytecodes.jump_on_not_nil_top_top),
+        ("ifNotNil:", Bytecodes.jump_on_nil_top_top),
     ],
 )
 def test_if_arg(mgenc, if_selector, jump_bytecode):
@@ -792,6 +794,8 @@ def test_if_true_if_false_nlr_arg2(mgenc):
     [
         ("ifTrue:", "ifFalse:", Bytecodes.jump_on_false_pop),
         ("ifFalse:", "ifTrue:", Bytecodes.jump_on_true_pop),
+        ("ifNil:", "ifNotNil:", Bytecodes.jump_on_not_nil_pop),
+        ("ifNotNil:", "ifNil:", Bytecodes.jump_on_nil_pop),
     ],
 )
 def test_if_true_if_false_return(mgenc, sel1, sel2, jump_bytecode):

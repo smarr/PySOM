@@ -19,7 +19,10 @@ from som.compiler.bc.bytecode_generator import (
     emit_push_constant_index,
     emit_return_non_local,
 )
-from som.compiler.bc.method_generation_context import MethodGenerationContext
+from som.compiler.bc.method_generation_context import (
+    MethodGenerationContext,
+    JumpCondition,
+)
 from som.compiler.parser import ParserBase
 from som.compiler.symbol import Symbol
 from som.vm.symbols import (
@@ -269,10 +272,21 @@ class Parser(ParserBase):
 
         if not is_super_send:
             if num_args == 1 and (
-                (keyword == "ifTrue:" and mgenc.inline_if_true_or_if_false(self, True))
+                (
+                    keyword == "ifTrue:"
+                    and mgenc.inline_then_branch(self, JumpCondition.on_false)
+                )
                 or (
                     keyword == "ifFalse:"
-                    and mgenc.inline_if_true_or_if_false(self, False)
+                    and mgenc.inline_then_branch(self, JumpCondition.on_true)
+                )
+                or (
+                    keyword == "ifNil:"
+                    and mgenc.inline_then_branch(self, JumpCondition.on_not_nil)
+                )
+                or (
+                    keyword == "ifNotNil:"
+                    and mgenc.inline_then_branch(self, JumpCondition.on_nil)
                 )
                 or (keyword == "whileTrue:" and mgenc.inline_while(self, True))
                 or (keyword == "whileFalse:" and mgenc.inline_while(self, False))
@@ -284,11 +298,19 @@ class Parser(ParserBase):
             if num_args == 2 and (
                 (
                     keyword == "ifTrue:ifFalse:"
-                    and mgenc.inline_if_true_false(self, True)
+                    and mgenc.inline_then_else_branches(self, JumpCondition.on_false)
                 )
                 or (
                     keyword == "ifFalse:ifTrue:"
-                    and mgenc.inline_if_true_false(self, False)
+                    and mgenc.inline_then_else_branches(self, JumpCondition.on_true)
+                )
+                or (
+                    keyword == "ifNil:ifNotNil:"
+                    and mgenc.inline_then_else_branches(self, JumpCondition.on_not_nil)
+                )
+                or (
+                    keyword == "ifNotNil:ifNil:"
+                    and mgenc.inline_then_else_branches(self, JumpCondition.on_nil)
                 )
             ):
                 return

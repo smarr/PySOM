@@ -80,13 +80,21 @@ class Bytecodes(object):
     jump_on_false_top_nil = jump_on_true_top_nil + 1
     jump_on_true_pop = jump_on_false_top_nil + 1
     jump_on_false_pop = jump_on_true_pop + 1
-    jump_backward = jump_on_false_pop + 1
+    jump_on_not_nil_top_top = jump_on_false_pop + 1
+    jump_on_nil_top_top = jump_on_not_nil_top_top + 1
+    jump_on_not_nil_pop = jump_on_nil_top_top + 1
+    jump_on_nil_pop = jump_on_not_nil_pop + 1
+    jump_backward = jump_on_nil_pop + 1
     jump2 = jump_backward + 1
     jump2_on_true_top_nil = jump2 + 1
     jump2_on_false_top_nil = jump2_on_true_top_nil + 1
     jump2_on_true_pop = jump2_on_false_top_nil + 1
     jump2_on_false_pop = jump2_on_true_pop + 1
-    jump2_backward = jump2_on_false_pop + 1
+    jump2_on_not_nil_top_top = jump2_on_false_pop + 1
+    jump2_on_nil_top_top = jump2_on_not_nil_top_top + 1
+    jump2_on_not_nil_pop = jump2_on_nil_top_top + 1
+    jump2_on_nil_pop = jump2_on_not_nil_pop + 1
+    jump2_backward = jump2_on_nil_pop + 1
 
     q_super_send_1 = jump2_backward + 1
     q_super_send_2 = q_super_send_1 + 1
@@ -154,12 +162,20 @@ JUMP_BYTECODES = [
     Bytecodes.jump_on_true_pop,
     Bytecodes.jump_on_false_pop,
     Bytecodes.jump_on_false_top_nil,
+    Bytecodes.jump_on_not_nil_top_top,
+    Bytecodes.jump_on_nil_top_top,
+    Bytecodes.jump_on_not_nil_pop,
+    Bytecodes.jump_on_nil_pop,
     Bytecodes.jump_backward,
     Bytecodes.jump2,
     Bytecodes.jump2_on_true_top_nil,
     Bytecodes.jump2_on_true_pop,
     Bytecodes.jump2_on_false_pop,
     Bytecodes.jump2_on_false_top_nil,
+    Bytecodes.jump2_on_not_nil_top_top,
+    Bytecodes.jump2_on_nil_top_top,
+    Bytecodes.jump2_on_not_nil_pop,
+    Bytecodes.jump2_on_nil_pop,
     Bytecodes.jump2_backward,
 ]
 
@@ -258,12 +274,20 @@ _BYTECODE_LENGTH = [
     LEN_TWO_ARGS,  # jump_on_false_top_nil
     LEN_TWO_ARGS,  # jump_on_true_pop
     LEN_TWO_ARGS,  # jump_on_false_pop
+    LEN_TWO_ARGS,  # jump_on_not_nil_top_top,
+    LEN_TWO_ARGS,  # jump_on_nil_top_top,
+    LEN_TWO_ARGS,  # jump_on_not_nil_pop,
+    LEN_TWO_ARGS,  # jump_on_nil_pop,
     LEN_TWO_ARGS,  # jump_backward
     LEN_TWO_ARGS,  # jump2
     LEN_TWO_ARGS,  # jump2_on_true_top_nil
     LEN_TWO_ARGS,  # jump2_on_false_top_nil
     LEN_TWO_ARGS,  # jump2_on_true_pop
     LEN_TWO_ARGS,  # jump2_on_false_pop
+    LEN_TWO_ARGS,  # jump2_on_not_nil_top_top,
+    LEN_TWO_ARGS,  # jump2_on_nil_top_top,
+    LEN_TWO_ARGS,  # jump2_on_not_nil_pop,
+    LEN_TWO_ARGS,  # jump2_on_nil_pop,
     LEN_TWO_ARGS,  # jump2_backward
     LEN_ONE_ARG,  # q_super_send_1
     LEN_ONE_ARG,  # q_super_send_2
