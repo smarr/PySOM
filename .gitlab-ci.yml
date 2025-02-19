@@ -51,7 +51,7 @@ build-and-test-interpreters:
   stage: build-test
   tags: [yuria]
   script:
-    - export PATH=$PATH:$PYPY_BIN_DIR
+    - export PATH=$PYPY_BIN_DIR:$PATH
     - export SOM_INTERP=BC
     - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)
 
@@ -90,7 +90,7 @@ build-and-test-jit-bc:
   stage: build-test
   tags: [yuria2]
   script:
-    - export PATH=$PATH:$PYPY_BIN_DIR
+    - export PATH=$PYPY_BIN_DIR:$PATH
     - export SOM_INTERP=BC
 
     # JIT Compiled Version
@@ -112,7 +112,7 @@ build-and-test-jit-ast:
   stage: build-test
   tags: [yuria3]
   script:
-    - export PATH=$PATH:$PYPY_BIN_DIR
+    - export PATH=$PYPY_BIN_DIR:$PATH
     - export SOM_INTERP=AST
 
     # JIT Compiled Version
