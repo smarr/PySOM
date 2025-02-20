@@ -5,7 +5,7 @@ stages:
 
 variables:
   PYTHONUNBUFFERED: "true"
-  PYPY_RELEASE: "7.3.16"
+  PYPY_RELEASE: "7.3.18"
 
 before_script:
   - git submodule update --init
@@ -23,6 +23,7 @@ build:aarch64-test-and-rebench:
 
   script:
     - export PATH=/opt/local/bin:/opt/local/sbin:/Users/gitlab-runner/Library/Python/3.12/bin:${PATH}:${PYPY_BIN_DIR}
+    - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)
 
     # BC JIT Compiled Version
     - SOM_INTERP=BC $RPYTHON --batch -Ojit src/main_rpython.py
@@ -44,14 +45,13 @@ build:aarch64-test-and-rebench:
     - ./som-ast-interp -cp Smalltalk TestSuite/TestHarness.som
     - ./som-ast-interp -cp Smalltalk:TestSuite Examples/Benchmarks/TestSuite/TestTestSuite.som
 
-    - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)
     - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf
 
 build-and-test-interpreters:
   stage: build-test
   tags: [yuria]
   script:
-    - export PATH=$PATH:$PYPY_BIN_DIR
+    - export PATH=$PYPY_BIN_DIR:$PATH
     - export SOM_INTERP=BC
     - (cd Examples/Benchmarks/TestSuite && ./duplicate-tests.sh)
 
@@ -90,7 +90,7 @@ build-and-test-jit-bc:
   stage: build-test
   tags: [yuria2]
   script:
-    - export PATH=$PATH:$PYPY_BIN_DIR
+    - export PATH=$PYPY_BIN_DIR:$PATH
     - export SOM_INTERP=BC
 
     # JIT Compiled Version
@@ -112,7 +112,7 @@ build-and-test-jit-ast:
   stage: build-test
   tags: [yuria3]
   script:
-    - export PATH=$PATH:$PYPY_BIN_DIR
+    - export PATH=$PYPY_BIN_DIR:$PATH
     - export SOM_INTERP=AST
 
     # JIT Compiled Version
@@ -147,7 +147,7 @@ benchmark-y1:
     - lz4 -d som-bc-interp.lz4  som-bc-interp
 
     # Run Benchmarks
-    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf m:yuria
+    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf t:yuria
 
 benchmark-y2:
   stage: benchmark
@@ -166,7 +166,7 @@ benchmark-y2:
     - lz4 -d som-bc-interp.lz4  som-bc-interp
 
     # Run Benchmarks
-    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf m:yuria2
+    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf t:yuria2
 
 benchmark-y3:
   stage: benchmark
@@ -185,7 +185,7 @@ benchmark-y3:
     - lz4 -d som-bc-interp.lz4  som-bc-interp
 
     # Run Benchmarks
-    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf m:yuria3
+    - rebench --experiment="CI ID $CI_PIPELINE_ID" --branch="$CI_COMMIT_REF_NAME" -c rebench.conf t:yuria3
 
 report-completion:
   stage: benchmark-completion
