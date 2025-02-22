@@ -434,9 +434,13 @@ class BcMethod(BcAbstractMethod):
                 bytecode == Bytecodes.jump
                 or bytecode == Bytecodes.jump_on_true_top_nil
                 or bytecode == Bytecodes.jump_on_false_top_nil
+                or bytecode == Bytecodes.jump_on_not_nil_top_top
+                or bytecode == Bytecodes.jump_on_nil_top_top
                 or bytecode == Bytecodes.jump2
                 or bytecode == Bytecodes.jump2_on_true_top_nil
                 or bytecode == Bytecodes.jump2_on_false_top_nil
+                or bytecode == Bytecodes.jump2_on_not_nil_top_top
+                or bytecode == Bytecodes.jump2_on_nil_top_top
             ):
                 # emit the jump, but instead of the offset, emit a dummy
                 idx = emit3_with_dummy(mgenc, bytecode, 0)
@@ -448,8 +452,12 @@ class BcMethod(BcAbstractMethod):
             elif (
                 bytecode == Bytecodes.jump_on_true_pop
                 or bytecode == Bytecodes.jump_on_false_pop
+                or bytecode == Bytecodes.jump_on_not_nil_pop
+                or bytecode == Bytecodes.jump_on_nil_pop
                 or bytecode == Bytecodes.jump2_on_true_pop
                 or bytecode == Bytecodes.jump2_on_false_pop
+                or bytecode == Bytecodes.jump2_on_not_nil_pop
+                or bytecode == Bytecodes.jump2_on_nil_pop
             ):
                 # emit the jump, but instead of the offset, emit a dummy
                 idx = emit3_with_dummy(mgenc, bytecode, -1)
@@ -529,12 +537,20 @@ class BcMethod(BcAbstractMethod):
                 or bytecode == Bytecodes.jump_on_true_pop
                 or bytecode == Bytecodes.jump_on_false_top_nil
                 or bytecode == Bytecodes.jump_on_false_pop
+                or bytecode == Bytecodes.jump_on_not_nil_top_top
+                or bytecode == Bytecodes.jump_on_nil_top_top
+                or bytecode == Bytecodes.jump_on_not_nil_pop
+                or bytecode == Bytecodes.jump_on_nil_pop
                 or bytecode == Bytecodes.jump_backward
                 or bytecode == Bytecodes.jump2
                 or bytecode == Bytecodes.jump2_on_true_top_nil
                 or bytecode == Bytecodes.jump2_on_true_pop
                 or bytecode == Bytecodes.jump2_on_false_top_nil
                 or bytecode == Bytecodes.jump2_on_false_pop
+                or bytecode == Bytecodes.jump2_on_not_nil_top_top
+                or bytecode == Bytecodes.jump2_on_nil_top_top
+                or bytecode == Bytecodes.jump2_on_not_nil_pop
+                or bytecode == Bytecodes.jump2_on_nil_pop
                 or bytecode == Bytecodes.jump2_backward
             ):
                 # don't use context

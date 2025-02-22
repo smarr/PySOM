@@ -22,6 +22,9 @@ from som.interpreter.ast.nodes.specialized.literal_and_or import (
 from som.interpreter.ast.nodes.specialized.literal_if import (
     IfInlinedNode,
     IfElseInlinedNode,
+    IfNilInlinedNode,
+    IfNotNilInlinedNode,
+    IfNilNotNilInlinedNode,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
 from som.interpreter.ast.nodes.variable_node import (
@@ -203,6 +206,29 @@ def test_if_arg(mgenc, if_selector, expected_bool, unexpected_bool):
     if_node = ast._exprs[1]
     assert if_node._expected_bool is expected_bool
     assert if_node._not_expected_bool is unexpected_bool
+
+
+@pytest.mark.parametrize(
+    "if_selector,expected_class",
+    [
+        ("ifNil:", IfNilInlinedNode),
+        ("ifNotNil:", IfNotNilInlinedNode),
+    ],
+)
+def test_if_nil_arg(mgenc, if_selector, expected_class):
+    ast = parse_method(
+        mgenc,
+        """
+        test: arg = (
+            #start.
+            self method IF_SELECTOR [ arg ].
+            #end
+        )""".replace(
+            "IF_SELECTOR", if_selector
+        ),
+    )
+
+    assert isinstance(ast._exprs[1], expected_class)
 
 
 def test_if_true_and_inc_field(cgenc, mgenc):
@@ -428,6 +454,35 @@ def test_if_true_if_false_return(mgenc, sel1, sel2, expected_bool, unexpected_bo
     if_node = seq._exprs[1]
     assert if_node._expected_bool is expected_bool
     assert if_node._not_expected_bool is unexpected_bool
+
+
+@pytest.mark.parametrize(
+    "sel1,sel2,expected_nil_expr,expected_not_nil_expr",
+    [
+        ("ifNil:", "ifNotNil:", ReturnLocalNode, LiteralNode),
+        ("ifNotNil:", "ifNil:", LiteralNode, ReturnLocalNode),
+    ],
+)
+def test_if_nil_not_nil_return(
+    mgenc, sel1, sel2, expected_nil_expr, expected_not_nil_expr
+):
+    seq = parse_method(
+        mgenc,
+        """
+        test: arg1 with: arg2 = (
+            #start.
+            ^ self method SEL1 [ ^ arg1 ] SEL2 [ #foo ]
+        )""".replace(
+            "SEL1", sel1
+        ).replace(
+            "SEL2", sel2
+        ),
+    )
+
+    assert isinstance(seq._exprs[1], IfNilNotNilInlinedNode)
+    if_node = seq._exprs[1]
+    assert isinstance(if_node._nil_expr, expected_nil_expr)
+    assert isinstance(if_node._not_nil_expr, expected_not_nil_expr)
 
 
 @pytest.mark.parametrize(

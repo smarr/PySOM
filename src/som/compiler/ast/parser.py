@@ -24,6 +24,9 @@ from som.interpreter.ast.nodes.specialized.literal_and_or import (
 from som.interpreter.ast.nodes.specialized.literal_if import (
     IfInlinedNode,
     IfElseInlinedNode,
+    IfNilInlinedNode,
+    IfNotNilInlinedNode,
+    IfNilNotNilInlinedNode,
 )
 from som.interpreter.ast.nodes.specialized.literal_while import WhileInlinedNode
 from som.vm.symbols import symbol_for
@@ -250,6 +253,26 @@ class Parser(ParserBase):
         return IfInlinedNode(receiver, body_expr, if_true, source)
 
     @staticmethod
+    def _try_inlining_if_nil(receiver, arguments, source, mgenc):
+        arg = arguments[0]
+        if not isinstance(arg, BlockNode):
+            return None
+
+        method = arg.get_method()
+        body_expr = method.inline(mgenc)
+        return IfNilInlinedNode(receiver, body_expr, source)
+
+    @staticmethod
+    def _try_inlining_if_not_nil(receiver, arguments, source, mgenc):
+        arg = arguments[0]
+        if not isinstance(arg, BlockNode):
+            return None
+
+        method = arg.get_method()
+        body_expr = method.inline(mgenc)
+        return IfNotNilInlinedNode(receiver, body_expr, source)
+
+    @staticmethod
     def _try_inlining_if_else(if_true, receiver, arguments, source, mgenc):
         arg1 = arguments[0]
         if not isinstance(arg1, BlockNode):
@@ -262,6 +285,25 @@ class Parser(ParserBase):
         true_expr = arg1.get_method().inline(mgenc)
         false_expr = arg2.get_method().inline(mgenc)
         return IfElseInlinedNode(receiver, true_expr, false_expr, if_true, source)
+
+    @staticmethod
+    def _try_inlining_if_nil_not_nil(is_if_nil, receiver, arguments, source, mgenc):
+        arg1 = arguments[0]
+        if not isinstance(arg1, BlockNode):
+            return None
+
+        arg2 = arguments[1]
+        if not isinstance(arg2, BlockNode):
+            return None
+
+        arg1_expr = arg1.get_method().inline(mgenc)
+        arg2_expr = arg2.get_method().inline(mgenc)
+        return IfNilNotNilInlinedNode(
+            receiver,
+            arg1_expr if is_if_nil else arg2_expr,
+            arg2_expr if is_if_nil else arg1_expr,
+            source,
+        )
 
     @staticmethod
     def _try_inlining_while(while_true, receiver, arguments, source, mgenc):
@@ -321,6 +363,18 @@ class Parser(ParserBase):
                     )
                     if inlined is not None:
                         return inlined
+                elif keyword == "ifNil:":
+                    inlined = self._try_inlining_if_nil(
+                        receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "ifNotNil:":
+                    inlined = self._try_inlining_if_not_nil(
+                        receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
                 elif keyword == "whileTrue:":
                     inlined = self._try_inlining_while(
                         True, receiver, arguments, source, mgenc
@@ -354,6 +408,18 @@ class Parser(ParserBase):
                         return inlined
                 elif keyword == "ifFalse:ifTrue:":
                     inlined = self._try_inlining_if_else(
+                        False, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "ifNil:ifNotNil:":
+                    inlined = self._try_inlining_if_nil_not_nil(
+                        True, receiver, arguments, source, mgenc
+                    )
+                    if inlined is not None:
+                        return inlined
+                elif keyword == "ifNotNil:ifNil:":
+                    inlined = self._try_inlining_if_nil_not_nil(
                         False, receiver, arguments, source, mgenc
                     )
                     if inlined is not None:

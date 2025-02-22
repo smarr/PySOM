@@ -584,6 +584,48 @@ def interpret(method, frame, max_stack_size):
                 stack[stack_ptr] = None
             stack_ptr -= 1
 
+        elif bytecode == Bytecodes.jump_on_not_nil_top_top:
+            val = stack[stack_ptr]
+            if val is not nilObject:
+                current_bc_idx += method.get_bytecode(current_bc_idx + 1)
+                # stack[stack_ptr] = val
+            else:
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                current_bc_idx += LEN_TWO_ARGS
+
+        elif bytecode == Bytecodes.jump_on_nil_top_top:
+            val = stack[stack_ptr]
+            if val is nilObject:
+                current_bc_idx += method.get_bytecode(current_bc_idx + 1)
+                # stack[stack_ptr] = val
+            else:
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                current_bc_idx += LEN_TWO_ARGS
+
+        elif bytecode == Bytecodes.jump_on_not_nil_pop:
+            val = stack[stack_ptr]
+            if val is not nilObject:
+                current_bc_idx += method.get_bytecode(current_bc_idx + 1)
+            else:
+                current_bc_idx += LEN_TWO_ARGS
+            if we_are_jitted():
+                stack[stack_ptr] = None
+            stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump_on_nil_pop:
+            val = stack[stack_ptr]
+            if val is nilObject:
+                current_bc_idx += method.get_bytecode(current_bc_idx + 1)
+            else:
+                current_bc_idx += LEN_TWO_ARGS
+            if we_are_jitted():
+                stack[stack_ptr] = None
+            stack_ptr -= 1
+
         elif bytecode == Bytecodes.jump_backward:
             current_bc_idx -= method.get_bytecode(current_bc_idx + 1)
             jitdriver.can_enter_jit(
@@ -649,6 +691,55 @@ def interpret(method, frame, max_stack_size):
                 stack[stack_ptr] = None
             stack_ptr -= 1
 
+        elif bytecode == Bytecodes.jump2_on_not_nil_top_top:
+            val = stack[stack_ptr]
+            if val is not nilObject:
+                current_bc_idx += method.get_bytecode(current_bc_idx + 1) + (
+                    method.get_bytecode(current_bc_idx + 2) << 8
+                )
+                # stack[stack_ptr] = val
+            else:
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                current_bc_idx += LEN_TWO_ARGS
+
+        elif bytecode == Bytecodes.jump2_on_nil_top_top:
+            val = stack[stack_ptr]
+            if val is nilObject:
+                current_bc_idx += method.get_bytecode(current_bc_idx + 1) + (
+                    method.get_bytecode(current_bc_idx + 2) << 8
+                )
+                # stack[stack_ptr] = val
+            else:
+                if we_are_jitted():
+                    stack[stack_ptr] = None
+                stack_ptr -= 1
+                current_bc_idx += LEN_TWO_ARGS
+
+        elif bytecode == Bytecodes.jump2_on_not_nil_pop:
+            val = stack[stack_ptr]
+            if val is not nilObject:
+                current_bc_idx += method.get_bytecode(current_bc_idx + 1) + (
+                    method.get_bytecode(current_bc_idx + 2) << 8
+                )
+            else:
+                current_bc_idx += LEN_TWO_ARGS
+            if we_are_jitted():
+                stack[stack_ptr] = None
+            stack_ptr -= 1
+
+        elif bytecode == Bytecodes.jump2_on_nil_pop:
+            val = stack[stack_ptr]
+            if val is nilObject:
+                current_bc_idx += method.get_bytecode(current_bc_idx + 1) + (
+                    method.get_bytecode(current_bc_idx + 2) << 8
+                )
+            else:
+                current_bc_idx += LEN_TWO_ARGS
+            if we_are_jitted():
+                stack[stack_ptr] = None
+            stack_ptr -= 1
         elif bytecode == Bytecodes.jump2_backward:
             current_bc_idx -= method.get_bytecode(current_bc_idx + 1) + (
                 method.get_bytecode(current_bc_idx + 2) << 8

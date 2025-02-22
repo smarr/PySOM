@@ -3,6 +3,13 @@ from som.vm.globals import nilObject, trueObject, falseObject
 from som.vm.symbols import sym_nil, sym_true, sym_false
 
 
+class JumpCondition(object):
+    on_nil = 0
+    on_not_nil = 1
+    on_true = 2
+    on_false = 3
+
+
 def emit_inc(mgenc):
     emit1(mgenc, BC.inc, 0)
 
@@ -186,17 +193,26 @@ def emit_push_constant_index(mgenc, lit_index):
     emit2(mgenc, BC.push_constant, lit_index, 1)
 
 
-def emit_jump_on_bool_with_dummy_offset(mgenc, is_if_true, needs_pop):
+def emit_jump_on_with_dummy_offset(mgenc, condition, needs_pop):
     # Remember: true and false seem flipped here.
     # This is because if the test passes, the block is inlined directly.
     # But if the test fails, we need to jump.
     # Thus, an  `#ifTrue:` needs to generated a jump_on_false.
     if needs_pop:
-        bc = BC.jump_on_false_pop if is_if_true else BC.jump_on_true_pop
         stack_effect = -1
     else:
-        bc = BC.jump_on_false_top_nil if is_if_true else BC.jump_on_true_top_nil
         stack_effect = 0
+
+    if condition == JumpCondition.on_true:
+        bc = BC.jump_on_true_pop if needs_pop else BC.jump_on_true_top_nil
+    elif condition == JumpCondition.on_false:
+        bc = BC.jump_on_false_pop if needs_pop else BC.jump_on_false_top_nil
+    elif condition == JumpCondition.on_not_nil:
+        bc = BC.jump_on_not_nil_pop if needs_pop else BC.jump_on_not_nil_top_top
+    elif condition == JumpCondition.on_nil:
+        bc = BC.jump_on_nil_pop if needs_pop else BC.jump_on_nil_top_top
+    else:
+        raise NotImplementedError("Unknown condition: " + str(condition))
 
     emit1(mgenc, bc, stack_effect)
     idx = mgenc.add_bytecode_argument_and_get_index(0)
